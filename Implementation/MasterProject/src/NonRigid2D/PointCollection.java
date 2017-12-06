@@ -25,7 +25,6 @@ public class PointCollection {
 				int p = ip.getPixel(u, v);
 				
 				if (p < -1) {
-					IJ.log(u + "/" + v);
 					pntlist.add(new double[]{u, v});
 				}
 			}
