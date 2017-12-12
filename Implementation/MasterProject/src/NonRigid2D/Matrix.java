@@ -31,8 +31,15 @@ public class Matrix {
 		double[][] T = new double[][] { { 1, 0, translateX }, { 0, 1, translateY }, { 0, 0, 1.0 } };
 
 		for (int i = 0; i < points.size(); i++) {
-
-			translatedPoints.add(Matrix.multiplication(T, points.get(i)));
+			
+			if(points.get(i)!= null){
+				translatedPoints.add(Matrix.multiplication(T, points.get(i)));
+			}
+			
+			else {
+				translatedPoints.add(null);
+			}
+			
 		}
 
 		return translatedPoints;
