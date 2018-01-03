@@ -13,7 +13,13 @@
 %   Main language: german, english (default)
 %%%----------------------------------------------------------
 
-\RequirePackage[utf8]{inputenc}		% Remove when using lualatex or xelatex entfernen!
+\usepackage{hgb}
+\usepackage{hgbabbrev}
+\usepackage{hgblistings}
+\usepackage{hgbbib}
+\usepackage{hgbheadings}
+
+\RequirePackage[utf8]{inputenc}		% Remove when using lualatex or xelatex!
 
 \graphicspath{{images/}}    % location of images and graphics
 \logofile{logo}				% logo file = images/logo.pdf (use \logofile{} for no logo)
@@ -24,7 +30,7 @@
 %%%----------------------------------------------------------
 
 %%% Entries for ALL types of work: --------------------------
-\title{Recover of body parts of articulated object}
+\title{Recovering of body parts of articulated object}
 \author{Anna M.\ Maureder}
 \programname{Interactive Media}
 \placeofstudy{Hagenberg}
