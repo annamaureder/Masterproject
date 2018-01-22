@@ -74,19 +74,18 @@ As a first step the outliers of the two point clouds S0 and D0 are removed. This
 
 \subsection{Subdividing into matching clusters}
 
-As a next step, the two meshes are recursively subdivided into clusters. This is realised in form of a binary tree. $S_0$ and $D_0$ are initially divided into a left and right cluster if the matching between them does not suceed. A new cluster can again be subdivided, if not matching into left and right. By doing the dividing as a depth-first approach of a tree, the whole object is subdivided from the left to the right. If no subdividing is done anymore (as two clusters of two objects match), those clusters are stored as matching cluster. By recursively dividing the objects from one side to another, the neighboring clusters in the list are also neighboring clusters of the object (see Figure XXX).
+As a next step, the two meshes are recursively subdivided into sub clusters. This is realised in form of a binary tree. The cluster0 is initially divided into a left and right cluster if the matching between cluster0 of S0 and D0 does not work. A new cluster can again be subdivided, if not matching into left and right. By doing the dividing as a depth-first approach of a tree, the whole object is subdivided from the left to the right. If no subdividing is done anymore (as two clusters of two objects match), those clusters are stored as matching cluster. By recursively dividing the objects from one side to another, the neighboring clusters in the list are also neighboring clusters of the object (see Figure XXX).
 
 \subsubsection{Declaring the matching condition}
 
-By applying the ICP and the nearest neighbour approach, usually a certain matching error is computed between 
-$ P =  \{ {p_0,....p_m}\}$ and its associated points $ Q =  \{ {q_0,....q_m}\}$. To declare when an object is matching, it is important to find the right maximum matching error $\tau$. If it is too high, two clusters are not easy to be matched, which will result in more clusters. If the value is too low, clusters are more likely to be matched and there won't be enough subdividing. The matching threshold is compared to error per point 
+By applying the ICP and the nearest neighbor approach, a certain matching error is computed between $P =  $\left{p_0,....p_m}\right$, as points usually don't match perfectly. To declare when an object is matching, it is important to find the right maximum matching error $\tau$. If it is too high, two clusters are not likely to be matched easy, as a result the clusters will be further subdivided which results in a higher result of clusters. If the value is too low, clusters are more likely to be matched and they are probably not subdivided enough. The matching threshold is compared to error per point 
 %
 \begin{equation}
-e_{avg} = \frac{\displaystyle\sum_{i=0}^{m}\| p_i - q_i\|^2}{| P |}
+e_{pp} = \frac{\sum_{i=0}^{m}\| p_i - q_i\|^2}{| P |}
 \end{equation}
 %
 
-which is the average error of a point contributing to the total error. By using the average error instead of the total error, region growing is enabled as the matching error is independent of the amount of points.
+which is the average error of a point contributing to the total error. By not using the total error, region growing is enabled as the error of clusters is then independent of the amount of points.
 
 \subsection{Merging neighboring clusters to rigid parts}
 

@@ -33,32 +33,27 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
  * 
  * @version 2013/08/22
  */
-public class ICP {
+public class ClosestPoint {
 	
 	//variable declaration
 	
-	private List<double[]> points1;
-	private List<double[]> points2;
+	private Cluster C1;
+	private Cluster C2;
 
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
+	private double thresholdError = 100;
 
 	private List<double[]> associatedPoints;
 	private List<double[]> transformedPoints;
 	
 	private List<double[]> tmp_transformation;
 	private List<double[]> tmp_association;
-	
-	double[] c1;
-	double[] c2;
-	
-	public ICP(List<double[]> p1, List<double[]> p2){
 		
-		points1 = p1;
-		points2 = p2;
+	public ClosestPoint(Cluster C1, Cluster C2){
 		
-		c1 = PointCollection.calculateCentroid(points1);
-		c2 = PointCollection.calculateCentroid(points2);
+		this.C1 = C1;
+		this.C2 = C2;
 		
 		this.run();
 	}
@@ -71,8 +66,8 @@ public class ICP {
 		 */
 		
 		
-		List<double[]> points1_origin = Matrix.translate(points1, -c1[0], -c1[1]);
-		List<double[]> points2_origin = Matrix.translate(points2, -c2[0], -c2[1]);
+		List<double[]> points1_origin = Matrix.translate(C1.getPoints(), -C1.getCentroid()[0], -C1.getCentroid()[1]);
+		List<double[]> points2_origin = Matrix.translate(C2.getPoints(), -C2.getCentroid()[0], -C2.getCentroid()[1]);
 		
 		/*
 		 * Step 2 - associate Points
@@ -99,11 +94,11 @@ public class ICP {
 			i++;
 		}
 		
-		associatedPoints = Matrix.translate(associatedPoints, c2[0], c2[1]);
-		transformedPoints = Matrix.translate(transformedPoints, c2[0], c2[1]);
+		associatedPoints = Matrix.translate(associatedPoints, C2.getCentroid()[0], C2.getCentroid()[1]);
+		transformedPoints = Matrix.translate(transformedPoints,  C2.getCentroid()[0], C2.getCentroid()[1]);
 		
 		ProcrustesFit pro = new ProcrustesFit();
-		pro.fit(points1, associatedPoints);
+		pro.fit(C1.getPoints(), associatedPoints);
 		//error = pro.getError();
 		
 		//IJ.log("Rotation:" + pro.getR().getEntry(0, 0));
@@ -173,10 +168,20 @@ public class ICP {
 	}
 	
 	public double getError(){
-		double errorPerPoint = error/((points1.size() + points2.size())/2.0);
+		return error;
+	}
+	
+	public boolean match(){
+		
+		double errorPerPoint = error/((C1.getPoints().size() + C2.getPoints().size()/2.0));
 		IJ.log("error per point: " + errorPerPoint);
 		
-		return error;
+		if( errorPerPoint < thresholdError){
+			return true;
+		}
+		
+		return false;
+			
 	}
 
 }
