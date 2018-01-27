@@ -42,7 +42,7 @@ public class ClosestPoint {
 
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
-	private double thresholdError = 100;
+	private double thresholdError = 350;
 
 	private List<double[]> associatedPoints;
 	private List<double[]> transformedPoints;

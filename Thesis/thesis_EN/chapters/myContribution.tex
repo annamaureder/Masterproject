@@ -1,26 +1,81 @@
 \chapter{My contribution}
 \label{cha:MyContribution}
 
-This chapter focuses on the implementation of a new segmentation approach by taking the existing methods as reference (see chapter \ref{cha:relatedWork}). The goal is to segment an articulated mesh \textit{M} into its unknown number \textit{n} of rigid parts \textit{P = \{{part\textsubscript{0}, ...,  part\textsubscript{n}\}}}, which is done by non-rigid registration of the points clouds \textit{S\textsubscript{0}} and \textit{D\textsubscript{0}} of an object in two different poses . Basically, a divide and conquer approach (see section \ref{divideAndConquer}) is implemented to reduce the computation steps of the correlated correspondence algorithm \cite{Anguelov04}. Furthermore, the LRP approach \cite{correspondence} is employed as an initial registration step to align the two poses of the object. 
+This chapter focuses on the implementation of a new segmentation approach by taking the existing methods as reference (see chapter \ref{cha:relatedWork}). 
+
+\section{Goal and approach}
+
+The goal is to segment an articulated mesh $M$ into its unknown number $n$ of rigid parts $ P =  \{ {p_0,....p_n}\}$ and extract the joints $ J =  \{ {j_0,....j_{n-1}}\}$ linking those parts in form of a skeleton structure. In general, this is done by non-rigid registration of the points clouds $S\textsubscript{0}$ and $D\textsubscript{0}$ of an object in two different poses. $S_0$ is thereby used as a \textit{template} to be registered with $D_0$. The main task is to determine a part assignment $p_i$ and the corresponding transformation $t_i$ for all points of the \textit{template} that alligns them with all points of $D_0$. Basically, a divide and conquer approach (see section \ref{divideAndConquer}) is implemented to recursively subdivide $S_0$ and $D_0$ into clusters trying to be matched(reduce the computation steps of the correlated correspondence algorithm \cite{Anguelov04}). Furthermore, the LRP approach \cite{correspondence} is employed as an initial registration step to align the two poses of the object. 
 
 \section{Assumptions}
 
-The input mesh \textit{M} is assumed to solely consist of rigid parts that can not be deformed or stretched (e.g. rigid parts of a human). Those parts are linked by joints and no matter what kind of pose is adopted by the articulated object, the geodesic distances bestween mesh points always stay the same (see Figure SKIZZE). As a result the object can be described as a skeleton structure, where parts are always linked the same. Thereby, it is taken advantage of the knowledge that the points located on one rigid part have the same transformation \textit{T = \{T\textsubscript{0}, ...,  T\textsubscript{n}\}}.
+The input mesh $M$ is assumed to solely consist of rigid parts that can not be deformed or stretched (e.g. rigid parts of a human). Those parts are linked by joints and no matter what kind of pose is adopted by the articulated object, the geodesic distances bestween mesh points always stay the same (see Figure SKIZZE).  Thereby, it is taken advantage of the knowledge that points located on a rigid part $p_i$ have the same transformation $t_i$ . Furthermore, it is assumed that the two poses $S_0$ and $D_0$ of $M$ are oriented the same direction.
 
 \section{Challenges/restrictions}
 
 There are many challenges regarding the non-rigid registration of point clouds in 2D, as well as in 3D. First off, the input data can be noisy by means of points not belonging to the object. Furthermore, the approach is computationally expensive and time-consuming, as the corresponding body parts of two meshes need to be detected iteratively. Additionally, the inevitable difficulty of finding the global optimum, related to ambiguous body parts, has to be overcome.
 
-\section{Divide and conquer approach}
+\section{Approach}
 \label{divideAndConquer}
 
-The point clouds \textit{S\textsubscript{0}} and \textit{D\textsubscript{0}} are iteratively subdivided into point clusters \textit{C = \{{cluster\textsubscript{0}, ...,  cluster\textsubscript{m}\}}} by a divider \textit{d}. In each iteration step two related clusters are matched by applying the ICP (iterative closest point) resulting in a matching error \textit{e}. In case of \textit{e} < \textit{e\textsubscript{threshold}}, two clusters are assumed to match. As it might be the case to have detected only a piece of a rigid part, the divider is slided to enlarge the clusters. This is done until the matching error gets higher. The matching clusters are assigned to a rigid part \textit{part\textsubscript{i}}. In case of \textit{e} > \textit{e\textsubscript{treshold}} the algorithm is applied recursively and the clusters are again subdivided into further clusters.
+\subsection{Divide and conquer}
 
-\subsection{Basic functionality for an articulated object with two parts}
-
-Assuming that the object is only composed of two rigid parts, the approach would work the following:
-
- The algorithm starts with two sets of point clouds \textit{S\textsubscript{0}} and \textit{D\textsubscript{0}} of the same object in different poses (\ref{fig:dc_original_p2}). \textit{S\textsubscript{0}} is used as a \textit{template} to be registered with \textit{D\textsubscript{0}}. The goal is to find a part assignment \textit{P = \{{part\textsubscript{0}, part\textsubscript{1}\}}} and transformation \textit{T = \{T\textsubscript{0}, T\textsubscript{1}\}} for all points of the \textit{template} that alligns them with all points of \textit{D\textsubscript{0}}. To iteratively find corresponding parts and transformations, \textit{S\textsubscript{0}} as well as \textit{D\textsubscript{0}} are divided into clusters \textit{C = \{{cluster\textsubscript{0}, cluster\textsubscript{1}\}}} . The dividers \textit{d\textsubscript{S}} and \textit{d\textsubscript{D}} are initially defined with the secondary axis \textit{s\textsubscript{S}} and \textit{s\textsubscript{D}} (see Figure \ref{fig:dc_axes_2p}). The resulting clusters are matched together with the ICP. Depending on the matching errors \textit{e\textsubscript{left}} and \textit{e\textsubscript{right}}, the dividers are slided alongside the principal axis \textit{p\textsubscript{S}} and \textit{p\textsubscript{D}} of the objects to grow/shrink the clusters. The algorithm terminates if the total error \textit{e\textsubscript{total} = e\textsubscript{right} + e\textsubscript{left}} doesn't get any smaller and the part assignments are accomplished (see Figure \ref{fig:dc_results_2p}).
+ The algorithm starts with two sets of point clouds $S_0$ and $D_0$ of an object $M$ in different poses (\ref{fig:dc_original_p2}). The two point clouds are iteratively subdivided into point clusters $ C =  \{ {c_0,..., c_m}\}$ through their centroids. In each iteration step two related clusters of $S_0$ and $D_0$ are matched by applying the ICP (iterative closest point) resulting in a matching error $e$. In case of $ e < \tau $, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the clusters are again subdivided into further clusters. The algorithm terminates if all resulting clusters of $S_0$ can be matched to all clusters of $D_0$. All neighboring clusters are then checked to be merged, in case of having divided a rigid part. After that step the remaining clusters are assigned to a rigid part $part_i$. 
+ 
+ \subsection{Removing outliers}
+ 
+ As a first step the outliers of the two point clouds S0 and D0 are removed. This is done, by finding clusters and just keeping the biggest one, assuming it is the main object
+ 
+ \subsection{Subdividing into clusters}
+ 
+ As a next step, the two point clouds $S_0$ and $D_0$ are assigned to the initial clusters $c_0$. If the matching between them does not suceed, they are subdivided into two clusters and the whole procedure is repeated recursively until all sub clusters $C = \{{c_1, ... c_m}\} $of $S_0$ can be matched to the clusters of $D_0$.  $S_0$ and $D_0$ are initially divided into a left and right cluster. 
+ 
+ \subsubsection{Divider position}
+ 
+ To determine where to divide a cluster into two other clusters, PCA is applied on the clusters is applied. The resulting dividers $d_0$ are realised by computing the principal axes $p_0$ through the centroids $ct_0$ and taking the perpendicular secondary axes $s_S$ and $s_D$ through the centroids.
+ 
+ \subsubsection{Cluster tree}
+ \label{tree}
+ 
+ The subdividing of the clusters $c_0$ is realised by a depth-first approach in a binary tree. Consequently, $S_0$ and $D_0$ are subdivided from the left to the right. A node $N$ of the tree contains two related clusters $c_i$ of $S_0$ and $D_0$ and in case of subdividing it, a Node \textit{left} and \textit{right}, containing the subdivided clusters $c_{i+1}$ and $c_{i+2}$. If two associated clusters in a Node $n_i$ match, no further subdividing is performed. The resulting leaves of the three are stored as matching clusters $C = \{{c_1, ... c_m}\}$ \ref{fig:illustrationTree}. By applying the depth-first approach, the neighboring clusters in the list are also neighbouring clusters in the object $S_0$ or $D_0$.  As a result, the skeleton structure from an object can be extracted, where parts are connected by joints.
+ 
+ \begin{figure}
+ 	\centering
+ 	\includegraphics[width=0.7\linewidth]{IllustrationTree}
+ 	\caption{Subdividing of S0 and D0 into matching clusters by the depth-first approach}
+ 	\label{fig:illustrationTree}
+ \end{figure}
+ 
+ 
+ \subsubsection{Declaring the matching condition}
+ 
+ By applying the ICP and the nearest neighbour approach, usually a certain matching error is computed between 
+ $ P =  \{ {p_0,....p_n}\}$ and its associated points $ Q =  \{ {q_0,....q_n}\}$. To declare when an object is matching, it is important to find the right maximum matching error $\tau$. If it is too high, two clusters are not easy to be matched, which will result in more clusters. If the value is too low, clusters are more likely to be matched and there won't be enough subdividing. The matching threshold is compared to error per point 
+ %
+ \begin{equation}
+ e_{avg} = \frac{\displaystyle\sum_{i=0}^{m}\| p_i - q_i\|^2}{| P |}
+ \end{equation}
+ %
+ 
+ which is the average error of a point contributing to the total error. By using the average error instead of the total error, region growing is enabled as the matching error is independent of the amount of points.
+ 
+ \subsection{Merging neighboring clusters to rigid parts}
+ 
+ As a next step, neighboring clusters from the matchedList are iteratively merged and checked for another match. This is done to reduce the found clusters to the rigid parts of the object.
+ Again, the mergin of one cluster is done until no further merge for neighboring parts can be done. Subsequently, the cluster is assumed to be a rigid part and saved in a new list. The resulting rigid parts in the list are again neighboring (see figure \ref{fig:clusterChain}). 
+ 
+ \begin{figure}
+ 	\centering
+ 	\includegraphics[width=0.7\linewidth]{ClusterChain}
+ 	\caption{Detecting rigid parts of S0 and D0 by iteratively merging neighboring clusters of S0 and matching them with the merged clusters of DO.}
+ 	\label{fig:clusterChain}
+ \end{figure}
+ 
+ \subsection{Joint/skeleton estimation}
+ 
+ \subsection{Implementation}
+ 
+ using of a binary tree to recursively segment clusters into smaller clusters, until they match. To be continued until all leaves of the tree can be matched with other clusters.
  
   \begin{figure}
   	\centering
@@ -63,48 +118,24 @@ Assuming that the object is only composed of two rigid parts, the approach would
  	\item The dividers \textit{d\textsubscript{S}} and \textit{d\textsubscript{D}} are shifted to the direction of the highest error. To be continued from step 5 until the total error \textit{e\textsubscript{total}} doesn't get smaller.
  \end{enumerate}
 
-\section{Segmentation of unknown number of rigid parts}
-
-In case of having an unknown number of rigid parts \textit{n}, the algorithm above has to be applied recursively in order to find all part assignments \textit{P = \{{part\textsubscript{0} ... part\textsubscript{n}\}}}. \textit{S\textsubscript{0}} and \textit{D\textsubscript{0}} are thereby initially divided into two assumed rigid parts by the dividers \textit{d\textsubscript{S}} and \textit{d\textsubscript{D}} initialized with \textit{s\textsubscript{S}} and \textit{s\textsubscript{D}}. The goal is now to find single parts by sliding another divider over \textit{S\textsubscript{left}} and \textit{D\textsubscript{left}} as well as \textit{S\textsubscript{right}} and \textit{D\textsubscript{right}} until the error \textit{e} for one part doesn't get any smaller. The total error \textit{e\textsubscript{total}} is not used any more as dividing one part into two doesn't ensure that they are both rigid. After assigning points to a Part \textit{P} the geodesic distance between points of rigid parts can be used to find further connecting parts. By taking the dividers as joints and taking into account that rigid parts are located between the same joints, rigid parts in the middle of the object can be easier detected.
-
-
-\subsection{Removing outliers}
-
-As a first step the outliers of the two point clouds S0 and D0 are removed. This is done, by finding clusters and just keeping the biggest one, assuming it is the main object
-
-\subsection{Subdividing into matching clusters}
-
-As a next step, the two meshes are recursively subdivided into clusters. This is realised in form of a binary tree. $S_0$ and $D_0$ are initially divided into a left and right cluster if the matching between them does not suceed. A new cluster can again be subdivided, if not matching into left and right. By doing the dividing as a depth-first approach of a tree, the whole object is subdivided from the left to the right. If no subdividing is done anymore (as two clusters of two objects match), those clusters are stored as matching cluster. By recursively dividing the objects from one side to another, the neighboring clusters in the list are also neighboring clusters of the object (see Figure XXX).
-
-\subsubsection{Declaring the matching condition}
-
-By applying the ICP and the nearest neighbour approach, usually a certain matching error is computed between 
-$ P =  \{ {p_0,....p_m}\}$ and its associated points $ Q =  \{ {q_0,....q_m}\}$. To declare when an object is matching, it is important to find the right maximum matching error $\tau$. If it is too high, two clusters are not easy to be matched, which will result in more clusters. If the value is too low, clusters are more likely to be matched and there won't be enough subdividing. The matching threshold is compared to error per point 
-%
-\begin{equation}
-e_{avg} = \frac{\displaystyle\sum_{i=0}^{m}\| p_i - q_i\|^2}{| P |}
-\end{equation}
-%
-
-which is the average error of a point contributing to the total error. By using the average error instead of the total error, region growing is enabled as the matching error is independent of the amount of points.
-
-\subsection{Merging neighboring clusters to rigid parts}
-
-As a next step, neighboring clusters from the matchedList are iteratively merged and checked for another match. This is done to reduce the found clusters to the rigid parts of the object.
-Again, the mergin of one cluster is done until no further merge for neighboring parts can be done. Subsequently, the cluster is assumed to be a rigid part and saved in a new list. The resulting rigid parts in the list are again neighboring. 
-
-
-\subsection{Joint/skeleton estimation}
-
-\subsection{Implementation}
-
-using of a binary tree to recursively segment clusters into smaller clusters, until they match. To be continued until all leaves of the tree can be matched with other clusters.
-
 \subsection{Results}
 
-Results from easy examples. Not working for human, as by dividing of one cluster, breaking down into single clusters (see Figure X). Another approach, e.g. using LRP as an initial alignment to then recursively segment the clusters linked to the LRP. Clusters not matching, as they don't have the same number of points, each point can only have one neighboring point. Or dividing clusters that they all have the same amount of points
+Results from easy examples. Not working for human, as by dividing of one cluster, breaking down into single clusters (see Figure X). Another approach, e.g. using LRP as an initial alignment to then recursively segment the clusters linked to the LRP. Clusters not matching, as they don't have the same number of points, each point can only have one neighboring point. Or dividing clusters that they all have the same amount of points. In case of a more complex object where one rigid part can be linked with a high number of rigid parts (upper body of a humen) another approach has to be found, as the skeleton structure is different than from a chain. (see Figure \ref{fig:dc_results_2p}).
+
+\subsection{Possible Improvements}
+
+\subsubsection{Same amount of points of associated clusters}
+
+\subsubsection{Check clusters after subdividing}
+
+After subdividing, only two clusters should come up.
+
+\subsubsection{LRP as initial alignment}
+
+As only objects with rigid parts arranged like a chain are possible with this approach, another improvement/algorithm has to be pursued (see section \ref{sec:LRP}).
 
 \section{LRP as initial alignment}
+\label{sec:LRP}
 
 Instead of cutting the object initially in half, as an initial step the largest rigid part is found and recursively from there all other linked parts can be detected.
 
@@ -144,7 +175,7 @@ The remaining clusters from \textit{S\textsubscript{0}} and \textit{T\textsubscr
 
 \section{Other approaches}
 
-\section{Points-to-Ellipse fitting}
+\subsection{Points-to-Ellipse fitting}
 
 \subsection{Algorithm}
 

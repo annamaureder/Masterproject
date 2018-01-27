@@ -98,17 +98,17 @@ public class Segmentation implements PlugInFilter {
 			Cluster[] clusters = segments.get(i);
 			
 			Cluster cluster1 = clusters[0];
-			Cluster cluster2 = clusters[1];
+			//Cluster cluster2 = clusters[1];
 			
 			for(int x = 0; x < cluster1.getPoints().size(); x++){
 				int[] point = new int[]{(int) cluster1.getPoints().get(x)[0], (int) cluster1.getPoints().get(x)[1]};
 				segmentation.drawDot(point[0], point[1]);
 			}
 			
-			for(int j = 0; j < cluster2.getPoints().size();j++){
+			/*for(int j = 0; j < cluster2.getPoints().size();j++){
 				int[] point = new int[]{(int) cluster2.getPoints().get(j)[0], (int) cluster2.getPoints().get(j)[1]};
 				segmentation.drawDot(point[0], point[1]);
-			}
+			}*/
 		}
 		
 		showImage(segmentation, title);
