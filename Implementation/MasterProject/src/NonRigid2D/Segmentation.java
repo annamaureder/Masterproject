@@ -40,10 +40,11 @@ public class Segmentation implements PlugInFilter {
 	// variable declaration
 	
 	private ImagePlus im;
+	private int size;
 	private ClusterTree tree;
 	List<Cluster[]> segmentedClusters;
 	List<Cluster[]> rigidParts;
-	private Color[] colors = new Color[]{Color.black, Color.blue, Color.green, Color.red, Color.orange, Color.yellow};
+	private Color[] colors = new Color[]{Color.black, Color.red, Color.blue, Color.green, Color.orange, Color.yellow};
 	
 	//private ClusterTree pose2;
 
@@ -55,36 +56,67 @@ public class Segmentation implements PlugInFilter {
 	public void run(ImageProcessor ip) {
 		
 		ImageStack stack = im.getStack();
+		size = im.getWidth();
+		
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
 		
-		tree = new ClusterTree(new Cluster(p1), new Cluster(p2));
+		Cluster S_0 = new Cluster(p1, false);
+		Cluster D_0 = new Cluster(p2, false);
 		
-		/*
-		 * ToDo:
-		 * - add both original clusters into tree
-		 * - divide and add nodes depending of error from ICP of current nodes (depth first
-		 * - save cluster if no further segmentation is done for it (no childs)
-		 * - check for the same amount of points!
-		 * 
-		 * 
-		 */
+		Cluster cS_0 = new Cluster(p1, true);
+		Cluster cD_0 = new Cluster(p2, true);
 		
+		tree = new ClusterTree(cS_0, cD_0);
+		
+		//recursive algorithm to subdivide the input clusters 
 		if(tree.checkClusters()){
 			segmentedClusters = tree.getSegmentedParts();		
 			rigidParts = tree.getRigidParts();
 		}
-						
-			
+								
 			IJ.log("Number of clusters: " + segmentedClusters.size());
 			IJ.log("Number of rigid parts: " + rigidParts.size());
 			
 			colorSegments(segmentedClusters, "Cluster Segmentation");
 			colorSegments(rigidParts, "Rigid parts");
+			
+			ColorProcessor inputPoints = new ColorProcessor(size, size);
+			inputPoints.invert();
+			
+			drawPoints(inputPoints, S_0.getPoints());
+			drawPoints(inputPoints, D_0.getPoints());
+			
+			showImage(inputPoints, "input points");
 						
+			ColorProcessor inputPoints_noNoise = new ColorProcessor(size, size);
+			inputPoints_noNoise.invert();
+			
+			drawPoints(inputPoints_noNoise, cS_0.getPoints());
+			drawPoints(inputPoints_noNoise, cD_0.getPoints());
+			
+			showImage(inputPoints_noNoise, "input points");
+			
 		}		
 
 
+	
+	void drawPoints(ColorProcessor cp, List<double[]> points){
+		
+		for(int i = 0; i < points.size(); i++){
+			cp.drawDot((int)points.get(i)[0], (int)points.get(i)[1]);
+		}
+		
+	}
+	
+	void drawClusters(ColorProcessor cp, Cluster c){
+		
+		
+		
+	}
+	
+	
+	
 	void colorSegments(List <Cluster[]> segments, String title){
 		
 		ColorProcessor segmentation = new ColorProcessor(250, 250);
@@ -93,17 +125,14 @@ public class Segmentation implements PlugInFilter {
 		
 		for(int i = 0; i < segments.size(); i++){
 			segmentation.setColor(colors[i%colors.length]);
-			//segmentation.setColor(Color.red);
 
 			Cluster[] clusters = segments.get(i);
 			
 			Cluster cluster1 = clusters[0];
-			//Cluster cluster2 = clusters[1];
+			Cluster cluster2 = clusters[1];
 			
-			for(int x = 0; x < cluster1.getPoints().size(); x++){
-				int[] point = new int[]{(int) cluster1.getPoints().get(x)[0], (int) cluster1.getPoints().get(x)[1]};
-				segmentation.drawDot(point[0], point[1]);
-			}
+			drawPoints(segmentation, cluster1.getPoints());
+			drawPoints(segmentation, cluster2.getPoints());
 			
 			/*for(int j = 0; j < cluster2.getPoints().size();j++){
 				int[] point = new int[]{(int) cluster2.getPoints().get(j)[0], (int) cluster2.getPoints().get(j)[1]};
@@ -114,7 +143,6 @@ public class Segmentation implements PlugInFilter {
 		showImage(segmentation, title);
 		
 	}
-	
 	
 	
 	void showImage(ImageProcessor ip, String title) {
