@@ -41,19 +41,43 @@ Pose and motion estimation of objects is an active field of research due to the 
 \section{Related Work}
 \label{cha:relatedWork}
 
-An overview of related methods to non-rigid registration for detecting rigid body parts of an articulated object are mentioned by Chang \cite{chang08articulated} and Tam  which mainly use the ICP (iterative closest point) and the PCA (Principal component analysis) to find corresponding body parts. This paper is based on the Correlated Correspondance algorithm \cite{CorrelatedCorrespondance} \cite{Anguelov04} and Symmetrization \cite{Mitra07}. A following work to \cite{chang08articulated} is \cite{chang09range}. Other methods include temporal coherence, markers and user inputs. Another method handels the registration process by first detecting the largest rigid part \cite{correspondence}.
+A main approach for non-rigid registration is proposed by Anguelov \cite{Anguelov04} using the correlated correspondence algorithm \cite{CorrelatedCorrespondance}. A different approach is reached by Symmetrization \cite{Mitra07} and the recursive detection of body parts by the LRP - "largest rigid part" algorithm \cite {guo2016correspondence}. Based on \cite{Anguelov04} and \cite{Mitra07}, Chang et al developed a closely related approach \cite{chang08articulated} \cite{chang09range}.
 
-\subsection{EM-algorithm}
+Mainly referenced are following approaches:
 
-Here comes an explanation of Anguelov with pictures.
+\subsection{Correlated Correspondence}
+
+This algorithm takes a template Mesh and other Meshes in different configurations as input. It performs an probabilistic framework and Expectation-Maximization (EM) to iterate between finding a decomposition of template into rigid parts and finding
+the part in the other meshes.
+
+\begin{figure}[htbp]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_Noise}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_noNoise}} 
+		\\	% PNG file
+		(a) & (b) 
+	\end{tabular}
+	\caption{Taking a mesh in two different poses as input (a), removing noise of the input point clouds (b)} 
+	\label{fig:pc_2parts}
+\end{figure}
 
 \subsection{LRP}
 
-Here comes the LRP algorithm with pictures.
+The LRP algorithm discovers the articulated parts of two objects in different configurations by initially detecting the largest rigid part. This would be the biggest point cluster by applying a single rigid transformation. To reach that, sparse correspondences in combination with RANSAC are implemented. From there, the linking parts are recursively detected by growing clusters from the LRP and reapplying the algorithm. 
 
-\subsection{Symmetrization}
+\begin{figure}[htbp]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.45\textwidth]{LRP_body}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{LRP_arm}} 
+		\\	% PNG file
+		(a) & (b) 
+	\end{tabular}
+	\caption{Taking a mesh in two different poses as input (a), removing noise of the input point clouds (b)} 
+	\label{fig:LRP_algorithm}
+\end{figure}
 
-Here comes an explanation of symmetrization.
 
 \chapter{My contribution}
 \label{cha:MyContribution}
@@ -77,22 +101,28 @@ There are many challenges regarding the non-rigid registration of point clouds i
 
 \subsection{General idea}
 
-The algorithm starts with two sets of point clouds $S_0$ and $D_0$ of an object $M$ in different poses (see figure \ref{fig:dc_original_p2}). The two point clouds are iteratively subdivided into point clusters $ C =  \{ {c_1, ... , c_m}\}$. In each iteration step two related clusters of $S_0$ and $D_0$ are matched by applying the ICP (iterative closest point) resulting in a matching error $e$. In case of $ e < \tau $, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the clusters are again subdivided into further clusters. The algorithm terminates if all resulting clusters of $S_0$ can be matched to all clusters of $D_0$. All neighboring clusters are then checked to be merged, in case of having divided a rigid part. After that step, the remaining clusters are assigned to rigid parts $ P =  \{ {p_1, ..., p_n}\}$.
+The algorithm starts with two sets of point clouds $S_0$ and $D_0$ of an object $M$ in different poses (see figure \ref{fig:pc_2parts}). The two point clouds are iteratively subdivided into point clusters $ C =  \{ {c_1, ... , c_m}\}$. In each iteration step two related clusters of $S_0$ and $D_0$ are matched by applying the ICP (iterative closest point) resulting in a matching error $e$. In case of $ e < \tau $, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the clusters are again subdivided into further clusters. The algorithm terminates if all resulting clusters of $S_0$ can be matched to all clusters of $D_0$. All neighboring clusters are then checked to be merged, in case of having divided a rigid part. After that step, the remaining clusters are assigned to rigid parts $ P =  \{ {p_1, ..., p_n}\}$.
 
-\begin{figure}
-	\centering
-	\includegraphics[width=0.7\linewidth]{illustration_original}
-	\caption{Taking a mesh \textit{M} in two different poses \textit{S\textsubscript{0}} and \textit{D\textsubscript{0}} as input.}
-	\label{fig:dc_original_p2}
+\begin{figure}[htbp]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_Noise}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_noNoise}} 
+		\\	% PNG file
+		(a) & (b) 
+	\end{tabular}
+	\caption{Taking a mesh in two different poses as input (a), removing noise of the input point clouds (b)} 
+	\label{fig:pc_2parts}
 \end{figure}
+
 
 \subsection{Removing outliers}
 
-As a first step, the outliers of the two point clouds $S_0$ and $D_0$ are removed. This is done, by detecting point clusters $C = \{{c_0, ... , c_m}\}$. A cluster $c_i$ starts with an unclustered point $p_i$ of $S_0$ or $D_0$. Another point $p_j$ is then added to the cluster $c_i$ if the euclidean distance between them $d_e(p_i, p_j)$ is under a certain threshold $\tau$. If $p_j$ can not be assigned to any cluster of $C$ a new cluster $c_{m+1}$ is created. Once all points of $S_0$ and $D_0$ are assigned to clusters, the biggest cluster $c_0$ is selected.
+As a first step, the outliers of the two point clouds $S_0$ and $D_0$ are removed. This is done, by detecting point clusters $C = \{{c_0, ... , c_m}\}$. A cluster $c_i$ is grown from an unclustered point $pt_i$ of $S_0$ or $D_0$. Another point $pt_j$ is added to the cluster $c_i$ if the euclidean distance between them $d_e(pt_i, pt_j)$ is below a pre-defined threshold $\tau$. All points of $c_i$ are then iteratively compared to the remaining unclustered points to allow the cluster to grow. Once, all points of $c_i$ have been treated, another unclustered point is used as a seed. If there are no unclustered points left, the clusters with the highest number of points $n$ are selected as input clusters $cS_0$ and $cD_0$ (see figure \ref{fig:pc_2parts}).
 
 \subsection{Subdividing into clusters}
 
-As a next step, the two main clusters $c_0$ are taken as input for further computation steps. If the matching between the two clusters does not suceed, they are subdivided into two clusters. In the other case, no subdividing is done and the procedure is repeated recursively for all clusters $C = \{{c_1, ..., c_m}\} $ of $S_0$ until they can be matched to all clusters of $D_0$.   
+As a next step, the two main clusters $cS_0$ and $cD_0$ are taken as input for further computation steps. If the matching between the two clusters does not suceed, they are subdivided into two clusters. In the other case, no subdividing is done and the procedure is repeated recursively for all clusters $C = \{{c_1, ..., c_m}\} $ of $cS_0$ until they can be matched to all clusters of $cD_0$   
 
 \subsubsection{Divider position}
 
@@ -107,14 +137,17 @@ To determine where to divide a cluster, it is taken advantage of the PCA (princi
 
 \subsubsection{Declaring the matching condition between two clusters}
 
-By applying the ICP and the nearest neighbour approach on two associated clusters $c_i$ of $S_0$ and $D_0$, a certain matching error is computed between the cluster points
-$ CP =  \{ {cp_0, ..., cp_n}\}$ and the associated points $ QP =  \{ {qp_0, ..., qp_n}\}$. To declare when two clusters are matching, it is important to find an appropriate threshold $\tau$. In case of being overvalued, clusters are more likely to be matched which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and too many rigid parts. To make the matching error independent of the amount of cluster points, an average error per point
+By applying the ICP and the nearest neighbour approach on two associated clusters $c_i$ of $S_0$ and $D_0$, a certain matching error is computed between the cluster points $ cSi =  \{ {cp_0, ..., cp_n}\}$ and the associated points $ cDi =  \{ {qp_0, ..., qp_n}\}$. To declare when two clusters match, it is important to find an appropriate threshold $\tau$. In case of being overvalued, clusters are more likely to be matched which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and too many rigid parts. To make the matching error independent of the amount of cluster points, an average error per point
 %
 \begin{equation}
 e_{avg} = \frac{\displaystyle\sum_{i=0}^{m}\| cp_i - cq_i\|^2}{| CP |}
 \end{equation}
 %
-is computed, assuming that the two clusters $c_i$ comprise the same amount of cluster points $m$.
+is computed, assuming that the two clusters $c_{S, i}$ and $c_{D, i}$ contain the same amount of cluster points $m$. In case of different point amounts, the segmentation needs to be carried out at that clusters are always the same amount of points or some points are not considered during error amount calculation.
+
+Two clusters 
+
+
 
 \subsubsection{Cluster tree}
 \label{tree}
@@ -130,7 +163,7 @@ The subdividing of the clusters $c_0$ is realised by a depth-first approach in a
 
 \subsection{Merging neighboring clusters to rigid parts}
 
-As a next step, neighboring clusters from $C_l$ are iteratively merged and subsequently verified to match. This process is required to rejoin, if necessary, detected sub clusters to the rigid parts of the object. This is the case, if during the subdividing process, a rigid part was subdivided. The merging initiates with the first cluster $c_{li} = c_{l1}$ and its adjacent cluster $c_{li+1}$. If the resulting merged clusters $c_{ri} = c_{r1}$ can be matched, the merging proceeds with $c_{ri}$ and the adjacent cluster $c_{li+2}$. If not, the merging is not executed and $c_{li}$ is stored in a list of resulting clusters $C_r$. The whole procedure then starts with $c_{li+1}$. The process terminates if all clusters of $C_l$ are verified and consequently the clusters of $C_r$ are assigned to rigid parts $P$ (see figure \ref{fig:clusterChain}). 
+As a next step, neighboring clusters from $C_l$ are iteratively merged and subsequently verified to match. This process is required to rejoin, if necessary, detected sub clusters to the rigid parts of the object. This is the case, if during the subdividing process, a rigid part was subdivided. The merging initiates with the first cluster $c_{li} = c_{l1}$ and its adjacent cluster $c_{li+1}$. If the resulting merged clusters $c_{ri} = c_{r1}$ can be matched, the merging proceeds with $c_{ri}$ and the adjacent cluster $c_{li+2}$. If not, the merging is not executed and $c_{li}$ is stored in a list of resulting clusters $C_r$. The whole procedure then starts with $c_{li+1}$. The process terminates if all clusters of $C_l$ are verified and consequently the clusters of $C_r$ are assigned to rigid parts $ P =  \{ {p_1,....p_n}\}$ (see figure \ref{fig:clusterChain}). 
 
 \begin{figure}
 	\centering
@@ -141,11 +174,11 @@ As a next step, neighboring clusters from $C_l$ are iteratively merged and subse
 
 \subsection{Joint/skeleton estimation}
 
-After detecting the rigid parts $ P =  \{ {p_1,....p_n}\}$
+After detecting the rigid parts $ P =  \{ {p_1,....p_n}\}$, they are linked with joints and the principal axes are for now assumed to form the skeleton. 
 
 \section{Implementation}
 
-My approach was implemented in Java, using ImageJ as processing library, to focus on implementing and testing the algorithm in 2D. Another implementation is planned for 3D with the PCL to bring the attention to segmentation in 3D, and visualization. A class Cluster was implemented to store cluster points, the centroid, the orientation as well as the principal and secondary axes. For the subdividing, a cluster tree was implemented to simultainiously divide the initial clusters $c_{S, 0}$ and $c_{D, 0}$ into sub clusters. Each node $N$ contains thereby two associated clusters $c_{S, i}$ and $c_{D, i}$. For the clustering and merging of clusters a List of Clusters was used to dynamically add/remove Clusters. Furthermore, a class ICP was created, which takes two clusters to be matched as input.
+My approach was implemented in Java, using ImageJ as processing library, to focus on implementing and testing the algorithm in 2D. Another implementation is planned for 3D with the PCL to bring the attention to segmentation in 3D, and visualization. A class Cluster was implemented to store cluster points, its centroid, the orientation as well as the principal and secondary axes. For the subdividing, a cluster tree was implemented to simultainiously divide the initial clusters $c_{S, 0}$ and $c_{D, 0}$ into sub clusters. Each node $N$ contains thereby two associated clusters $c_{S, i}$ and $c_{D, i}$. For the clustering and merging of clusters a List of Clusters was used to dynamically add and remove Clusters. Furthermore, a class ICP was created, which takes two clusters to be matched as input.
 
 \subsection{Implementation Steps}
 
@@ -175,7 +208,21 @@ My approach was implemented in Java, using ImageJ as processing library, to focu
 
 \subsection{Intermediate results}
 
-First on, the implementation was tested with two point clouds of an articulated object with only two rigid parts (see Figure \ref{fig:dc_results_2p}). Results from easy examples. Not working for human, as by dividing of one cluster, breaking down into single clusters (see Figure X). Another approach, e.g. using LRP as an initial alignment to then recursively segment the clusters linked to the LRP. Clusters not matching, as they don't have the same number of points, each point can only have one neighboring point. Or dividing clusters that they all have the same amount of points. In case of a more complex object where one rigid part can be linked with a high number of rigid parts (upper body of a humen) another approach has to be found, as the skeleton structure is different than from a chain. (see Figure \ref{fig:dc_results_2p}).
+First on, the implementation was tested with two point clouds of an articulated object with only two rigid parts. The segmentation results are directly dependent on the matching error threshold $/tau/$ which can bee seen on Table XX. The higher $/tau/$ the less clusters and subsequently rigid parts can be detected, as two clusters are more likely to match and are not further subdivided. The lower $/tau/$, the more clusters and rigid parts can be detected, as clusters are more likely to be subdivided. Figure XX shows the clusters of the object after subdividing, figure XX shows the resulting rigid parts. The results are directly dependent of error threshold $\tau$. In case of XXX too many segments are detected, in case of XXX no segmentation is conducted. (see Figure \ref{fig:dc_results_2p}). 
+
+\begin{center}
+	\begin{tabular}{ |c|c|c|c| } 
+		\hline
+		Rigid parts & $\tau$ & detected clusters & detected rigid parts \\
+		\hline
+		2 & 10 & cell3 & cell4 \\ 
+		2 & 5 & cell3 & cell4 \\
+		2 & 4 & cell3 & cell4 \\
+		2 & 3 & cell3 & cell4 \\
+		2 & 1 & cell3 & cell4 \\
+		\hline
+	\end{tabular}
+\end{center}
 
 \begin{figure}
 	\centering
@@ -184,13 +231,11 @@ First on, the implementation was tested with two point clouds of an articulated 
 	\label{fig:dc_results_2p}
 \end{figure}
 
+
+Results from easy examples. Not working for human, as by dividing of one cluster, breaking down into single clusters (see Figure X). Another approach, e.g. using LRP as an initial alignment to then recursively segment the clusters linked to the LRP. Clusters not matching, as they don't have the same number of points, each point can only have one neighboring point. Or dividing clusters that they all have the same amount of points. In case of a more complex object where one rigid part can be linked with a high number of rigid parts (upper body of a humen) another approach has to be found, as the skeleton structure is different than from a chain. (see Figure \ref{fig:dc_results_2p}).
+
 \subsection{Possible Improvements}
 
-\subsubsection{Same amount of points of associated clusters}
-
-\subsubsection{Check clusters after subdividing}
-
-After subdividing, only two clusters should come up.
 
 \subsubsection{LRP as initial alignment}
 

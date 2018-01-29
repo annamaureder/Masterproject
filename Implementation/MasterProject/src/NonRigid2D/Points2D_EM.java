@@ -43,7 +43,7 @@ public class Points2D_EM implements PlugInFilter {
 	private List<double[]> part2 = new ArrayList<double[]>();
 	private List<double[]> associated1 = new ArrayList<double[]>();
 	private List<double[]> associated2 = new ArrayList<double[]>();
-	
+
 	private int divideOffset = 0;
 
 	private PointsOrientation o1;
@@ -75,17 +75,17 @@ public class Points2D_EM implements PlugInFilter {
 
 		// draw points clouds with their principal axis
 
-		 ColorProcessor cp = ip.convertToColorProcessor();
+		ColorProcessor cp = ip.convertToColorProcessor();
 
-		 drawCentroid(cp, o1.getCentroid(), Color.red, 5);
-		 drawCentroid(cp, o2.getCentroid(), Color.red, 5);
-		 drawPoints(cp, points1, Color.black);
-		 drawPoints(cp, points2, Color.black);
-		 o1.drawPrincipalAxis(cp);
-		 o2.drawPrincipalAxis(cp);
-		 o1.drawSecondaryAxis(cp);
-		 o2.drawSecondaryAxis(cp);
-		 showImage(cp, "Point cloud orientation");
+		drawCentroid(cp, o1.getCentroid(), Color.red, 5);
+		drawCentroid(cp, o2.getCentroid(), Color.red, 5);
+		drawPoints(cp, points1, Color.black);
+		drawPoints(cp, points2, Color.black);
+		o1.drawPrincipalAxis(cp);
+		o2.drawPrincipalAxis(cp);
+		o1.drawSecondaryAxis(cp);
+		o2.drawSecondaryAxis(cp);
+		showImage(cp, "Point cloud orientation");
 
 		/*
 		 * Orient the point clouds around their centroids, that both principal
@@ -107,7 +107,7 @@ public class Points2D_EM implements PlugInFilter {
 		 */
 
 		int direction = 0;
-		
+
 		int i = 0;
 
 		while (i < 20 && running) {
@@ -133,25 +133,24 @@ public class Points2D_EM implements PlugInFilter {
 
 			ICP icp2 = new ICP(points1_2, points2_2);
 			double error2 = icp2.getError();
-			
+
 			double tmp_error = error1 + error2;
-			
 
 			if (tmp_error <= error) {
-				
+
 				error = tmp_error;
 
 				part1 = points1_1;
 				part2 = points1_2;
 				associated1 = icp1.getAssociatedPoints();
 				associated2 = icp2.getAssociatedPoints();
-				
+
 				IJ.log("Error1: " + error1);
 				IJ.log("Error2: " + error2);
 				IJ.log("error: " + error);
-				
-				//draw the new segmentation
-				
+
+				// draw the new segmentation
+
 				drawCentroid(sep, o1_1.getCentroid(), Color.red, 5);
 				drawCentroid(sep, o2_1.getCentroid(), Color.red, 5);
 				drawCentroid(sep, o1_2.getCentroid(), Color.red, 5);
@@ -164,23 +163,22 @@ public class Points2D_EM implements PlugInFilter {
 				o2_1.drawPrincipalAxis(sep);
 				o1_2.drawPrincipalAxis(sep);
 				o2_2.drawPrincipalAxis(sep);
-				
+
 				showImage(sep, "Point cloud orientation");
-				
-				if(i == 0)
-					direction = (int)(error2 - error1);
+
+				if (i == 0)
+					direction = (int) (error2 - error1);
 
 			}
-			
+
 			else {
-				
+
 				running = false;
-				
+
 			}
-			
-			
+
 			i++;
-			
+
 			IJ.log("iteation nr. " + i);
 
 		}
@@ -200,8 +198,8 @@ public class Points2D_EM implements PlugInFilter {
 		drawAssociations(assoc, part2, associated2);
 		drawPoints(assoc, points1, Color.black);
 		drawPoints(assoc, points2, Color.black);
-		//drawPoints(assoc, icp1.getTransformedPoints(), Color.red);
-		//drawPoints(assoc, icp2.getTransformedPoints(), Color.red);
+		// drawPoints(assoc, icp1.getTransformedPoints(), Color.red);
+		// drawPoints(assoc, icp2.getTransformedPoints(), Color.red);
 
 		ColorProcessor segmentation = new ColorProcessor(ip.getWidth(), ip.getHeight());
 		segmentation.invert();
@@ -219,16 +217,15 @@ public class Points2D_EM implements PlugInFilter {
 
 		List<double[]> leftPart = new ArrayList<double[]>();
 		List<double[]> rightPart = new ArrayList<double[]>();
-		
-		if(direction<0){
+
+		if (direction < 0) {
 			divideOffset++;
 		}
-		
-		else if(direction>0){
+
+		else if (direction > 0) {
 			divideOffset--;
 		}
 
-		
 		double[] centroid = PointCollection.calculateCentroid(points1);
 
 		for (double[] point : points1) {

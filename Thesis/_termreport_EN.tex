@@ -41,7 +41,7 @@ Pose and motion estimation of objects is an active field of research due to the 
 \section{Related Work}
 \label{cha:relatedWork}
 
-A main approach for non-rigid registration is proposed by Anguelov \cite{Anguelov04} using the correlated correspondence algorithm \cite{CorrelatedCorrespondance}. A different approach is reached by Symmetrization \cite{Mitra07} and the recursive detection of body parts by the LRP - "largest rigid part" algorithm \cite {correspondence}. Based on \cite{Anguelov04} and \cite{Mitra07}, Chang et al developed a closely related approach \cite{chang08articulated} \cite{chang09range}.
+A main approach for non-rigid registration is proposed by Anguelov \cite{Anguelov04} using the correlated correspondence algorithm \cite{CorrelatedCorrespondance}. A different approach is reached by Symmetrization \cite{Mitra07} and the recursive detection of body parts by the LRP - "largest rigid part" algorithm \cite {guo2016correspondence}. Based on \cite{Anguelov04} and \cite{Mitra07}, Chang et al developed a closely related approach \cite{chang08articulated} \cite{chang09range}.
 
 Mainly referenced are following approaches:
 
@@ -137,25 +137,18 @@ To determine where to divide a cluster, it is taken advantage of the PCA (princi
 
 \subsubsection{Declaring the matching condition between two clusters}
 
-By applying the ICP and the nearest neighbour approach on two associated clusters $c_i$ of $S_0$ and $D_0$, a certain matching error is computed between the cluster points
-$ CP =  \{ {cp_0, ..., cp_n}\}$ and the associated points $ QP =  \{ {qp_0, ..., qp_n}\}$. To declare when two clusters match, it is important to find an appropriate threshold $\tau$. In case of being overvalued, clusters are more likely to be matched which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and too many rigid parts. To make the matching error independent of the amount of cluster points, an average error per point
+By applying the ICP and the nearest neighbour approach on two associated clusters $C_p$ and $C_q$, a certain matching error $e$ is computed between the cluster points $ C_p =  \{ {cp_0, ..., cp_n}\}$ and the associated points $ C_q =  \{ {cq_0, ..., cq_n}\}$. To make the matching error independent of the amount of cluster points, an average error per point
 %
 \begin{equation}
 e_{avg} = \frac{\displaystyle\sum_{i=0}^{m}\| cp_i - cq_i\|^2}{| CP |}
 \end{equation}
 %
-is computed, assuming that the two clusters $c_{S, i}$ and $c_{D, i}$ contain the same amount of cluster points $m$. In case of different point amounts, the segmentation needs to be carried out at that clusters are always the same amount of points or some points are not considered during error amount calculation.
-
-Version 1:
-
-
-
-Version 2:
+is computed, assuming that the two clusters $C_p$ and $C_q$ contain the same amount of cluster points $m$. In case of different point amounts, the segmentation needs to be carried out at that clusters are always the same amount of points or some points are not considered during error amount calculation. To declare when two clusters match, it is quite essential to determine an appropriate threshold $\tau$. In case of being overvalued, clusters are more likely to be matched which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and the detection of too many rigid parts. The two clusters $C_p$ are matching, if $e_{avg} < \tau$.
 
 \subsubsection{Cluster tree}
 \label{tree}
 
-The subdividing of the clusters $c_0$ is realised by a depth-first approach in a binary tree. Consequently, $S_0$ and $D_0$ are subdivided from the left to the right. A node $N$ of the tree contains two related clusters $c_i$ of $S_0$ and $D_0$ and in case of subdividing it, a Node \textit{left} and \textit{right}, containing the subdivided clusters $c_{i+1}$ and $c_{i+2}$. If two associated clusters in a Node $n_i$ match, no further subdividing is performed. The resulting leaves of the three are stored as matching clusters $C_l = \{{c_{l1}, ... , c_{lm}}\}$ (see figure \ref{fig:illustrationTree}). By applying the depth-first approach, the neighboring clusters in the list are also neighbouring clusters in the object $S_0$ or $D_0$.  As a result, in the following steps the skeleton structure from an object can be extracted, where parts are connected by joints.
+The subdividing of the clusters $cS_0$ and $cD_0$ is realised by a depth-first approach in a tree. Consequently, $cS_0$ and $cD_0$ are subdivided from the left to the right. A node $N$ of the tree contains two related clusters $cS_i$ of $S_0$ and $cS_i$ of $D_0$ and in case of subdividing it, a Node \textit{left}, containing the subdivided clusters $cS_{i+1}$ and $cD_{i+1}$, as well as a Node\textit{right}, containing the subdivided clusters $cS_{i+2}$ and $cD_{i+2}$. If two associated clusters \{$cS_{i+1}, cD_{i+1}$\} in a Node $N_i$ match, no further subdividing is performed. The resulting leaves of the tree are stored as matching clusters $C_l = \{{c_{l1}, ... , c_{lm}}\}$ (see figure \ref{fig:illustrationTree}). By applying the depth-first approach, the neighboring clusters in the list are also neighbouring clusters in the main clusters $cS_0$ or $cD_0$.  As a result, in the following steps the skeleton structure from an object can be extracted, where parts are connected by joints.
 
 \begin{figure}
 	\centering
@@ -211,7 +204,21 @@ My approach was implemented in Java, using ImageJ as processing library, to focu
 
 \subsection{Intermediate results}
 
-First on, the implementation was tested with two point clouds of an articulated object with only two rigid parts. Figure XX shows the clusters of the object after subdividing, figure XX shows the resulting rigid parts. The results are directly dependent of error threshold $\tau$. In case of XXX too many segments are detected, in case of XXX no segmentation is conducted. (see Figure \ref{fig:dc_results_2p}). 
+First on, the implementation was tested with two point clouds of an articulated object with only two rigid parts. The segmentation results are directly dependent on the matching error threshold $/tau/$ which can bee seen on Table XX. The higher $/tau/$ the less clusters and subsequently rigid parts can be detected, as two clusters are more likely to match and are not further subdivided. The lower $/tau/$, the more clusters and rigid parts can be detected, as clusters are more likely to be subdivided. Figure XX shows the clusters of the object after subdividing, figure XX shows the resulting rigid parts. The results are directly dependent of error threshold $\tau$. In case of XXX too many segments are detected, in case of XXX no segmentation is conducted. (see Figure \ref{fig:dc_results_2p}). 
+
+\begin{center}
+	\begin{tabular}{ |c|c|c|c| } 
+		\hline
+		Rigid parts & $\tau$ & detected clusters & detected rigid parts \\
+		\hline
+		2 & 10 & cell3 & cell4 \\ 
+		2 & 5 & cell3 & cell4 \\
+		2 & 4 & cell3 & cell4 \\
+		2 & 3 & cell3 & cell4 \\
+		2 & 1 & cell3 & cell4 \\
+		\hline
+	\end{tabular}
+\end{center}
 
 \begin{figure}
 	\centering
