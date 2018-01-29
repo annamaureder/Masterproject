@@ -40,7 +40,6 @@ public class Points2D_ICP implements PlugInFilter {
 	private List<double[]> points1;
 	private List<double[]> points2;
 
-	private double[] initialTransformation = new double[2];
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
 
@@ -80,8 +79,8 @@ public class Points2D_ICP implements PlugInFilter {
 		drawCentroid(cp, o2.getCentroid(), Color.red, 5);
 		drawPoints(cp, points1, Color.black);
 		drawPoints(cp, points2, Color.black);
-		o1.drawAxis(cp);
-		o2.drawAxis(cp);
+		o1.drawPrincipalAxis(cp);
+		o2.drawPrincipalAxis(cp);
 		
 		/*
 		 * Orient the point clouds around their centroids, that both principal axis overlap
@@ -96,7 +95,6 @@ public class Points2D_ICP implements PlugInFilter {
 		 * Step 1 - initial transformation estimate (move centroids to origin)
 		 */
 		
-		initialTransformation = new double[]{o2.getCentroid()[0] - o1.getCentroid()[0], o2.getCentroid()[1] - o1.getCentroid()[1]};
 		
 		List<double[]> points1_origin = Matrix.translate(points1, -o1.getCentroid()[0], -o1.getCentroid()[1]);
 		List<double[]> points2_origin = Matrix.translate(points2, -o2.getCentroid()[0], -o2.getCentroid()[1]);
@@ -119,11 +117,16 @@ public class Points2D_ICP implements PlugInFilter {
 			transformedPoints = Matrix.rotate(points1_origin, (i/180.0) * Math.PI);
 			associatedPoints = getAssociation(transformedPoints, points2_origin);	
 			
+			ProcrustesFit pro = new ProcrustesFit();
+			pro.fit(points1, associatedPoints);
+			
 			if (tmp_error < error) {
 				error = tmp_error;
 				association = associatedPoints;
 				transformed = transformedPoints;
 				IJ.log("Error: " + error);
+				IJ.log("Procrustes Translation: " + pro.getT().getEntry(0) + pro.getT().getEntry(1));
+				IJ.log("Procrustes Rotation: " + pro.getR().getEntry(0, 0));
 			}
 			
 			i++;

@@ -34,17 +34,6 @@ public class PointCollection {
 
 	}
 	
-	public static List<double[]> [] seperatePoints(List<double[]> points){
-		
-		
-		
-		
-		
-		
-		return null;
-		
-	}
-	
 	public static double[] calculateCentroid(List<double[]> points){
 		
 		double avgX = 0.0;
@@ -55,7 +44,9 @@ public class PointCollection {
 			avgY += points.get(i)[1];
 		}
 		return new double[]{avgX/points.size(), avgY/points.size()};
-		
 	}
+	
+	
+	
 	
 }
