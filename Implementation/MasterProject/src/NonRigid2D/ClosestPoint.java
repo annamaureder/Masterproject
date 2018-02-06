@@ -24,7 +24,7 @@ public class ClosestPoint {
 
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
-	private double thresholdError = 5;
+	private double thresholdError = 6.2;
 
 	private List<double[]> associatedPoints;
 	private List<double[]> transformedPoints;
@@ -41,7 +41,7 @@ public class ClosestPoint {
 		this.C1 = C1;
 		this.C2 = C2;
 
-		amountC1 = C2.getPoints().size();
+		amountC1 = C1.getPoints().size();
 		amountC2 = C2.getPoints().size();
 
 		IJ.log("amount1: " + amountC1);
@@ -93,6 +93,11 @@ public class ClosestPoint {
 		IJ.log("error: " + error);
 
 		associatedPoints = Matrix.translate(associatedPoints, C2.getCentroid()[0], C2.getCentroid()[1]);
+		
+		Visualize.drawAssociations(Segmentation.assoc, transformedPoints, associatedPoints);
+		Visualize.drawPoints(Segmentation.assoc, transformedPoints, Color.black);
+		Visualize.drawPoints(Segmentation.assoc, C2.getPoints(), Color.red);
+		
 		transformedPoints = Matrix.translate(transformedPoints, C2.getCentroid()[0], C2.getCentroid()[1]);
 		
 		
@@ -165,8 +170,8 @@ public class ClosestPoint {
 
 		for (int i = 0; i < comparePoints.size(); i++) {
 
-			double distanceNew = Math.sqrt(
-					Math.pow(point[0] - comparePoints.get(i)[0], 2) + Math.pow(point[1] - comparePoints.get(i)[1], 2));
+			double distanceNew =
+					Math.pow(point[0] - comparePoints.get(i)[0], 2) + Math.pow(point[1] - comparePoints.get(i)[1], 2);
 
 			if (distanceNew < distance) {
 				distance = distanceNew;

@@ -42,12 +42,14 @@ public class Segmentation implements PlugInFilter {
 	// variable declaration
 
 	private ImagePlus im;
-	public static int size;
+	public static int width;
+	public static int height;
 	private ClusterTree tree;
 	List<Cluster[]> segmentedClusters;
 	List<Cluster[]> rigidParts;
 	
 	public static ColorProcessor finalAssoc; 
+	public static ColorProcessor assoc; 
 
 	// private ClusterTree pose2;
 
@@ -59,9 +61,13 @@ public class Segmentation implements PlugInFilter {
 	public void run(ImageProcessor ip) {
 
 		ImageStack stack = im.getStack();
-		size = im.getWidth();
-		finalAssoc = new ColorProcessor(size, size);
+		width = im.getWidth();
+		height = im.getHeight();
+		finalAssoc = new ColorProcessor(width, height);
 		finalAssoc.invert();
+		
+		assoc = new ColorProcessor(width, height);
+		assoc.invert();
 
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
@@ -69,8 +75,8 @@ public class Segmentation implements PlugInFilter {
 		Cluster S_0 = new Cluster(p1, false);
 		Cluster D_0 = new Cluster(p2, false);
 
-		Cluster cS_0 = new Cluster(p1, true);
-		Cluster cD_0 = new Cluster(p2, true);
+		Cluster cS_0 = new Cluster(p1, false);
+		Cluster cD_0 = new Cluster(p2, false);
 
 		tree = new ClusterTree(cS_0, cD_0);
 
@@ -87,7 +93,7 @@ public class Segmentation implements PlugInFilter {
 		Visualize.colorSegments(rigidParts, "Rigid parts");
 	
 
-		ColorProcessor inputPoints = new ColorProcessor(size, size);
+		ColorProcessor inputPoints = new ColorProcessor(width, height);
 		inputPoints.invert();
 
 		Visualize.drawPoints(inputPoints, S_0.getPoints(), Color.black);
@@ -95,7 +101,7 @@ public class Segmentation implements PlugInFilter {
 
 		Visualize.showImage(inputPoints, "input points");
 
-		ColorProcessor inputPoints_noNoise = new ColorProcessor(size, size);
+		ColorProcessor inputPoints_noNoise = new ColorProcessor(width, height);
 		inputPoints_noNoise.invert();
 
 		Visualize.drawPoints(inputPoints_noNoise, cS_0.getPoints(), Color.black);
@@ -104,6 +110,7 @@ public class Segmentation implements PlugInFilter {
 		Visualize.showImage(inputPoints_noNoise, "input points");
 		
 		Visualize.showImage(finalAssoc, "Final Associations");
+		Visualize.showImage(assoc, "Associations");
 
 	}
 	

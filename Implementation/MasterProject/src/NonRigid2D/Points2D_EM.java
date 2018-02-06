@@ -136,7 +136,7 @@ public class Points2D_EM implements PlugInFilter {
 
 			double tmp_error = error1 + error2;
 
-			if (tmp_error <= error) {
+			if (true) {
 
 				error = tmp_error;
 
@@ -151,7 +151,7 @@ public class Points2D_EM implements PlugInFilter {
 
 				// draw the new segmentation
 
-				drawCentroid(sep, o1_1.getCentroid(), Color.red, 5);
+				/*drawCentroid(sep, o1_1.getCentroid(), Color.red, 5);
 				drawCentroid(sep, o2_1.getCentroid(), Color.red, 5);
 				drawCentroid(sep, o1_2.getCentroid(), Color.red, 5);
 				drawCentroid(sep, o2_2.getCentroid(), Color.red, 5);
@@ -162,7 +162,28 @@ public class Points2D_EM implements PlugInFilter {
 				o1_1.drawPrincipalAxis(sep);
 				o2_1.drawPrincipalAxis(sep);
 				o1_2.drawPrincipalAxis(sep);
-				o2_2.drawPrincipalAxis(sep);
+				o2_2.drawPrincipalAxis(sep);*/
+				
+				ColorProcessor assoc = new ColorProcessor(ip.getWidth(), ip.getHeight());
+				assoc.invert();
+
+				drawAssociations(assoc, part1, associated1);
+				drawAssociations(assoc, part2, associated2);
+				drawPoints(assoc, points1, Color.black);
+				drawPoints(assoc, points2, Color.black);
+				// drawPoints(assoc, icp1.getTransformedPoints(), Color.red);
+				// drawPoints(assoc, icp2.getTransformedPoints(), Color.red);
+
+				ColorProcessor segmentation = new ColorProcessor(ip.getWidth(), ip.getHeight());
+				segmentation.invert();
+
+				drawPoints(segmentation, part1, Color.red);
+				drawPoints(segmentation, part2, Color.blue);
+				drawPoints(segmentation, associated1, Color.red);
+				drawPoints(segmentation, associated2, Color.blue);
+
+				showImage(assoc, "Point association");
+				showImage(segmentation, "Segmentation");
 
 				showImage(sep, "Point cloud orientation");
 

@@ -11,8 +11,8 @@ import ij.process.ImageProcessor;
 
 public class Visualize {
 	
-	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.orange,
-			Color.yellow };
+	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta
+			};
 	
 	
 	public Visualize(Color[] colors){
@@ -36,8 +36,10 @@ public class Visualize {
 	
 	public static void colorSegments(List<Cluster[]> segments, String title) {
 
-		ColorProcessor segmentation = new ColorProcessor(250, 250);
+		ColorProcessor segmentation = new ColorProcessor(Segmentation.width, Segmentation.height);
+		ColorProcessor segmentation2 = new ColorProcessor(Segmentation.width, Segmentation.height);
 		segmentation.invert();
+		segmentation2.invert();
 
 		for (int i = 0; i < segments.size(); i++) {
 
@@ -47,10 +49,11 @@ public class Visualize {
 			Cluster cluster2 = clusters[1];
 
 			drawPoints(segmentation, cluster1.getPoints(), colors[i % colors.length]);
-			drawPoints(segmentation, cluster2.getPoints(), colors[i % colors.length]);
+			drawPoints(segmentation2, cluster2.getPoints(), colors[i % colors.length]);
 		}
 		
 		showImage(segmentation, title);
+		showImage(segmentation2, title);
 
 	}
 	
