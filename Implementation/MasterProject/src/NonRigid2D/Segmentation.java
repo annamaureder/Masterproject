@@ -72,11 +72,11 @@ public class Segmentation implements PlugInFilter {
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
 
-		Cluster S_0 = new Cluster(p1, false);
-		Cluster D_0 = new Cluster(p2, false);
+		Cluster S_0 = new Cluster(p1, true);
+		Cluster D_0 = new Cluster(p2, true);
 
-		Cluster cS_0 = new Cluster(p1, false);
-		Cluster cD_0 = new Cluster(p2, false);
+		Cluster cS_0 = new Cluster(p1, true);
+		Cluster cD_0 = new Cluster(p2, true);
 
 		tree = new ClusterTree(cS_0, cD_0);
 

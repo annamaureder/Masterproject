@@ -1,0 +1,38 @@
+https://ctan.org/upload
+
+Name of your contribution* 
+hagenberg-thesis
+	
+Version number*
+2017-10-27
+	
+Maintainer*
+Wilhelm Burger
+
+Your email*
+wilhelm.burger@fh-hagenberg.at
+	
+Summary description*
+Collection of LaTeX classes, style files and example documents for academic manuscripts
+
+Suggested CTAN directory*	
+macros/latex/contrib
+
+Type of Upload*
+New package
+
+
+A collection of modern LaTeX classes, style files and example documents for authoring Bachelor, Master or Diploma theses and related academic manuscripts in English and German. Includes a comprehensive tutorial (in German) with detailed instructions and authoring guidelines.
+	
+Administrative notes (to the CTAN maintainers)
+
+	
+License type*
+	CC BY 4.0
+
+Repository: (only)
+	https://github.com/Digital-Media/HagenbergThesis
+
+	
+
+Infos: http://mirror.easyname.at/ctan/help/ctan/CTAN-upload-addendum.html
