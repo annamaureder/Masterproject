@@ -85,6 +85,9 @@ public class Segmentation implements PlugInFilter {
 			segmentedClusters = tree.getSegmentedParts();
 			rigidParts = tree.getRigidParts();
 		}
+		
+		//ToDo:
+		// - handle points at joints (weights, ignore them, fit ellipsoids)
 
 		IJ.log("Number of clusters: " + segmentedClusters.size());
 		IJ.log("Number of rigid parts: " + rigidParts.size());

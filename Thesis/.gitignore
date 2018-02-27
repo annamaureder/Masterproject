@@ -9,5 +9,5 @@
 *.synctex.gz
 *.toc
 *.tps
-/_praktikum.pdf
-/_praktikum.tcp
+*.tcp
+tmpltx

@@ -1,0 +1,8 @@
+\chapter{Conclusion}
+\label{cha:Closing}
+
+In the first project phase, intense research has been conducted in order to detect one main issue to focus on in the master project. For that, it was quite essential to form an overall perspective of the state-of-the-art regarding motion and pose estimation. During this process, the field of unsupervised pose estimation frequently arose. By following this direction, the non-rigid registration became a major indicator for possible optimizations. Taking existing methods as reference (see Chapter \ref{cha:relatedWork}), an own approach for 2D point clouds was developed, which should reduce the computation steps of detecting the rigid parts of an articulated non-rigid object. Basically, a divide-and-conquer approach was developed, which recursively divides two point-clouds of the same object in different poses into matching clusters. The subdividing was realised with a tree and depth-first traversal to segment the point clouds from the left to the right. As a next step, all neighboring clusters were verified to be merged, in case of having subdivided a rigid part. After the merging the rigid parts of the objects are detected. 
+	
+\section{Future work}
+	
+The focus in the next semester will be intensive testing of the current implementation and adding possible improvements. Eventually other existing approaches are taken into account to be able to segment more complex objects. Furthermore, joint estimation and eventually skeleton extraction between detected rigid parts will be addressed. Then, the next main step is to implement the finished segmentation algorithm in 3D using the PCL.
