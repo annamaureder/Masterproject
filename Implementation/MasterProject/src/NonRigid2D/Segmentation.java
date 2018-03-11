@@ -88,6 +88,7 @@ public class Segmentation implements PlugInFilter {
 		
 		//ToDo:
 		// - handle points at joints (weights, ignore them, fit ellipsoids)
+		// - draw principal axis of all rigid parts P and draw the intersection as joints
 
 		IJ.log("Number of clusters: " + segmentedClusters.size());
 		IJ.log("Number of rigid parts: " + rigidParts.size());

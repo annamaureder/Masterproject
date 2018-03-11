@@ -23,7 +23,7 @@ public class Cluster {
 
 	private double[] centroid;
 	private double orientation;
-	private int axisLength = 100;
+	//private int axisLength = 100;
 	private int principalLength;
 	private int secondaryLength;
 	private boolean removeNoise;
@@ -45,12 +45,13 @@ public class Cluster {
 		this.secondaryLength = getSecondaryRadius();
 	}
 
+	/*
+	 * copy constructor for temporal orientations
+	 */
 	public Cluster(Cluster c) {
 		this.points = c.points;
 		this.centroid = c.centroid;
 		this.orientation = c.orientation;
-		this.principalLength = getPrincipalRadius();
-		this.secondaryLength = getSecondaryRadius();
 	}
 
 	private List<double[]> getPoints(ImageProcessor ip) {
@@ -73,6 +74,7 @@ public class Cluster {
 		if (removeNoise) {
 			IJ.log("Remove Noise");
 			pntlist = biggestCluster(pntlist);
+			IJ.log("Removing done");
 		}
 
 		return pntlist;
@@ -149,7 +151,7 @@ public class Cluster {
 
 	}
 
-	public List<double[]> allignAxis() {
+	public List<double[]> alignAxis() {
 
 		points = Matrix.translate(points, -centroid[0], -centroid[1]);
 		points = Matrix.rotate(points, -orientation);
@@ -161,16 +163,16 @@ public class Cluster {
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {
-
+		
 		int x1 = (int) centroid[0];
 		int y1 = (int) centroid[1];
 
 		int x_test = (int) centroid[0] - 30;
 
-		int x2 = (int) (x1 + axisLength / 2 * Math.cos(orientation));
-		int y2 = (int) (y1 + axisLength / 2 * Math.sin(orientation));
-		int x2_ = (int) (x1 - (axisLength / 2) * Math.cos(orientation));
-		int y2_ = (int) (y1 - (axisLength / 2) * Math.sin(orientation));
+		int x2 = (int) (x1 + principalLength * Math.cos(orientation));
+		int y2 = (int) (y1 + principalLength * Math.sin(orientation));
+		int x2_ = (int) (x1 - principalLength * Math.cos(orientation));
+		int y2_ = (int) (y1 - principalLength * Math.sin(orientation));
 
 		int y = (int) (Math.sin(orientation) * (x_test - x1) + y1);
 
@@ -179,14 +181,14 @@ public class Cluster {
 	}
 
 	public void drawSecondaryAxis(ImageProcessor cp) {
-
+		
 		int x1 = (int) centroid[0];
 		int y1 = (int) centroid[1];
 
-		int x2 = (int) (x1 + (axisLength / 4) * Math.cos(orientation + 1.5707963268));
-		int y2 = (int) (y1 + (axisLength / 4) * Math.sin(orientation + 1.5707963268));
-		int x2_ = (int) (x1 - (axisLength / 4) * Math.cos(orientation + 1.5707963268));
-		int y2_ = (int) (y1 - (axisLength / 4) * Math.sin(orientation + 1.5707963268));
+		int x2 = (int) (x1 + secondaryLength * Math.cos(orientation + 1.5707963268));
+		int y2 = (int) (y1 + secondaryLength * Math.sin(orientation + 1.5707963268));
+		int x2_ = (int) (x1 - secondaryLength * Math.cos(orientation + 1.5707963268));
+		int y2_ = (int) (y1 - secondaryLength * Math.sin(orientation + 1.5707963268));
 
 		cp.drawLine(x1, y1, x2, y2);
 		cp.drawLine(x1, y1, x2_, y2_);
@@ -194,20 +196,22 @@ public class Cluster {
 	}
 
 	public int getPrincipalRadius() {
-
-		// allignAxis();
+		
+		Cluster copy = new Cluster(this);
+		copy.alignAxis();
+		// alignAxis();
 
 		int minX = Integer.MAX_VALUE;
 		int maxX = 0;
 
-		for (int i = 0; i < points.size(); i++) {
+		for (int i = 0; i < copy.points.size(); i++) {
 
-			if (points.get(i)[0] < minX) {
-				minX = (int) points.get(i)[0];
+			if (copy.points.get(i)[0] < minX) {
+				minX = (int) copy.points.get(i)[0];
 			}
 
-			if (points.get(i)[0] > maxX) {
-				maxX = (int) points.get(i)[0];
+			if (copy.points.get(i)[0] > maxX) {
+				maxX = (int) copy.points.get(i)[0];
 			}
 
 		}
@@ -218,19 +222,20 @@ public class Cluster {
 
 	public int getSecondaryRadius() {
 
-		// allignAxis();
+		Cluster copy = new Cluster(this);
+		copy.alignAxis();
 
 		int minY = Integer.MAX_VALUE;
 		int maxY = 0;
 
-		for (int i = 0; i < points.size(); i++) {
+		for (int i = 0; i < copy.points.size(); i++) {
 
-			if (points.get(i)[1] < minY) {
-				minY = (int) points.get(i)[1];
+			if (copy.points.get(i)[1] < minY) {
+				minY = (int) copy.points.get(i)[1];
 			}
 
-			if (points.get(i)[1] > maxY) {
-				maxY = (int) points.get(i)[1];
+			if (copy.points.get(i)[1] > maxY) {
+				maxY = (int) copy.points.get(i)[1];
 			}
 		}
 		return (maxY - minY) / 2;
@@ -242,7 +247,7 @@ public class Cluster {
 		List<double[]> right = new ArrayList<double[]>();
 
 		Cluster rotatedCluster = new Cluster(this);
-		rotatedCluster.allignAxis();
+		rotatedCluster.alignAxis();
 
 		for (int i = 0; i < this.getPoints().size(); i++) {
 			if (rotatedCluster.getPoints().get(i)[0] <= this.getCentroid()[0]) {

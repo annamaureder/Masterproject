@@ -113,5 +113,13 @@ public class ClusterTree {
 		return rigidParts;
 
 	}
+	
+	public List<double[]> calculateJoints(){
+		
+		//ToDo: Joints are points located at the intersection of the principal axis of two neighboring rigid parts.
+		
+		return null;
+		
+	}
 
 }

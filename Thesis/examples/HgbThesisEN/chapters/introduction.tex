@@ -20,14 +20,25 @@ Pose and motion estimation of objects is an active field of research due to the 
 The initial project idea was to create a tool for 3D animation purposes using a small puppet to capture its poses in real-time. However, the idea addressed many different challenges, like 3D reconstruction, segmentation, joint and skeleton estimation as well as creating an interface with a 3D animation program. As the implementation of these tasks would go beyond the scope of a thesis project, it was indispensable to break it down into its main areas. While doing researches on pose estimation, the issue of segmenting an articulated object into its rigid part frequently emerged and for this reason the thesis project focuses on this field. 
 
 \section{General approach}
-Generally, there are two major steps to capture the pose of an object. First, bringing the object in 3D, this has to be done to subsequently determine the keypoints (joints). Then the determination of joints and the skeleton takes place. Depending on approach this major step might be subdivided into further steps (shape fitting, segmentation).
+Generally, there are two major steps to capture the pose of an object. First, the object has to be digitalized, which is achieved by a 3D scanning and reconstruction approach. The data might be in form of a point cloud or voxels depending on the reconstruction method (see section \ref{sec:reconstruction}). The second major step includes the analysing of the data to recognize body parts and subsequently joints and extract the object's skeleton. Depending on the chosen approach, which is usually a segmentation step (see section \ref{sec:segmentation}), there might be a subdivision into sub steps.
+%
+% ToDo: NEW image!!!
+%
+\begin{figure}
+	\centering
+	\includegraphics[width=0.7\linewidth]{reconstructionWorkflow}
+	\caption{General approach to estimate the pose of a real object, including 3D scanning and reconstruction, 3D segmentation to get the joints and subsequently skeleton extraction}
+	\label{fig:posecapture}
+\end{figure}
+%
+\section{3D Scanning/Reconstruction}
+\label{sec:reconstruction}
 
-IMAGE of steps --> visualized (Real object, 3D visualization, )
-How it generally works, examples, not important for this project
-examples of 3D scanning
+Scanning means collecting a real shape as 3D data. Reconstruction means the approach to convert the raw data to a mesh or process the input data.
+Voxelization, Shape from Shilouette, Shape from Shading, Shape from 2D, Markers, sensors, ... 
 
-\section{Frequently used approaches of known body parts}
-\label{sec:currentApproaches}
+\section{3D Segmentation}
+\label{sec:segmentation}
 
 How it is done: markers, sensors, shape fitting (already known)
 Cite all papers (Voxelization, ....)
@@ -40,13 +51,6 @@ ToDo:
 - quickly describe methods
 - advantages
 - disadvantages
-
-\subsection{Shape fitting/Shape from Shilouette}
-Rigid parts are known, after Digitalisation of object rigid parts are matched to voxels
-
-\subsection{Other....}
-Look over papers!
-
 
 \section{Unsupervised approaches}
 

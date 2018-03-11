@@ -13,13 +13,7 @@ public class Visualize {
 	
 	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta
 			};
-	
-	
-	public Visualize(Color[] colors){
-		this.colors = colors;
-	}
-	
-	
+		
 	public static void drawPoints(ColorProcessor cp, List<double[]> points, Color color) {
 		
 		cp.setColor(color);
@@ -27,10 +21,6 @@ public class Visualize {
 		for (int i = 0; i < points.size(); i++) {
 			cp.drawDot((int) points.get(i)[0], (int) points.get(i)[1]);
 		}
-
-	}
-
-	void drawClusters(ColorProcessor cp, Cluster c) {
 
 	}
 	
@@ -52,6 +42,8 @@ public class Visualize {
 			drawPoints(segmentation2, cluster2.getPoints(), colors[i % colors.length]);
 		}
 		
+		drawSkeleton(segmentation, segmentation2, segments);
+		
 		showImage(segmentation, title);
 		showImage(segmentation2, title);
 
@@ -60,9 +52,7 @@ public class Visualize {
 	public static void drawAssociations(ColorProcessor ip, List<double[]> points1, List<double[]> association) {
 		
 		ip.setColor(Color.green);
-		
-		
-
+	
 		for (int i = 0; i < points1.size(); i++) {
 
 			if (association.get(i) != null) {
@@ -78,6 +68,15 @@ public class Visualize {
 			}
 		}
 
+	}
+	
+	public static void drawSkeleton(ColorProcessor cp, ColorProcessor cp2, List<Cluster[]> segments){
+
+		for(int i = 0; i < segments.size(); i++){
+			segments.get(i)[0].drawPrincipalAxis(cp);
+			segments.get(i)[1].drawPrincipalAxis(cp2);
+		}
+		
 	}
 	
 	public static void showImage(ImageProcessor ip, String title) {
