@@ -1,0 +1,17 @@
+\section{LRP}
+\label{sec:LRP}
+Instead of starting to subdivide the clusters $C_{1,0}$ and $C_{2,0}$ in each two sub clusters, as an initial step the largest rigid part is detected and recursively all other linked parts can be detected.
+
+\subsection{Overview}
+As an initial step, the LRP algorithm tries to find the most reliable correspondences, the so-called largest rigid part (LRP), subsequently all other parts are detected that are linked to the LRP. The initial alignment stage tries to find sparse correspondences between two point clouds by applying a single rigid transformation to detect the largest subsets of points in two point clouds. Starting from the LRP all other parts are detected recursively.
+\subsection{Algorithm} 
+
+\subsubsection{Finding the LRP}
+
+The algorithm takes two point clouds $C_{1,0}$ and $C_{2,0}$ of the same object in different configurations as input.
+The goal is to find a single rigid transformation $T_{init}$ for all points of $C_{1,0}$ to obtain potential corresponding points between $C_{1,0}$ and $C_{2,0}$. For that, local descriptors of $C_{1,0}$ and $C_{2,0}$ are computed. The requirement for a sparse correspondence between two points $\boldmath{p}_{1,i}$ and $\boldmath{p}_{2,i}$  is that they are \textit{reciprocal}, which means that the euclidean distance $d(\boldmath{p}_{1,i}, \boldmath{p}_{2,i})$ between them is the smallest in both directions. Some of the sparse correspondences are assumed to be wrong. Therefore, RANSAC is applied on the sparse correspondences  to estimate a rigid alignment that is supported by the largest number of points $n$ from $C_{1,0}$ and $C_{2,0}$. To assign the LRP in $C_{1,0}$ and $C_{2,0}$, the biggest point clusters $C_{1,1}$ and $C_{2,1}$ of the overlapping areas $\mathcal{C}_1 = \{C_{1,1}\ldots,C_{1,n}\}$ and  $\mathcal{C}_2 = \{C_{2,1}\ldots,C_{2,n}\}$ are detected. 
+
+
+\subsubsection{Part discovery}
+
+The remaining clusters from $C_{1,0}$ and $C_{2,0}$ that have not been registered yet are matched recursively by starting with clusters connected to already matched parts. As a first step, all matched parts are excluded from the input point clouds. Then, clusters of all remaining points are formed by region growing, taking into account that they are attached to already registered parts. The algorithm of finding the LRP is applied until all body parts have been discovered.
