@@ -27,7 +27,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
-import NonRigid2D._Matrix;
+import NonRigid2D.Matrix;
 
 /**
  * This plugin implements the ICP for two 2D point clouds
@@ -108,8 +108,8 @@ public class Points2D_LRP implements PlugInFilter {
 		// shift both point clouds to the origin (centroid, bounding box point
 		// as origin)
 
-		List<double[]> points1_origin = _Matrix.translate(points1, -o1.getCentroid()[0], -o1.getCentroid()[1]);
-		List<double[]> points2_origin = _Matrix.translate(points2, -o2.getCentroid()[0], -o2.getCentroid()[1]);
+		List<double[]> points1_origin = Matrix.translate(points1, -o1.getCentroid()[0], -o1.getCentroid()[1]);
+		List<double[]> points2_origin = Matrix.translate(points2, -o2.getCentroid()[0], -o2.getCentroid()[1]);
 
 		// List<double[]> points1_origin = Matrix.translate(points1, -minBB1[0],
 		// -minBB1[1]);
@@ -131,7 +131,7 @@ public class Points2D_LRP implements PlugInFilter {
 
 			// recalculate Transformation for "best fit"
 
-			transformedPoints = _Matrix.rotate(points1_origin, (i / 180.0) * Math.PI);
+			transformedPoints = Matrix.rotate(points1_origin, (i / 180.0) * Math.PI);
 			associatedPoints = getAssociation(transformedPoints, points2_origin);
 
 			if (tmp_numberAssoc > numberAssoc) {
@@ -153,8 +153,8 @@ public class Points2D_LRP implements PlugInFilter {
 
 		// shift the points back from the origin
 
-		association = _Matrix.translate(association, o2.getCentroid()[0], o2.getCentroid()[1]);
-		transformed = _Matrix.translate(transformed, o2.getCentroid()[0], o2.getCentroid()[1]);
+		association = Matrix.translate(association, o2.getCentroid()[0], o2.getCentroid()[1]);
+		transformed = Matrix.translate(transformed, o2.getCentroid()[0], o2.getCentroid()[1]);
 		
 		
 		//filter all points that have a corresponding point

@@ -27,7 +27,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
-import NonRigid2D._Matrix;
+import NonRigid2D.Matrix;
 
 /**
  * This plugin implements the ICP for two 2D point clouds
@@ -284,7 +284,7 @@ public class Points2D_EllipseFitting implements PlugInFilter {
 	private double calculateEllipse(List<double[]> points, PointsOrientation o){
 		
 		points = o.allignAxis();
-		points = _Matrix.translate(points, -o.getCentroid()[0], -o.getCentroid()[1]);
+		points = Matrix.translate(points, -o.getCentroid()[0], -o.getCentroid()[1]);
 		
 		double error = 0;
 

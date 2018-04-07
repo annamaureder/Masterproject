@@ -16,10 +16,12 @@ Pose and motion estimation of objects is an active field of research due to the 
 \end{figure}
 
 \section{Initial idea}
-
+%
+% ToDo: Write down use case!
+%
 The initial project idea was to create a tool for 3D animation purposes using a small puppet to capture its poses in real-time. However, the idea addressed many different challenges, like 3D reconstruction, segmentation, joint and skeleton estimation as well as creating an interface with a 3D animation program. As the implementation of these tasks would go beyond the scope of a thesis project, it was indispensable to break it down into its main areas. While doing researches on pose estimation, the issue of segmenting an articulated object into its rigid part frequently emerged and for this reason the thesis project focuses on this field. 
 
-\section{General approach}
+\section{General pose capture approach}
 Generally, there are two major steps to capture the pose of an object. First, the object has to be digitalized, which is achieved by a 3D scanning and reconstruction approach. The data might be in form of a point cloud or voxels depending on the reconstruction method (see section \ref{sec:reconstruction}). The second major step includes the analysing of the data to recognize body parts and subsequently joints and extract the object's skeleton. Depending on the chosen approach, which is usually a segmentation step (see section \ref{sec:segmentation}), there might be a subdivision into sub steps.
 %
 % ToDo: NEW image!!!
@@ -33,32 +35,33 @@ Generally, there are two major steps to capture the pose of an object. First, th
 %
 \section{3D Scanning/Reconstruction}
 \label{sec:reconstruction}
-
+%
+% ToDo: explain in detail
+%
 Scanning means collecting a real shape as 3D data. Reconstruction means the approach to convert the raw data to a mesh or process the input data.
 Voxelization, Shape from Shilouette, Shape from Shading, Shape from 2D, Markers, sensors, ... 
 
 \section{3D Segmentation}
 \label{sec:segmentation}
-
+%
+% ToDo: explain methods in detail
+% 1) markers/sensors/exoskeleton
+% 2) markerless methods
+%
 How it is done: markers, sensors, shape fitting (already known)
 Cite all papers (Voxelization, ....)
 
 \subsection{Markers and sensors}
 Many approaches use markers or sensors (Motion Capture) that are placed on the object to be captured. 
 
-ToDo:
+\subsection{Markerless, supervised methods}
+Many already existing methods don't require markers and sensors but already assume or know the hierarchical structure or the body parts of the object to be captured (see \cite{multiLayerSkeleton}, \cite{baker2005shape}, \cite{de2008hierarchical} and \cite{michoud2007real}).
 
-- quickly describe methods
-- advantages
-- disadvantages
-
-\subsection{Shape fitting}
-
-\section{Unsupervised approaches}
+\subsection{Unsupervised methods}
 
 Although the approaches mentioned in section \ref{sec:currentApproaches} work quite well depending on the application, improvements can be made that are more independent from user inputs.... which leads us to the non-rigid registration.
 
-\subsection{Non-rigid registration}
+\section{Non-rigid registration}
 \label{nonrigidregistration}
 
 Generally, registration means the alignment of rigid point clouds (see figure \ref{fig:registration}). A well-known approach to achieve this, is the iterative closest point (ICP) \cite{ICP}, which requires the input point clouds to be aligned quite similar to avoid a local optimum. After registration, a matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered point clouds. In case of two non-rigid objects (e.g. a human in different poses which is composed of rigid parts) the ICP won't lead to a satisfying registration as associated parts are transformed differently. In order to register a non-rigid object, a segmentation into its rigid parts is required.
