@@ -1,11 +1,11 @@
 \chapter{Optimization approach}
 \label{cha:TheThesis}
 
-Taking the existing methods as reference (see chapter \ref{RelatedWork}) a new segmentation approach is developed. Thereby, the main focus is to reduce the computation steps of the correlated correspondence algorithm \cite{CorrelatedCorrespondance} as well as the LRP algorithm \cite {guo2016correspondence}. The approach has been first implemented in 2D, in order to be able to focus solely on developing and testing. Subsequently, it will be implemented in 3D using the PCL.
+Taking the existing methods as reference (see chapter \ref{cha:RelatedWork}) a new segmentation approach is developed. Thereby, the main focus is to reduce the computation steps of the correlated correspondence algorithm \cite{CorrelatedCorrespondance} as well as the LRP algorithm \cite {guo2016correspondence}. The approach has been first implemented in 2D, in order to be able to focus solely on developing and testing. Subsequently, it will be implemented in 3D using the PCL.
 
 \section{Goal}
 
-The goal is to segment an articulated mesh $M$ into its unknown number $n$ of rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$ and extract the joints $\mathcal{J} =  \{J_1,\ldots,J_m\}$ linking those parts in form of a skeleton structure. In general, this is done by non-rigid registration of the point clouds $C_1$ and $C_2$ of an object in two different poses. $C_1$ is thereby used as a \textit{template} to be registered with $C_2$. The main task is to determine a part assignment $P_i$ and the corresponding transformation $T_i$ for all points of the \textit{template} that aligns them with all points of $C_2$. Basically, a divide and conquer approach is implemented to recursively subdivide $C_1$ and $C_2$ into matching subclusters. 
+The goal is to segment an articulated mesh $M$ into its unknown number $n$ of rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$ and extract all joints $m$ $\mathcal{J} =  \{J_1,\ldots,J_m\}$ linking those parts in form of a skeleton structure. In general, this is done by non-rigid registration of the point clouds $C_1$ and $C_2$ of an object in two different poses. $C_1$ is thereby used as a \textit{template} to be registered with $C_2$. The main task is to determine a part assignment $P_i$ and the corresponding transformation $T_i$ for all points of the \textit{template} that aligns them with all points of $C_2$. Basically, a divide and conquer approach is implemented to recursively subdivide $C_1$ and $C_2$ into matching sub clusters. 
 
 \section{Assumptions}
 
@@ -13,13 +13,13 @@ The input mesh $M$ is assumed to solely consist of rigid parts that can not be d
 
 \section{General functionality}
 
-The algorithm starts with two sets of point clouds $C_1$ and $C_2$ of an object $M$ in different poses (see figure \ref{fig:pc_2parts}). The two point clouds are iteratively subdivided into point clusters $\mathcal{C}_1 =  (C_{1,1},\ldots, C_{1,m})$ and $\mathcal{C}_2 =  (C_{2,1},\ldots, C_{2,m})$. In each iteration step two related clusters of $C_1$ and $C_2$ are verified to match by applying the ICP (iterative closest point), resulting in a matching error $e$. In case of $ e < \tau $, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the subclusters are again subdivided. The algorithm terminates if all resulting subclusters of $C_1$ can be matched to all subclusters of $C_2$. Subsequently, they are stored depending on their location and then checked to be merged, in case of having divided a rigid part. After that step, the resulting clusters are assigned to rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$.
+The algorithm starts with two sets of point clouds $C_1$ and $C_2$ of an object $M$ in different poses (see figure \ref{fig:pc_2parts}). The two point clouds are iteratively subdivided into point clusters $\mathcal{C}_1 =  (C_{1,1},\ldots, C_{1,m})$ and $\mathcal{C}_2 =  (C_{2,1},\ldots, C_{2,m})$. In each iteration step two related sub clusters of $C_1$ and $C_2$ are verified to match by applying the ICP (iterative closest point), resulting in a matching error $e$. In case of $e < \tau$, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the sub clusters are again subdivided. The algorithm terminates if all resulting sub clusters of $C_1$ can be matched to all sub clusters of $C_2$. Subsequently, they are stored depending on their location and then checked to be merged, in case of having divided a rigid part. After that step, the resulting clusters are assigned to rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$.
 
 \subsection{Removing outliers}
 
 As a first step, the outliers of the point clouds of $M$ are removed. This is done, by iteratively detecting point clusters $\mathcal{C} = \{C_1, \ldots , C_m\}$ from all points of $M$. A cluster $C_i$ is grown from an unclustered point $\boldsymbol{p}_i(x,y)$. Another point $\boldsymbol{p}_j(x,y)$ is added to the cluster $C_i$ if the euclidean distance between them $d(\boldsymbol{p}_i, \boldsymbol{p}_j)$ is below a pre-defined threshold $\tau$. This threshold is thereby depending on the resolution and density of $M$. All points of $C_i$ are then iteratively compared to the remaining unclustered points to allow the cluster to grow. Once, all points of $C_i$ have been treated, another unclustered point is used as a seed. If there are no unclustered points left, the clusters with the highest number of points $n$ are selected as input clusters $C_1$ and $C_2$ (see figure \ref{fig:pc_2parts}).
 %%
-% TODO: picture of removing outliers
+% TODO: picture of removing outliers + change notation (C1, C2)
 %%
 \begin{figure}[htbp]
 	\centering\small
@@ -68,12 +68,12 @@ By applying the ICP and the nearest neighbor approach on two associated clusters
 	e_{\mathrm{avg}(C_p, C_q)} = \frac{1}{| C_p |} \cdot \displaystyle\sum_{i=0}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2
 \end{equation}
 %
-is computed, assuming that the two clusters $C_p$ and $C_q$ contain the same number of cluster points $m$. In case of varying point amounts, the segmentation needs to be carried out differently that subclusters contain the same number of points. Alternatively, extra points are not considered in the error amount calculation. To declare when two clusters match, it is quite essential to determine an appropriate threshold $\tau$ for the maximum distance $d(p_0, q_0)$ between two associated points $p_0$ and $q_0$. In case of being overvalued, clusters are more likely to match which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and the detection of too many rigid parts. The two clusters $C_p$ and $C_q$ are matching, if $e_{avg} < \tau$.
+is computed, assuming that the two clusters $C_p$ and $C_q$ contain the same number of cluster points $m$. In case of varying point amounts, the segmentation needs to be carried out differently that sub clusters contain the same number of points. Alternatively, extra points are not considered in the error amount calculation. To declare when two clusters match, it is quite essential to determine an appropriate threshold $\tau$ for the maximum distance $d(p_0, q_0)$ between two associated points $p_0$ and $q_0$. In case of being overvalued, clusters are more likely to match which could result in insufficient subdividing. On the other hand, the clusters are difficult to be matched, which will result in further subdividing and the detection of too many rigid parts. The two clusters $C_p$ and $C_q$ are matching, if $e_{avg} < \tau$.
 
 \subsubsection{Cluster tree}
 \label{tree}
 
-The subdividing of the clusters $C_1$ and $C_2$ is realized by a depth-first approach in a tree. Consequently, $C_1$ and $C_2$ represent the root and are subdivided from the left to the right. A node $N$ of the tree contains two related clusters $C_{1,i}$ and $C_{2,i}$, where $i$ defines whether the node is a left ($i=1$) or right ($i=2$) node of the parent. In case of further subdividing, a Node $left$, containing the  clusters $C_{1,i,1}$ and $C_{2,i,1}$, as well as a Node $right$, containing the clusters $C_{1,i,2}$ and $C_{2,i,2}$ origin. If two associated clusters $C_{1,i,j}$ and $C_{2,i,j}$ in a Node $N_i$ match, no further subdividing is performed. The resulting leaves of the tree are the final matching sub clusters and stored from left to right in a list $\mathcal{L} = (L_{1,1},L_{2,1},\ldots,L_{1,m},L_{2,m})$ (see figure \ref{fig:illustrationTree}). By applying the depth-first approach, the neighboring clusters in the list are also neighboring clusters in the main clusters $C_1$ and $C_2$.  As a result, in the following step the adjacent sub clusters of $C_1$ or $C_2$ can be merged (see subsection \ref{mergingClusters}).
+The subdividing of the clusters $C_1$ and $C_2$ is realized by a depth-first approach in a tree. Consequently, $C_1$ and $C_2$ represent the root and are subdivided from the left to the right. A node $N$ of the tree contains two related clusters $C_{1,i}$ and $C_{2,i}$, where $i$ defines whether the node is a left ($i=1$) or right ($i=2$) node of the parent. In case of further subdividing, a Node $\mathit{left}$, containing the  clusters $C_{1,i,1}$ and $C_{2,i,1}$, as well as a Node $\mathit{right}$, containing the clusters $C_{1,i,2}$ and $C_{2,i,2}$ origin. If two associated clusters $C_{1,i,j}$ and $C_{2,i,j}$ in a Node $N_i$ match, no further subdividing is performed. The resulting leaves of the tree are the final matching sub clusters and stored from left to right in a list $\mathcal{L} = (L_{1,1},L_{2,1},\ldots,L_{1,m},L_{2,m})$ (see figure \ref{fig:illustrationTree}). By applying the depth-first approach, the neighboring clusters in the list are also neighboring clusters in the main clusters $C_1$ and $C_2$.  As a result, in the following step the adjacent sub clusters of $C_1$ or $C_2$ can be merged (see subsection \ref{mergingClusters}).
 \begin{figure}
 	\centering
 	\includegraphics[width=0.7\linewidth]{IllustrationTree}
@@ -86,18 +86,18 @@ The subdividing of the clusters $C_1$ and $C_2$ is realized by a depth-first app
 %%
 %TODO: Think about renaming!
 %%
-As a next step, adjacent sub clusters from $\mathcal{L}$ are iteratively merged and subsequently verified to still match. This process is required to rejoin, if necessary, detected sub clusters to the rigid parts of the object. This is the case, if a rigid part was subdivided during the subdividing process (see section \ref{Subdividing}). The merging initiates with the first clusters in the list $L_{1,i}$, $L_{2,i}$ and its adjacent clusters $L_{1,i+1},L_{2,i+1}$. If the resulting merged clusters can be matched, the merging proceeds with the adjacent cluster $L_{1,i+2},C_{2,i+2}$. If not, the merging is not executed and $L_{1,i}$, $L_{2,i}$ are stored in a list of resulting clusters $\mathcal{R}$. The merging procedure then initiates with $L_{1,i+1},L_{2,i+1}$. The process terminates if all clusters of $\mathcal{L}$ are verified and consequently the clusters of $\mathcal{R}$ are assigned to rigid parts $ \mathcal{P} =  \{P_1,\ldots,P_m\}$ (see figure \ref{fig:clusterChain}). 
+As a next step, adjacent sub clusters from $\mathcal{L}$ are iteratively merged and subsequently verified to still match. This process is required to rejoin, if necessary, detected sub clusters to the rigid parts of the object. This is the case, if a rigid part was subdivided during the subdividing process (see section \ref{Subdividing}). The merging initiates with the first clusters in the list $L_{1,i}$, $L_{2,i}$ and its adjacent clusters $L_{1,i+1},L_{2,i+1}$. If the resulting merged clusters can be matched, the merging proceeds with the adjacent cluster $L_{1,i+2},C_{2,i+2}$. If not, the merging is not executed and $L_{1,i}$, $L_{2,i}$ are stored in a list of resulting clusters $\mathcal{R}$. The merging procedure then initiates with $L_{1,i+1},L_{2,i+1}$. The process terminates if all clusters of $\mathcal{L}$ are verified and consequently the clusters of $\mathcal{R}$ are assigned to rigid parts $\mathcal{P} =  \{P_1,\ldots,P_m\}$ (see figure \ref{fig:clusterChain}). 
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.8\linewidth]{ClusterChain}
-	\caption{Detecting rigid parts of $C_1$ and $C_2$ by iteratively merging neighboring clusters of $C_l$ that merged clusters still match.}
+	\caption{Detecting rigid parts of $C_1$ and $C_2$ by iteratively merging adjacent clusters of $\mathcal{L}$ that merged clusters still match.}
 	\label{fig:clusterChain}
 \end{figure}
 
 \subsection{Joint/skeleton estimation}
 
-After detecting the rigid parts $\mathcal{P} =  \{ {P_1,....P_m}\}$, they are linked with joints. Their locations are thereby calculated by computing the points of intersection of all principal axis of $\mathcal{P} =  \{ {P_1,....P_m}\}$. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axis might not represent the skeleton of an object. For this reason another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation an object point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select points that are located near a joint allocated to more neighboring rigid parts and from those selected points the location of a joint is computed. 
+After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are linked with joints. Their locations are thereby calculated by computing the points of intersection of all principal axis of $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axis might not represent the skeleton of an object. For this reason another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation an object point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select points that are located near a joint allocated to more neighboring rigid parts and from those selected points the location of a joint is computed. 
 
 \begin{figure}[H]
 	\centering\small
@@ -118,7 +118,7 @@ My approach was implemented in Java, using ImageJ as processing library, to focu
 \section{Architecture}
 
 The initial algorithm was realized with four classes to divide the own ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.
-The main class is called ``Segmentation'' which solely requires a stack of two point clouds. First, the noise removal and cluster detection is done in the Cluster class. As a next step, the detected main clusters $m$ $C_1$ $\cdots$ $C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters (see algorithm\ref{alg:inputClusters}). Following, the divide and conquer algorithm (see algorithm \ref{alg:clustering}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i}$ $\cdots$ $C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
+The main class is called ``Segmentation'' which solely requires a stack of two point clouds. First, the noise removal and cluster detection is done in the Cluster class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
 
 \begin{figure}
 	\centering
@@ -133,74 +133,73 @@ The main class is called ``Segmentation'' which solely requires a stack of two p
 	
 		\begin{algorithmic}[1]     % [1] = all lines are numbered
 			\label{clusterTree}
-			\Procedure{ClusterTree}{$\mathit{C1}, \mathit{C2}$}
+			\Procedure{ClusterTree}{$\mathit{C_1}, \mathit{C_2}$}
 			
-			\State $\mathit{subclusters} \gets ()$
+			\State $L \gets ()$
 			\State $\mathit{left} \gets \mathit{nil}$
 			\State $\mathit{right} \gets \mathit{nil}$
-			\State $\mathit{node:=<C1, C2, left, right>}$
-			\State $\mathit{subclusters}$ = \Call{Subdivide}{$\mathit{node}$}
-			\State $\mathit{mergedParts}$ =\Call{MergeClusters}{$\mathit{subclusters}$}
+			\State $N \gets \langle C_1, C_2, \mathit{left}, \mathit{right}\rangle$
+			\State $L \gets \Call{Subdivide}{N}$
+			\State $P \gets \Call{MergeClusters}{L}$
 			
 			\EndProcedure
 		\end{algorithmic}
 	
 	\begin{algorithmic}[1]     % [1] = all lines are numbered
 		\label{subdivide}
-		\Procedure{Subdivide}{$\mathit{node}$}
+		\Procedure{Subdivide}{$N$}
 		
-		\If {\Call{match}{$\mathit{C1(node)}$, $\mathit{C2(node)}$}}
+		\If {$\Call{match}{C_1(N)}, C_2(N)$}
 		\Comment{Apply ICP on two clusters}
-		\State $\mathit{subclusters = subclusters + (node)}$
+		\State $L \gets L + (N)$
 		
 		\Else
-		\State $\mathit{left(node) \gets \Call{Split}{node}}$
-		\State $\mathit{right(node) \gets \Call{Split}{node}}$
+		\State $\mathit{left}(N) \gets \Call{Split}{N}$
+		\State $\mathit{right}(N) \gets \Call{Split}{N}$
 		\Comment{Split the cluster into a left and right side}
-		\State \Call{Subdivide}{$\mathit{left(node)}$}
-		\State \Call{Subdivide}{$\mathit{right(node)}$}
+		\State \Call{Subdivide}{$\mathit{left}(N)$}
+		\State \Call{Subdivide}{$\mathit{right}(N)$}
 		\Comment{Recall the algorithm with sub clusters}
 		\EndIf
 		
-		\State\Return $\mathit{subclusters}$
-		\Comment{Return all subclusters after termination.}
+		\State\Return $L$
+		\Comment{Return all sub clusters after termination.}
 		\EndProcedure
 			
 	\end{algorithmic}
 \end{algorithm}
 
 \begin{algorithm}[tbp]
-	\caption{Merging of the subclusters of $C_1$ and $C_2$ resulting from algorithm \ref{alg:subdivide} in the order of being stored. Verify the matching of adjacent clusters of $C_1$ and $C_2$ after merging them to one cluster. The merging is continued until no match can be done. In this case the last merging step is reverted and the relevant clusters are stored. The algorithm continues with the next clusters in the list and terminates if all subclusters have been traversed.}
+	\caption{Merging of the sub clusters $\mathit{L} = ((L_{1,1}, L_{2,1}),\ldots,(L_{1,m}, L_{2,m}))$, resulting from algorithm \ref{alg:subdivide} in the order of being stored, to rigid parts $\mathcal{P}$. Verify the matching of merged adjacent clusters $L_{i,j}$ and $L_{i,j+1}$ from $C_1$ and $C_2$. The merging is continued until no match can be done. In this case the last last merged cluster pairs are stored as rigid parts $P_1$ and $P_2$. The algorithm then continues with the next cluster pair in the list and terminates if all pairs have been traversed. The list with all detected rigid parts $\mathcal{P}$ is returned.}
 	\label{alg:merging}
 	
 	\begin{algorithmic}[1]     % [1] = all lines are numbered
 		\label{merging}
 
-		\Procedure{MergeClusters}{$\mathit{subclusters}$} 
-		\State $\mathit{mergedClusters} \gets ()$
-		\State $toBeMergedC1 \gets C1(subclusters[0]$)
-		\State $toBeMergedC2 \gets C2(subclusters[0]$)
+		\Procedure{MergeClusters}{$L$} 
+		\State $P \gets ()$
+		\State $P_1 \gets L_{1,1}$
+		\State $P_2 \gets L_{2,1}$
+		\State $n \gets \mathit{sizeOf}(L)$
 		
-		\For{$i = 1$ to $\mathit{sizeOf(subclusters)}$}
-		\State $currentC1 \gets C1(subclusters[i]$)
-		\State $currentC2 \gets C2(subclusters[i]$)
-		\State $mergedC1 \gets \Call{Merge}{toBeMergedC1, currentC1}$
-		\State $mergedC2 \gets \Call{Merge}{toBeMergedC2, currentC2}$
+		\For{$i = 2,\ldots,n$}
+		\State $\mathit{merge_1} \gets \Call{Merge}{P_1, L_{1,i}}$
+		\State $\mathit{merge_2} \gets \Call{Merge}{P_2, L_{2,i}}$
 		
-		\If {\Call{match}{$\mathit{mergedC1}$, $\mathit{mergedC2}$}}
+		\If {\Call{match}{$merge_1$, $merge_2$}}
 		\Comment{Apply ICP on two merged clusters}
-		\State $\mathit{toBeMergedC1 \gets mergedC1}$
-		\State $\mathit{toBeMergedC2 \gets mergedC2}$
+		\State $\mathit{P_1} \gets merge_1$
+		\State $\mathit{P_2} \gets merge_2$
 		\Comment{Continue merging with merged clusters}
 		\Else
-		\State $\mathit{mergedClusters = mergedClusters + (toBeMergedC1, toBeMergedC2)}$
-		\State $toBeMergedC1 \gets currentC1$
-		\State $toBeMergedC2 \gets currentC2$
+		\State $P \gets P + (P_1, P_2)$
+		\State $P_1 \gets L_{1,i}$
+		\State $P_2 \gets L_{2,i}$
 		\Comment{Initiate merging with current clusters}
 		\EndIf
 		\EndFor
-		\State $\mathit{mergedClusters = mergedClusters + (toBeMergedC1, toBeMergedC2)}$
-		\State\Return $\mathit{mergedClusters}$
+		\State $P \gets P + (merge_1, merge_2)$
+		\State\Return $P$
 		\EndProcedure	
 	\end{algorithmic}
 \end{algorithm}

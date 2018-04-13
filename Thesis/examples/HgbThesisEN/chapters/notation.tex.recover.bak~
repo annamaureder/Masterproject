@@ -1,17 +1,36 @@
 \chapter{Notation}
 \label{cha:Notation}
 
-$C_1$
-$C_2$
-$C_{1,2}$
-$C_{2,2}$
-$C_{1,1,2}$
-$C_{2,1,2}$
-$C_{1,1,1,1}$
-$C_{2,1,1,1}$
-$C_{1,1,1,2,1}$
-$C_{2,1,1,2,1}$
-$C_{1,1,1,2,1}$
-$C_{1,1,1,2,2}$
-$C_{2,1,1,2,2}$
+\begin{itemize}
+	\item[$M$] Input mesh
+	\item[$\mathcal{P}$] set of rigid parts
+	\item[$\mathcal{J}$] set of joints
+	\item[$\mathcal{C}$] set of clusters
+	\item[$C_i$] cluster
+	\item[$C_{i,j,\cdots}$] sub cluster of $C_i$
+	\item[$\mathcal{L}$] set of final sub cluster pairs
+	\item[$L_{i,j}$] sub cluster $C_i$
+	
+	
+	
+	
+\end{itemize}
 
+
+
+
+$p_i$
+$s_i$
+
+$\boldsymbol{p}_i(x,y)$
+$g(\boldsymbol{p}_i,\boldsymbol{p}_j)$
+
+$e$
+$e_{avg}$
+$\tau$
+
+$\theta$
+
+$N$
+$\mathit{left}$
+$\mathit{right}$
