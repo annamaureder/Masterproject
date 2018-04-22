@@ -15,18 +15,18 @@ The input mesh $M$ is assumed to solely consist of rigid parts that can not be d
 
 The algorithm starts with two sets of point clouds $C_1$ and $C_2$ of an object $M$ in different poses (see figure \ref{fig:pc_2parts}). The two point clouds are iteratively subdivided into point clusters $\mathcal{C}_1 =  (C_{1,1},\ldots, C_{1,m})$ and $\mathcal{C}_2 =  (C_{2,1},\ldots, C_{2,m})$. In each iteration step two related sub clusters of $C_1$ and $C_2$ are verified to match by applying the ICP (iterative closest point), resulting in a matching error $e$. In case of $e < \tau$, two clusters are assumed to match. Otherwise, the algorithm is applied recursively and the sub clusters are again subdivided. The algorithm terminates if all resulting sub clusters of $C_1$ can be matched to all sub clusters of $C_2$. Subsequently, they are stored depending on their location and then checked to be merged, in case of having divided a rigid part. After that step, the resulting clusters are assigned to rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$.
 
-\subsection{Removing outliers}
+\subsection{Detecting point clusters}
 
-As a first step, the outliers of the point clouds of $M$ are removed. This is done, by iteratively detecting point clusters $\mathcal{C} = \{C_1, \ldots , C_m\}$ from all points of $M$. A cluster $C_i$ is grown from an unclustered point $\boldsymbol{p}_i(x,y)$. Another point $\boldsymbol{p}_j(x,y)$ is added to the cluster $C_i$ if the euclidean distance between them $d(\boldsymbol{p}_i, \boldsymbol{p}_j)$ is below a pre-defined threshold $\tau$. This threshold is thereby depending on the resolution and density of $M$. All points of $C_i$ are then iteratively compared to the remaining unclustered points to allow the cluster to grow. Once, all points of $C_i$ have been treated, another unclustered point is used as a seed. If there are no unclustered points left, the clusters with the highest number of points $n$ are selected as input clusters $C_1$ and $C_2$ (see figure \ref{fig:pc_2parts}).
+As a first step, all point clusters $\mathcal{C} = \{C_1, \ldots , C_m\}$ are detected by applying region growing on all points of $M$. A cluster $C_i$ is grown from an unclustered point $\boldsymbol{p}_i(x,y)$. Another point $\boldsymbol{p}_j(x,y)$ is added to the cluster $C_i$ if the euclidean distance between them $d(\boldsymbol{p}_i, \boldsymbol{p}_j)$ is below a predefined threshold $\tau$. This threshold is thereby depending on the resolution and density of $M$. All points of $C_i$ are then iteratively compared to the remaining unclustered points to allow the cluster to grow. Once, all points of $C_i$ have been treated, another unclustered point is used as a seed. If there are no unclustered points left, the clusters with the highest number of points $n$ are selected as input clusters $C_1$ and $C_2$ (see figure \ref{fig:pc_2parts}). As a result, the remaining clusters are classified as noise and rejected for further computations.
 %%
 % TODO: picture of removing outliers + change notation (C1, C2)
 %%
 \begin{figure}[htbp]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_Noise}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_Noise}} &		
 		\fbox{\includegraphics[width=0.45\textwidth]{pc_2parts_noNoise}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Taking a mesh $M$ in two different poses as input (a), removing noise of the input point clouds (b) to achieve the input clusters $C_1$ and $C_2$.} 
@@ -82,9 +82,7 @@ The subdividing of the clusters $C_1$ and $C_2$ is realized by a depth-first app
 \end{figure}
 
 \subsection{Merging neighboring clusters to rigid parts}
-\label{mergingClusters}
-%%
-%TODO: Think about renaming!
+\label{mergingClusters}x
 %%
 As a next step, adjacent sub clusters from $\mathcal{L}$ are iteratively merged and subsequently verified to still match. This process is required to rejoin, if necessary, detected sub clusters to the rigid parts of the object. This is the case, if a rigid part was subdivided during the subdividing process (see section \ref{Subdividing}). The merging initiates with the first clusters in the list $L_{1,i}$, $L_{2,i}$ and its adjacent clusters $L_{1,i+1},L_{2,i+1}$. If the resulting merged clusters can be matched, the merging proceeds with the adjacent cluster $L_{1,i+2},C_{2,i+2}$. If not, the merging is not executed and $L_{1,i}$, $L_{2,i}$ are stored in a list of resulting clusters $\mathcal{R}$. The merging procedure then initiates with $L_{1,i+1},L_{2,i+1}$. The process terminates if all clusters of $\mathcal{L}$ are verified and consequently the clusters of $\mathcal{R}$ are assigned to rigid parts $\mathcal{P} =  \{P_1,\ldots,P_m\}$ (see figure \ref{fig:clusterChain}). 
 
@@ -102,9 +100,9 @@ After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/non-rigid_3parts_associations}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{results/non-rigid_3parts_associations}} &
 		\fbox{\includegraphics[width=0.45\textwidth]{results/rigid_3parts_associations}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Registration of $C_1$ and $C_2$ before the segmentation into rigid parts (a) and after the segmentation.} 
@@ -117,8 +115,10 @@ My approach was implemented in Java, using ImageJ as processing library, to focu
 
 \section{Architecture}
 
-The initial algorithm was realized with four classes to divide the own ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.
-The main class is called ``Segmentation'' which solely requires a stack of two point clouds. First, the noise removal and cluster detection is done in the Cluster class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
+The initial algorithm was realized with four classes to divide the ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.
+The main class \texttt{Segmentation} solely requires a stack of two point clouds. First, the noise removal and cluster detection is done in the \texttt{Cluster} class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
+
+%TODO: add code snippets
 
 \begin{figure}
 	\centering
@@ -271,9 +271,9 @@ The segmentation into rigid parts is also apparent, when visualizing the point r
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/non-rigid_3parts_associations}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{results/non-rigid_3parts_associations}} &	
 		\fbox{\includegraphics[width=0.45\textwidth]{results/rigid_3parts_associations}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Registration of $C_1$ and $C_2$ before the segmentation into rigid parts (a) and after the segmentation (b).} 
@@ -285,9 +285,9 @@ In case of a more complex object, the simple segmentation algorithm fails. Altho
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
 		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Taking a more complex Mesh $M$ in two poses with four rigid parts as an input, with a threshold $\tau = 7$, 3 clusters and rigid parts can be detected in $C_1$~(a) and $C_2$~(b).} 
