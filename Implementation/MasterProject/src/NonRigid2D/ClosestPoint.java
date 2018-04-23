@@ -24,7 +24,7 @@ public class ClosestPoint {
 
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
-	private double thresholdError = 6;
+	private double errorThreshold = Input.errorThreshold;
 
 	private List<double[]> associatedPoints;
 	private List<double[]> transformedPoints;
@@ -37,18 +37,16 @@ public class ClosestPoint {
 	private int amountPoints;
 
 	public ClosestPoint(Cluster c_i, Cluster c_j) {
-
 		this.c_i = c_i;
 		this.c_j = c_j;
 
 		amountC1 = c_i.getPoints().size();
 		amountC2 = c_j.getPoints().size();
 
-		IJ.log("amount1: " + amountC1);
-		IJ.log("amount2: " + amountC2);
+		IJ.log("Points in C1: " + amountC1);
+		IJ.log("Points in C2: " + amountC2);
 
 		amountPoints = Math.min(amountC1, amountC2);
-
 		run();
 	}
 
@@ -75,9 +73,7 @@ public class ClosestPoint {
 		double i = 0;
 
 		while (i < 360) {
-
 			// recalculate Transformation for "best fit"
-
 			tmp_transformation = Matrix.rotate(points1_origin, (i / 180.0) * Math.PI);
 			tmp_association = getAssociation(tmp_transformation, points2_origin);
 
@@ -86,38 +82,19 @@ public class ClosestPoint {
 				associatedPoints = tmp_association;
 				transformedPoints = tmp_transformation;
 			}
-
 			i += 0.5;
 		}
 
-		IJ.log("error: " + error);
-
-		associatedPoints = Matrix.translate(associatedPoints, c_j.getCentroid()[0], c_j.getCentroid()[1]);
-		
-		Visualize.drawAssociations(Segmentation.assoc, transformedPoints, associatedPoints);
-		Visualize.drawPoints(Segmentation.assoc, transformedPoints, Color.black);
-		Visualize.drawPoints(Segmentation.assoc, c_j.getPoints(), Color.red);
-		
+		associatedPoints = Matrix.translate(associatedPoints, c_j.getCentroid()[0], c_j.getCentroid()[1]);		
 		transformedPoints = Matrix.translate(transformedPoints, c_j.getCentroid()[0], c_j.getCentroid()[1]);
 		
 		
 		if(match()){
-			
-			Visualize.drawAssociations(Segmentation.finalAssoc, transformedPoints, associatedPoints);
-			Visualize.drawPoints(Segmentation.finalAssoc, transformedPoints, Color.black);
-			Visualize.drawPoints(Segmentation.finalAssoc, c_j.getPoints(), Color.red);
-			
-			//not matching parts
-			
-		/*ColorProcessor cp = new ColorProcessor(Segmentation.size, Segmentation.size);
-		cp.invert();
-		
-		Visualize.drawAssociations(cp, transformedPoints, associatedPoints);
-		Visualize.drawPoints(cp, transformedPoints, Color.black);
-		Visualize.drawPoints(cp, C2.getPoints(), Color.red);
-		
-		Visualize.showImage(cp, "Associations");*/
-		
+			if(Input.showAssociations){
+				Visualize.drawAssociations(Segmentation.finalAssoc, transformedPoints, associatedPoints);
+				Visualize.drawPoints(Segmentation.finalAssoc, transformedPoints, Color.black);
+				Visualize.drawPoints(Segmentation.finalAssoc, c_j.getPoints(), Color.red);
+			}		
 		}
 
 		ProcrustesFit pro = new ProcrustesFit();
@@ -132,7 +109,6 @@ public class ClosestPoint {
 		// Math.acos(pro.getR().getEntry(0, 0)));
 		// transformedPoints = Matrix.translate(transformedPoints, c1[0] +
 		// pro.getT().getEntry(0), c1[1] + pro.getT().getEntry(1));
-
 	}
 
 	/**
@@ -143,16 +119,13 @@ public class ClosestPoint {
 	 * @return List with points with the same sorting as resultPoitns
 	 */
 	private List<double[]> getAssociation(List<double[]> resultPositions, List<double[]> targetPositions) {
-
 		tmp_error = 0;
 		List<double[]> assocPoints = new ArrayList<double[]>();
 
 		for (int i = 0; i < resultPositions.size(); i++) {
 			assocPoints.add(closestPoint(resultPositions.get(i), targetPositions));
 		}
-
 		return assocPoints;
-
 	}
 
 	/**
@@ -198,14 +171,14 @@ public class ClosestPoint {
 
 	public boolean match() {
 
-		if (amountC1 < 2 || amountC2 < 2) {
+		if (amountC1 < 5 || amountC2 < 5) {
 			return true;
 		}
 
 		double errorPerPoint = error / amountPoints;
 		IJ.log("error per point: " + errorPerPoint);
 
-		if (errorPerPoint < thresholdError) {
+		if (errorPerPoint < errorThreshold) {
 			return true;
 		}
 

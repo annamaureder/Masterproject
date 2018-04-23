@@ -34,8 +34,8 @@ public class ClusterTree {
 	}
 
 	/**
-	 * Recursively subdivide a Node containing two clusters in each two
-	 * sub clusters until all parts match
+	 * Recursively subdivide a Node containing two clusters in each two sub
+	 * clusters until all parts match
 	 * 
 	 * @param node
 	 * @return segmented parts
@@ -44,19 +44,23 @@ public class ClusterTree {
 
 		cp = new ClosestPoint(node.cluster[0], node.cluster[1]);
 
+		if (iterations > 50) {
+			return subclusters;
+		}
+
 		if (!cp.match()) {
 			split(node);
-			iterations++;
-			IJ.log("Iteration #" + iterations);
+			IJ.log("Iteration #" + iterations++);
 
 			subdivide(node.left);
 			subdivide(node.right);
 		} else {
+			IJ.log("Add cluster to list!");
 			subclusters.add(node.cluster);
 		}
 		return subclusters;
 	}
-	
+
 	/**
 	 * 
 	 * @param currentNode
@@ -71,8 +75,7 @@ public class ClusterTree {
 	}
 
 	/**
-	 * Merge subclusters of C1 and C2 to clusters that can still be
-	 * matched
+	 * Merge subclusters of C1 and C2 to clusters that can still be matched
 	 * 
 	 * @param subclusters
 	 * @return mergedParts
@@ -110,7 +113,7 @@ public class ClusterTree {
 		}
 		return mergedParts;
 	}
-	
+
 	public Node getRoot() {
 		return root;
 	}

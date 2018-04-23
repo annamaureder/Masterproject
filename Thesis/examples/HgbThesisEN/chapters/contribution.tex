@@ -1,7 +1,7 @@
 \chapter{Optimization approach}
 \label{cha:TheThesis}
 
-Taking the existing methods as reference (see chapter \ref{cha:RelatedWork}) a new segmentation approach is developed. Thereby, the main focus is to reduce the computation steps of the correlated correspondence algorithm \cite{CorrelatedCorrespondance} as well as the LRP algorithm \cite {guo2016correspondence}. The approach has been first implemented in 2D, in order to be able to focus solely on developing and testing. Subsequently, it will be implemented in 3D using the PCL.
+Taking the existing methods as reference (see chapter \ref{cha:RelatedWork}) a new segmentation approach is developed. Thereby, the main focus is to reduce the computation steps of the correlated correspondence algorithm \cite{CorrelatedCorrespondance} as well as the LRP algorithm \cite {guo2016correspondence}.
 
 \section{Goal}
 
@@ -111,12 +111,23 @@ After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are
 
 \chapter{Implementation and Results}
 
-My approach was implemented in Java, using ImageJ as processing library, to focus on implementing and testing the algorithm in 2D. Another implementation is planned in 3D with the PCL to bring the attention to segmentation and visualization in 3D. A class \texttt{Cluster} was implemented to store the cluster's points, its centroid, the orientation $\theta$ as well as the principal and secondary axes. For the subdividing, a \texttt{ClusterTree} was implemented to simultaneously divide the main clusters $C_1$ and $C_2$ into sub clusters (see algorithm \ref{alg:subdivide}). Each node $N$ contains thereby two associated clusters $C_{1,i}$ and $C_{2,i}$. For the clustering and merging of clusters a \texttt{List<Clusters>} was used to dynamically add and remove Clusters. Furthermore, a class \texttt{ICP} was created, which takes two clusters to be matched as input.
+After planning the algorithm, it was initially implemented and for 2D point clouds, in order to be able to focus solely on developing and testing. Subsequently, the realization for 3D point clouds followed.
+
+\section{Chosen environment}
+
+The initial approach was implemented in Java, using ImageJ as processing library. The chosen environment depends on the following factors:
+\begin{itemize}
+	\item familiarity and prior experience
+	\item complexity
+	\item available plug-in for image processing
+\end{itemize}
+%%
+As ImageJ is mainly used for 2D use cases, another implementation is planned in 3D by using PCL in C++. As a result, the attention can be brought to segmentation and visualization in 3D.
 
 \section{Architecture}
 
 The initial algorithm was realized with four classes to divide the ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.
-The main class \texttt{Segmentation} solely requires a stack of two point clouds. First, the noise removal and cluster detection is done in the \texttt{Cluster} class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
+The main class \texttt{Segmentation} solely requires a stack of two point clouds in 2D.  A class \texttt{Cluster} was implemented to store the cluster's points, its centroid, the orientation $\theta$ as well as the principal and secondary axes. For the subdividing, a \texttt{ClusterTree} was implemented to simultaneously divide the main clusters $C_1$ and $C_2$ into sub clusters (see algorithm \ref{alg:subdivide}). Each node $N$ contains thereby two associated clusters $C_{1,i}$ and $C_{2,i}$. For the clustering and merging of clusters a \texttt{List<Clusters>} was used to dynamically add and remove Clusters. Furthermore, a class \texttt{ICP} was created, which takes two clusters to be matched as input. First, the noise removal and cluster detection is done in the \texttt{Cluster} class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
 
 %TODO: add code snippets
 

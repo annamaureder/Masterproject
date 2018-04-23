@@ -20,17 +20,16 @@ public class Cluster {
 
 	private List<double[]> points = new ArrayList<double[]>();
 	private double distanceThreshold = 10;
+	private int size;
 
 	private double[] centroid;
 	private double orientation;
-	//private int axisLength = 100;
 	private int principalLength;
 	private int secondaryLength;
-	private boolean removeNoise;
 
-	public Cluster(ImageProcessor ip, boolean removeNoise) {
-		this.removeNoise = removeNoise;
+	public Cluster(ImageProcessor ip) {
 		this.points = getPoints(ip);
+		this.size = points.size();
 		this.centroid = calculateCentroid(points);
 		this.orientation = calculateOrientation();
 		this.principalLength = getPrincipalRadius();
@@ -39,6 +38,7 @@ public class Cluster {
 
 	public Cluster(List<double[]> p) {
 		this.points = p;
+		this.size = points.size();
 		this.centroid = calculateCentroid(points);
 		this.orientation = calculateOrientation();
 		this.principalLength = getPrincipalRadius();
@@ -50,12 +50,12 @@ public class Cluster {
 	 */
 	public Cluster(Cluster c) {
 		this.points = c.points;
+		this.size = c.size;
 		this.centroid = c.centroid;
 		this.orientation = c.orientation;
 	}
 
 	private List<double[]> getPoints(ImageProcessor ip) {
-
 		int w = ip.getWidth();
 		int h = ip.getHeight();
 
@@ -64,30 +64,26 @@ public class Cluster {
 		for (int v = 0; v < h; v++) {
 			for (int u = 0; u < w; u++) {
 				int p = ip.getPixel(u, v);
-
 				if (p < -1) {
 					pntlist.add(new double[] { u, v });
 				}
 			}
 		}
 
-		if (removeNoise) {
+		if (Input.removeOutliers) {
 			IJ.log("Remove Noise");
 			pntlist = biggestCluster(pntlist);
 			IJ.log("Removing done");
 		}
 
 		return pntlist;
-
 	}
 
 	private List<double[]> biggestCluster(List<double[]> allPoints) {
-
 		List<double[]> current = new ArrayList<double[]>();
 		List<double[]> maximum = new ArrayList<double[]>();
 
 		while (!allPoints.isEmpty()) {
-
 			current.add(allPoints.get(0));
 
 			for (int c = 0; c < current.size(); c++) {
@@ -98,23 +94,17 @@ public class Cluster {
 					}
 				}
 			}
-
 			allPoints.removeAll(current);
 
 			if (current.size() > maximum.size()) {
 				maximum = current;
 			}
-
 			current = new ArrayList<double[]>();
-
 		}
-
 		return maximum;
-
 	}
 
 	private double distance(double[] current, double[] point) {
-
 		double x = Math.abs(current[0] - point[0]);
 		double y = Math.abs(current[1] - point[1]);
 
@@ -122,7 +112,6 @@ public class Cluster {
 	}
 
 	private double[] calculateCentroid(List<double[]> points) {
-
 		double avgX = 0.0;
 		double avgY = 0.0;
 
@@ -140,30 +129,24 @@ public class Cluster {
 	}
 
 	private double centralMoment(int p, int q) {
-
 		double moment = 0.0;
 
 		for (double[] point : points) {
 			moment += Math.pow((point[0] - centroid[0]), p) * Math.pow((point[1] - centroid[1]), q);
 		}
-
 		return moment;
-
 	}
 
 	public List<double[]> alignAxis() {
-
 		points = Matrix.translate(points, -centroid[0], -centroid[1]);
 		points = Matrix.rotate(points, -orientation);
 		points = Matrix.translate(points, centroid[0], centroid[1]);
-
 		orientation = 0;
 
 		return points;
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {
-		
 		int x1 = (int) centroid[0];
 		int y1 = (int) centroid[1];
 
@@ -181,7 +164,6 @@ public class Cluster {
 	}
 
 	public void drawSecondaryAxis(ImageProcessor cp) {
-		
 		int x1 = (int) centroid[0];
 		int y1 = (int) centroid[1];
 
@@ -192,14 +174,11 @@ public class Cluster {
 
 		cp.drawLine(x1, y1, x2, y2);
 		cp.drawLine(x1, y1, x2_, y2_);
-
 	}
 
 	public int getPrincipalRadius() {
-		
 		Cluster copy = new Cluster(this);
 		copy.alignAxis();
-		// alignAxis();
 
 		int minX = Integer.MAX_VALUE;
 		int maxX = 0;
@@ -215,13 +194,10 @@ public class Cluster {
 			}
 
 		}
-
 		return (maxX - minX) / 2;
-
 	}
 
 	public int getSecondaryRadius() {
-
 		Cluster copy = new Cluster(this);
 		copy.alignAxis();
 
@@ -241,29 +217,72 @@ public class Cluster {
 		return (maxY - minY) / 2;
 	}
 
-	public Cluster[] divideCluster() {
+	private int getMinPoint(Cluster c) {
+		double[] minPoint = c.getPoints().get(0);
+		int minPointIndex = 0;
+		int i = 0;
 
+		for (double[] point : c.getPoints()) {
+			if (point[0] < minPoint[0]) {
+				minPoint = point;
+				minPointIndex = i; 
+			}
+			i++;
+		}
+		return minPointIndex;
+	}
+
+	public Cluster[] divideCluster() {
 		List<double[]> left = new ArrayList<double[]>();
 		List<double[]> right = new ArrayList<double[]>();
 
 		Cluster rotatedCluster = new Cluster(this);
 		rotatedCluster.alignAxis();
 
-		for (int i = 0; i < this.getPoints().size(); i++) {
-			if (rotatedCluster.getPoints().get(i)[0] <= this.getCentroid()[0]) {
-
-				left.add(this.getPoints().get(i));
-			} else {
-
-				right.add(this.getPoints().get(i));
-			}
+		if (Input.regionGrowing) {
+			int minPoint = getMinPoint(rotatedCluster);
+			double[] leftStart = this.points.get(minPoint);
+			right.addAll(this.points);
+			left = regionGrowing(right, leftStart, this.points.size()/2);
+			right.removeAll(left);
 		}
 
+		else {
+			for (int i = 0; i < this.getPoints().size(); i++) {
+				if (rotatedCluster.getPoints().get(i)[0] <= this.getCentroid()[0]) {
+					left.add(this.getPoints().get(i));
+				} else {
+					right.add(this.getPoints().get(i));
+				}
+			}
+		}
+		
+		IJ.log("Points: " + this.points.size());
+		IJ.log("left: " + left.size());
+		IJ.log("right: " + right.size());
+		
 		return new Cluster[] { new Cluster(left), new Cluster(right) };
 	}
+	
+	private List<double[]> regionGrowing(List<double[]> points, double[] start, int maxAmount){
+		List<double[]> region = new ArrayList<>();
+		region.add(start);
+		
+			for (int c = 0; c < region.size(); c++) {
+				points.removeAll(region);
+				for (int i = 0; i < points.size(); i++) {
+					if (distance(region.get(c), points.get(i)) < distanceThreshold) {
+						region.add(points.get(i));
+						if(region.size() == maxAmount){
+							return region;
+						}
+					}
+				}
+			}
+			return region;
+		}
 
 	public Cluster mergeClusters(Cluster c1) {
-
 		List<double[]> points = new ArrayList<double[]>();
 
 		points.addAll(this.getPoints());

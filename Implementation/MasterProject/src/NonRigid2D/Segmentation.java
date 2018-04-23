@@ -43,7 +43,6 @@ public class Segmentation implements PlugInFilter {
 	public static int width;
 	public static int height;
 	public static ColorProcessor finalAssoc;
-	public static ColorProcessor assoc;
 
 	// member variables
 
@@ -51,59 +50,75 @@ public class Segmentation implements PlugInFilter {
 	private ClusterTree tree;
 	private List<Cluster[]> subclusters;
 	private List<Cluster[]> mergedParts;
+	
+	private Cluster c1;
+	private Cluster c2;
 
 	public int setup(String arg, ImagePlus im) {
 		this.im = im;
 		width = im.getWidth();
 		height = im.getHeight();
-		return DOES_ALL + NO_CHANGES;
+		return DOES_ALL + STACK_REQUIRED;
 	}
 
 	public void run(ImageProcessor ip) {
+		
+		if (!Input.getUserInput()) {
+			return;
+		}
+		
+		if(Input.showAssociations){
+			finalAssoc = new ColorProcessor(width, height); 
+			finalAssoc.invert();
+		}
 
 		ImageStack stack = im.getStack();
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
 
-		Cluster c1 = new Cluster(p1, true);
-		Cluster c2 = new Cluster(p2, true);
+		c1 = new Cluster(p1);
+		c2 = new Cluster(p2);
 
 		tree = new ClusterTree(c1, c2);
 		subclusters = tree.subdivide(tree.getRoot());
+		IJ.log("Subdividing done!");
 		mergedParts = tree.mergeClusters(subclusters);
-
-		/*
-		 * finalAssoc = new ColorProcessor(width, height); finalAssoc.invert();
-		 * assoc = new ColorProcessor(width, height); assoc.invert();
-		 */
-
-		// ToDo:
-		// - handle points at joints (weights, ignore them, fit ellipsoids)
-		// - draw principal axis of all rigid parts P and draw the intersection
-		// as joints
+		IJ.log("Merging done!");
 
 		IJ.log("Number of clusters: " + subclusters.size());
 		IJ.log("Number of rigid parts: " + mergedParts.size());
-
-		Visualize.colorClusters(subclusters, "Cluster Segmentation");
-		Visualize.colorClusters(mergedParts, "Rigid parts");
-
-		ColorProcessor inputPoints = new ColorProcessor(width, height);
-		inputPoints.invert();
-
-		Visualize.showImage(inputPoints, "input points");
-
-		ColorProcessor inputPoints_noNoise = new ColorProcessor(width, height);
-		inputPoints_noNoise.invert();
-
-		Visualize.drawPoints(inputPoints_noNoise, c1.getPoints(), Color.black);
-		Visualize.drawPoints(inputPoints_noNoise, c2.getPoints(), Color.black);
-
-		Visualize.showImage(inputPoints_noNoise, "input points");
-
-		Visualize.showImage(finalAssoc, "Final Associations");
-		Visualize.showImage(assoc, "Associations");
-
+		
+		showResults();
 	}
+	
+	/**
+	 * method to visualize all results
+	 */
+	public void showResults(){
+		if(Input.showClusters){
+			Visualize.colorClusters(subclusters, "Cluster Segmentation");
+		}
+		
+		if(Input.showRigidParts){
+			Visualize.colorClusters(mergedParts, "RigidParts");
+		}
+		
+		if(Input.showInputCloud){
+			ColorProcessor inputPoints_1 = new ColorProcessor(width, height);
+			inputPoints_1.invert();
+			
+			ColorProcessor inputPoints_2 = new ColorProcessor(width, height);
+			inputPoints_2.invert();
 
+			Visualize.drawPoints(inputPoints_1, c1.getPoints(), Color.black);
+			Visualize.drawPoints(inputPoints_2, c2.getPoints(), Color.black);
+
+			Visualize.showImage(inputPoints_1, "Input points 1");
+			Visualize.showImage(inputPoints_2, "Input points 2");
+		}
+
+		if(Input.showAssociations){
+			Visualize.showImage(finalAssoc, "Final Associations");
+		}
+	}
 }
