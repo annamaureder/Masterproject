@@ -282,7 +282,6 @@ public class Points2D_EllipseFitting implements PlugInFilter {
 	}
 	
 	private double calculateEllipse(List<double[]> points, PointsOrientation o){
-		
 		points = o.allignAxis();
 		points = Matrix.translate(points, -o.getCentroid()[0], -o.getCentroid()[1]);
 		
@@ -294,9 +293,7 @@ public class Points2D_EllipseFitting implements PlugInFilter {
 			error += tmp_error;
 
 		}
-		
 		return error;
-		
 	}
 
 	/**
