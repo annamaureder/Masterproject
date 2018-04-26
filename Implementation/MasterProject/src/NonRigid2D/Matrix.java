@@ -25,7 +25,6 @@ public class Matrix {
 	}
 
 	public static List<double[]> translate(List<double[]> points, double translateX, double translateY) {
-
 		List<double[]> translatedPoints = new ArrayList<double[]>();
 
 		double[][] T = new double[][] { { 1, 0, translateX }, { 0, 1, translateY }, { 0, 0, 1.0 } };
@@ -39,27 +38,19 @@ public class Matrix {
 			else {
 				translatedPoints.add(null);
 			}
-			
 		}
-
 		return translatedPoints;
-
 	}
 
 	public static List<double[]> rotate(List<double[]> points, double angle) {
-
 		List<double[]> rotatedPoints = new ArrayList<double[]>();
 
 		double[][] R = new double[][] { { Math.cos(angle), -Math.sin(angle), 0 },
 				{ Math.sin(angle), Math.cos(angle), 0 }, { 0, 0, 1 } };
 
 		for (int i = 0; i < points.size(); i++) {
-
 			rotatedPoints.add(Matrix.multiplication(R, points.get(i)));
-
 		}
-
 		return rotatedPoints;
 	}
-
 }

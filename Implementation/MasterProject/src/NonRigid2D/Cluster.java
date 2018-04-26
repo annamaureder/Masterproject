@@ -137,13 +137,17 @@ public class Cluster {
 		return moment;
 	}
 
-	public List<double[]> alignAxis() {
+	public List<double[]> alignAxis(double orientation) {
 		points = Matrix.translate(points, -centroid[0], -centroid[1]);
 		points = Matrix.rotate(points, -orientation);
 		points = Matrix.translate(points, centroid[0], centroid[1]);
 		orientation = 0;
 
 		return points;
+	}
+	
+	public List<double[]> alignAxis(){
+		return alignAxis(this.orientation);
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {

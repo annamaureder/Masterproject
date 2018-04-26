@@ -26,11 +26,9 @@ public class ClusterTree {
 	}
 
 	public ClusterTree(Cluster c1, Cluster c2) {
-
 		root = new Node(new Cluster[] { c1, c2 });
 		root.left = null;
 		root.right = null;
-
 	}
 
 	/**
@@ -41,7 +39,6 @@ public class ClusterTree {
 	 * @return segmented parts
 	 */
 	public List<Cluster[]> subdivide(Node node) {
-
 		cp = new ClosestPoint(node.cluster[0], node.cluster[1]);
 
 		if (iterations > 50) {
@@ -66,7 +63,6 @@ public class ClusterTree {
 	 * @param currentNode
 	 */
 	private void split(Node currentNode) {
-
 		Cluster[] c1 = currentNode.cluster[0].divideCluster();
 		Cluster[] c2 = currentNode.cluster[1].divideCluster();
 
@@ -81,7 +77,6 @@ public class ClusterTree {
 	 * @return mergedParts
 	 */
 	public List<Cluster[]> mergeClusters(List<Cluster[]> subclusters) {
-
 		List<Cluster[]> mergedParts = new ArrayList<Cluster[]>();
 
 		if (subclusters != null) {
