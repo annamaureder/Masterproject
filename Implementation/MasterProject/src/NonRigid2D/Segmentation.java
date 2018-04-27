@@ -116,6 +116,8 @@ public class Segmentation implements PlugInFilter {
 			Visualize.showImage(inputPoints_1, "Input points 1");
 			Visualize.showImage(inputPoints_2, "Input points 2");
 		}
+		if(Input.showAssociations){
 			Visualize.showImage(finalAssoc, "Final Associations");
+		}
 	}
 }

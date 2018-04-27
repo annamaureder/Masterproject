@@ -19,7 +19,7 @@ import ij.process.ImageProcessor;
 public class Cluster {
 
 	private List<double[]> points = new ArrayList<double[]>();
-	private double distanceThreshold = 10;
+	private double distanceThreshold = Input.distanceThreshold;
 	private int size;
 
 	private double[] centroid;
