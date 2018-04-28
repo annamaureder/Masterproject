@@ -26,7 +26,31 @@ Another improvement is the assurance that during the ICP procedure each point on
 
 \section{Segmentation of articulated objects}
 The initial approach fails with articulated objects, whose parts are not simple linked as a chain, but a rigid part can have more than two linking rigid parts. An example would be the skeleton of humans and most animals. As a result, the objects are simply too complex to linearly subdivide them.
-One improvement proposition is thereby the initial alignment of the object, that the largest rigid part is aligned.  A similar approach was taken during the LRP algorithm \cite{guo2016correspondence}. Then, recursively linked parts of this largest rigid part are detected. 
+One improvement proposition is thereby the initial alignment of the object, that the largest rigid part is aligned.  A similar approach was taken during the LRP algorithm \cite{guo2016correspondence}. Then, recursively linked parts of this largest rigid part are detected (see section \ref{LRP}).
+
+
+\section{Initial Alignment of the largest rigid part}
+\label{LRP}
+
+As opposed to recursively subdividing $C_1$ and $C_2$ into sub clusters, as an initial step the largest rigid part (LRP) is detected. From there, all other linked parts can be detected by region growing an reapplying the algorithm.
+
+\subsection{Functionality}
+As an initial step, the LRP algorithm attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ between them is the smallest in both directions. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to those point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest point cluster of $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected.align the two clusters according to their LRP.
+
+\begin{enumerate}
+	\item The PCA is adapted for the input clusters $C_1$ and $C_2$ to apply the same orientation. 
+	\item The ICP is conducted as a first guess to find a transformation $T_i$ for all cluster points from $C_1$ that results in the highest number of corresponding points $n$ in $C_2$, given the threshold $\tau$.
+	\item The RANSAC approach is applied on those corresponding points to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
+	\item The LRP is assigned to the resulting biggest point cluster.
+	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. The algorithm is then reapplied on those clusters until all rigid parts have been discovered.
+\end{enumerate}
+
+\subsection{Rigid part discovery}
+
+The remaining clusters from $C_1$ and $C_2$ that have not been registered yet are matched recursively by initiating with clusters connected to already matched parts. First, all matched parts are excluded from the input point clouds  \textit{G\textsubscript{s(l+1)}} = \textit{S\textsubscript{0}} - \textit{C\textsubscript{sl}} and \textit{G\textsubscript{t(l+1)}} = \textit{T\textsubscript{0}} - \textit{C\textsubscript{tl}} defining \textit{l} as the number of already matched parts \{1, ..., n\}, \textit{C\textsubscript{sl}}. For that clusters are formed, using region taking into account that they are attached to already registered parts. The algorithm explained is applied until all body parts have been discovered.
+
+\subsection{Steps}
+
 
 %%
 %TODO: TEST RESULTS!

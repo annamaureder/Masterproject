@@ -2,6 +2,7 @@ package LargestRigidPart;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import ij.IJ;
 import ij.process.ImageProcessor;
@@ -16,13 +17,13 @@ import ij.process.ImageProcessor;
  *
  */
 
-public class Cluster {
+public class Cluster implements Comparable<Cluster> {
 
 	private List<double[]> points = new ArrayList<double[]>();
-	private double distanceThreshold = Input.distanceThreshold;
 	private int size;
 
 	private double[] centroid;
+	private double[] joint;
 	private double orientation;
 	private int principalLength;
 	private int secondaryLength;
@@ -50,6 +51,7 @@ public class Cluster {
 	 */
 	public Cluster(Cluster c) {
 		this.points = c.points;
+		this.joint = c.joint;
 		this.size = c.size;
 		this.centroid = c.centroid;
 		this.orientation = c.orientation;
@@ -69,46 +71,16 @@ public class Cluster {
 				}
 			}
 		}
-
+		
 		if (Input.removeOutliers) {
 			IJ.log("Remove Noise");
-			pntlist = biggestCluster(pntlist);
+			List<Cluster> clusters = RegionGrowing.detectClusters(pntlist, null);
+			Collections.sort(clusters);
 			IJ.log("Removing done");
+			return clusters.get(0).points;
 		}
 
 		return pntlist;
-	}
-
-	private List<double[]> biggestCluster(List<double[]> allPoints) {
-		List<double[]> current = new ArrayList<double[]>();
-		List<double[]> maximum = new ArrayList<double[]>();
-
-		while (!allPoints.isEmpty()) {
-			current.add(allPoints.get(0));
-
-			for (int c = 0; c < current.size(); c++) {
-				allPoints.removeAll(current);
-				for (int i = 0; i < allPoints.size(); i++) {
-					if (distance(current.get(c), allPoints.get(i)) < distanceThreshold) {
-						current.add(allPoints.get(i));
-					}
-				}
-			}
-			allPoints.removeAll(current);
-
-			if (current.size() > maximum.size()) {
-				maximum = current;
-			}
-			current = new ArrayList<double[]>();
-		}
-		return maximum;
-	}
-
-	private double distance(double[] current, double[] point) {
-		double x = Math.abs(current[0] - point[0]);
-		double y = Math.abs(current[1] - point[1]);
-
-		return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 	}
 
 	private double[] calculateCentroid(List<double[]> points) {
@@ -236,65 +208,6 @@ public class Cluster {
 		return minPointIndex;
 	}
 
-	public Cluster[] divideCluster() {
-		List<double[]> left = new ArrayList<double[]>();
-		List<double[]> right = new ArrayList<double[]>();
-
-		Cluster rotatedCluster = new Cluster(this);
-		rotatedCluster.alignAxis();
-
-		if (Input.regionGrowing) {
-			int minPoint = getMinPoint(rotatedCluster);
-			double[] leftStart = this.points.get(minPoint);
-			right.addAll(this.points);
-			left = regionGrowing(right, leftStart, this.points.size()/2);
-			right.removeAll(left);
-		}
-
-		else {
-			for (int i = 0; i < this.getPoints().size(); i++) {
-				if (rotatedCluster.getPoints().get(i)[0] <= this.getCentroid()[0]) {
-					left.add(this.getPoints().get(i));
-				} else {
-					right.add(this.getPoints().get(i));
-				}
-			}
-		}
-		
-		IJ.log("Points: " + this.points.size());
-		IJ.log("left: " + left.size());
-		IJ.log("right: " + right.size());
-		
-		return new Cluster[] { new Cluster(left), new Cluster(right) };
-	}
-	
-	private List<double[]> regionGrowing(List<double[]> points, double[] start, int maxAmount){
-		List<double[]> region = new ArrayList<>();
-		region.add(start);
-		
-			for (int c = 0; c < region.size(); c++) {
-				points.removeAll(region);
-				for (int i = 0; i < points.size(); i++) {
-					if (distance(region.get(c), points.get(i)) < distanceThreshold) {
-						region.add(points.get(i));
-						if(region.size() == maxAmount){
-							return region;
-						}
-					}
-				}
-			}
-			return region;
-		}
-
-	public Cluster mergeClusters(Cluster c1) {
-		List<double[]> points = new ArrayList<double[]>();
-
-		points.addAll(this.getPoints());
-		points.addAll(c1.getPoints());
-
-		return new Cluster(points);
-	}
-
 	public List<double[]> getPoints() {
 		return points;
 	}
@@ -305,6 +218,20 @@ public class Cluster {
 
 	public double getOrientation() {
 		return orientation;
+	}
+	
+	public double[] getJoint() {
+		return joint;
+	}
+	
+	public void setJoint(double[] joint){
+		this.joint = joint;
+	}
+
+	@Override
+	public int compareTo(Cluster c) {
+		int size = c.points.size();
+        return size - this.points.size();
 	}
 
 }

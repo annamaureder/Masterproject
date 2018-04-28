@@ -47,9 +47,7 @@ public class Segmentation implements PlugInFilter {
 	// member variables
 
 	private ImagePlus im;
-	private ClusterTree tree;
-	private List<Cluster[]> subclusters;
-	private List<Cluster[]> mergedParts;
+	private List<Cluster[]> rigidParts;
 	
 	private Cluster c1;
 	private Cluster c2;
@@ -78,16 +76,10 @@ public class Segmentation implements PlugInFilter {
 
 		c1 = new Cluster(p1);
 		c2 = new Cluster(p2);
-
-		tree = new ClusterTree(c1, c2);
-		subclusters = tree.subdivide(tree.getRoot());
-		IJ.log("Subdividing done!");
-		mergedParts = tree.mergeClusters(subclusters);
-		IJ.log("Merging done!");
-
-		IJ.log("Number of clusters: " + subclusters.size());
-		IJ.log("Number of rigid parts: " + mergedParts.size());
 		
+		PartDetection detect = new PartDetection(c1, c2);
+		rigidParts = detect.getRigidParts();
+
 		showResults();
 	}
 	
@@ -95,12 +87,9 @@ public class Segmentation implements PlugInFilter {
 	 * method to visualize all results
 	 */
 	public void showResults(){
-		if(Input.showClusters){
-			Visualize.colorClusters(subclusters, "Cluster Segmentation");
-		}
 		
 		if(Input.showRigidParts){
-			Visualize.colorClusters(mergedParts, "RigidParts");
+			Visualize.colorClusters(rigidParts, "RigidParts");
 		}
 		
 		if(Input.showInputCloud){

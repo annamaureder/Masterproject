@@ -38,7 +38,7 @@ public class ClosestPoint {
 	private int amountC2;
 	private int amountPoints;
 
-	public ClosestPoint(Cluster c_i, Cluster c_j) {
+	public ClosestPoint(Cluster c_i, Cluster c_j, double matchPercentage) {
 		
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
@@ -177,7 +177,6 @@ public class ClosestPoint {
 		if (errorPerPoint < errorThreshold) {
 			return true;
 		}
-
 		return false;
 	}
 	
@@ -190,7 +189,6 @@ public class ClosestPoint {
 			avgX += points.get(i)[0];
 			avgY += points.get(i)[1];
 		}
-
 		return new double[] { avgX / points.size(), avgY / points.size() };
 	}
 
