@@ -9,7 +9,6 @@ import ij.IJ;
 import ij.gui.ShapeRoi;
 import ij.process.ColorProcessor;
 import procrustes.ProcrustesFit;
-import prototyping.ICP;
 
 /**
  * This plugin takes as input two point clouds c1 and c2 and returns the largest
@@ -39,10 +38,13 @@ public class PartDetection {
 	}
 
 	private void run() {
-		denseCorrespondances_c1 = new ClosestPoint(c_i, c_j, 50).getTransformedPoints();
-		denseCorrespondances_c2 = new ClosestPoint(c_i, c_j, 50).getAssociatedPoints();
 		
+		ClosestPoint cp = new ClosestPoint(c_i, c_j);
 		
+		denseCorrespondances_c1 = cp.getReferencePoints();
+		denseCorrespondances_c2 = cp.getTargetPoints();
+		
+		IJ.log("Finished!");
 		
 		
 		//Create recursive loop to detect all lrps of C1 and C2.

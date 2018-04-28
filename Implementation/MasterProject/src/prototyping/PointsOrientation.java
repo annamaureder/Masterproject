@@ -2,7 +2,7 @@ package prototyping;
 
 import java.util.List;
 
-import NonRigid2D.Matrix;
+import NonRigid2D.Matrix1;
 import ij.IJ;
 import ij.process.ImageProcessor;
 
@@ -43,9 +43,9 @@ public class PointsOrientation {
 
 	public List<double[]> allignAxis() {
 		
-		points = Matrix.translate(points, -centroid[0], -centroid[1]);
-		points = Matrix.rotate(points, -orientation);
-		points = Matrix.translate(points, centroid[0], centroid[1]);
+		points = Matrix1.translate(points, -centroid[0], -centroid[1]);
+		points = Matrix1.rotate(points, -orientation);
+		points = Matrix1.translate(points, centroid[0], centroid[1]);
 		
 		orientation = 0;
 		

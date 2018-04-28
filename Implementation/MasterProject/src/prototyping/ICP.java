@@ -27,7 +27,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
-import NonRigid2D.Matrix;
+import NonRigid2D.Matrix1;
 
 
 /**
@@ -73,8 +73,8 @@ public class ICP {
 		 */
 		
 		
-		List<double[]> points1_origin = Matrix.translate(points1, -c1[0], -c1[1]);
-		List<double[]> points2_origin = Matrix.translate(points2, -c2[0], -c2[1]);
+		List<double[]> points1_origin = Matrix1.translate(points1, -c1[0], -c1[1]);
+		List<double[]> points2_origin = Matrix1.translate(points2, -c2[0], -c2[1]);
 		
 		/*
 		 * Step 2 - associate Points
@@ -89,7 +89,7 @@ public class ICP {
 			
 			//recalculate Transformation for "best fit"
 				
-			tmp_transformation = Matrix.rotate(points1_origin, (i/180.0) * Math.PI);
+			tmp_transformation = Matrix1.rotate(points1_origin, (i/180.0) * Math.PI);
 			tmp_association = getAssociation(tmp_transformation, points2_origin);	
 			
 			if (tmp_error < error) {
@@ -101,8 +101,8 @@ public class ICP {
 			i++;
 		}
 		
-		associatedPoints = Matrix.translate(associatedPoints, c2[0], c2[1]);
-		transformedPoints = Matrix.translate(transformedPoints, c2[0], c2[1]);
+		associatedPoints = Matrix1.translate(associatedPoints, c2[0], c2[1]);
+		transformedPoints = Matrix1.translate(transformedPoints, c2[0], c2[1]);
 		
 		ProcrustesFit pro = new ProcrustesFit();
 		pro.fit(points1, associatedPoints);

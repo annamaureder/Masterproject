@@ -111,15 +111,15 @@ public class Cluster implements Comparable<Cluster> {
 
 	public List<double[]> alignAxis(double orientation) {
 		points = Matrix.translate(points, -centroid[0], -centroid[1]);
-		points = Matrix.rotate(points, -orientation);
+		points = Matrix.rotate(points, orientation);
 		points = Matrix.translate(points, centroid[0], centroid[1]);
-		orientation = 0;
+		this.orientation += orientation;
 
 		return points;
 	}
 	
 	public List<double[]> alignAxis(){
-		return alignAxis(this.orientation);
+		return alignAxis(-this.orientation);
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {

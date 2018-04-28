@@ -8,25 +8,25 @@ import java.util.ArrayList;
 
 public class ClusterTree {
 
-	private List<Cluster[]> subclusters = new ArrayList<Cluster[]>();
+	private List<Cluster1[]> subclusters = new ArrayList<Cluster1[]>();
 	private Node root;
 	private int iterations = 1;
-	private ClosestPoint cp;
+	private ClosestPoint1 cp;
 
 	public class Node {
-		private Cluster[] cluster;
+		private Cluster1[] cluster;
 		private Node left;
 		private Node right;
 
-		public Node(Cluster[] c) {
+		public Node(Cluster1[] c) {
 			this.cluster = c;
 			right = null;
 			left = null;
 		}
 	}
 
-	public ClusterTree(Cluster c1, Cluster c2) {
-		root = new Node(new Cluster[] { c1, c2 });
+	public ClusterTree(Cluster1 c1, Cluster1 c2) {
+		root = new Node(new Cluster1[] { c1, c2 });
 		root.left = null;
 		root.right = null;
 	}
@@ -38,8 +38,8 @@ public class ClusterTree {
 	 * @param node
 	 * @return segmented parts
 	 */
-	public List<Cluster[]> subdivide(Node node) {
-		cp = new ClosestPoint(node.cluster[0], node.cluster[1]);
+	public List<Cluster1[]> subdivide(Node node) {
+		cp = new ClosestPoint1(node.cluster[0], node.cluster[1]);
 
 		if (iterations > 50) {
 			return subclusters;
@@ -63,11 +63,11 @@ public class ClusterTree {
 	 * @param currentNode
 	 */
 	private void split(Node currentNode) {
-		Cluster[] c1 = currentNode.cluster[0].divideCluster();
-		Cluster[] c2 = currentNode.cluster[1].divideCluster();
+		Cluster1[] c1 = currentNode.cluster[0].divideCluster();
+		Cluster1[] c2 = currentNode.cluster[1].divideCluster();
 
-		currentNode.left = new Node(new Cluster[] { c1[0], c2[0] });
-		currentNode.right = new Node(new Cluster[] { c1[1], c2[1] });
+		currentNode.left = new Node(new Cluster1[] { c1[0], c2[0] });
+		currentNode.right = new Node(new Cluster1[] { c1[1], c2[1] });
 	}
 
 	/**
@@ -76,35 +76,35 @@ public class ClusterTree {
 	 * @param subclusters
 	 * @return mergedParts
 	 */
-	public List<Cluster[]> mergeClusters(List<Cluster[]> subclusters) {
-		List<Cluster[]> mergedParts = new ArrayList<Cluster[]>();
+	public List<Cluster1[]> mergeClusters(List<Cluster1[]> subclusters) {
+		List<Cluster1[]> mergedParts = new ArrayList<Cluster1[]>();
 
 		if (subclusters != null) {
 
-			Cluster toBeMergedC1 = subclusters.get(0)[0];
-			Cluster toBeMergedC2 = subclusters.get(0)[1];
+			Cluster1 toBeMergedC1 = subclusters.get(0)[0];
+			Cluster1 toBeMergedC2 = subclusters.get(0)[1];
 
 			for (int i = 1; i < subclusters.size(); i++) {
 
-				Cluster currentSegment1 = subclusters.get(i)[0];
-				Cluster currentSegment2 = subclusters.get(i)[1];
+				Cluster1 currentSegment1 = subclusters.get(i)[0];
+				Cluster1 currentSegment2 = subclusters.get(i)[1];
 
-				Cluster merged1 = toBeMergedC1.mergeClusters(currentSegment1);
-				Cluster merged2 = toBeMergedC2.mergeClusters(currentSegment2);
+				Cluster1 merged1 = toBeMergedC1.mergeClusters(currentSegment1);
+				Cluster1 merged2 = toBeMergedC2.mergeClusters(currentSegment2);
 
-				ClosestPoint cp = new ClosestPoint(merged1, merged2);
+				ClosestPoint1 cp = new ClosestPoint1(merged1, merged2);
 				if (cp.match()) {
 					toBeMergedC1 = merged1;
 					toBeMergedC2 = merged2;
 				}
 
 				else if (!cp.match()) {
-					mergedParts.add(new Cluster[] { toBeMergedC1, toBeMergedC2 });
+					mergedParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
 					toBeMergedC1 = currentSegment1;
 					toBeMergedC2 = currentSegment2;
 				}
 			}
-			mergedParts.add(new Cluster[] { toBeMergedC1, toBeMergedC2 });
+			mergedParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
 		}
 		return mergedParts;
 	}

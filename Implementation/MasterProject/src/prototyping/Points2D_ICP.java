@@ -27,7 +27,7 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
-import NonRigid2D.Matrix;
+import NonRigid2D.Matrix1;
 
 
 /**
@@ -98,8 +98,8 @@ public class Points2D_ICP implements PlugInFilter {
 		 */
 		
 		
-		List<double[]> points1_origin = Matrix.translate(points1, -o1.getCentroid()[0], -o1.getCentroid()[1]);
-		List<double[]> points2_origin = Matrix.translate(points2, -o2.getCentroid()[0], -o2.getCentroid()[1]);
+		List<double[]> points1_origin = Matrix1.translate(points1, -o1.getCentroid()[0], -o1.getCentroid()[1]);
+		List<double[]> points2_origin = Matrix1.translate(points2, -o2.getCentroid()[0], -o2.getCentroid()[1]);
 		
 		/*
 		 * Step 2 - associate Points
@@ -116,7 +116,7 @@ public class Points2D_ICP implements PlugInFilter {
 			
 			//recalculate Transformation for "best fit"
 				
-			transformedPoints = Matrix.rotate(points1_origin, (i/180.0) * Math.PI);
+			transformedPoints = Matrix1.rotate(points1_origin, (i/180.0) * Math.PI);
 			associatedPoints = getAssociation(transformedPoints, points2_origin);	
 			
 			ProcrustesFit pro = new ProcrustesFit();
@@ -141,8 +141,8 @@ public class Points2D_ICP implements PlugInFilter {
 		 * 
 		 */
 		
-		association = Matrix.translate(association, o2.getCentroid()[0], o2.getCentroid()[1]);
-		transformed = Matrix.translate(transformed, o2.getCentroid()[0], o2.getCentroid()[1]);
+		association = Matrix1.translate(association, o2.getCentroid()[0], o2.getCentroid()[1]);
+		transformed = Matrix1.translate(transformed, o2.getCentroid()[0], o2.getCentroid()[1]);
 		
 		ColorProcessor assoc = new ColorProcessor(ip.getWidth(), ip.getHeight());
 		assoc.invert();
