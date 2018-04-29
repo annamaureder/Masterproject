@@ -65,11 +65,6 @@ public class Segmentation implements PlugInFilter {
 			return;
 		}
 		
-		if(Input.showAssociations){
-			finalAssoc = new ColorProcessor(width, height); 
-			finalAssoc.invert();
-		}
-
 		ImageStack stack = im.getStack();
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
@@ -81,10 +76,6 @@ public class Segmentation implements PlugInFilter {
 		rigidParts = detect.getRigidParts();
 
 		//showResults();
-		
-		if(Input.showAssociations){
-			Visualize.showImage(finalAssoc, "Final Associations");
-		}
 	}
 	
 	/**

@@ -30,11 +30,15 @@ public class ClosestPoint {
 	private Map<Integer, Integer> targetAssociation;
 
 	private List<double[]> referencePoints;
-	private List<double[]> finalReferencePoints;
 	private List<double[]> targetPoints;
-	private List<double[]> finalTargetPoints;
+	
+	private List<double[]> finalReferenceAssoc;
+	private List<double[]> finalTargetAssoc;
+	
+	private List<double[]> finalTransformedPoints;
 
 	private Association associations;
+	private boolean reciprocalMatching = Input.reciprocalMatching;
 
 	protected class Association {
 		protected List<double[]> referencePoints;
@@ -62,7 +66,12 @@ public class ClosestPoint {
 				Integer targetIndex = entry.getValue();
 
 				if (targetIndex != -1 && target.containsKey(targetIndex)) {
-					if (target.get(targetIndex) == referenceIndex) {
+					if (reciprocalMatching && target.get(targetIndex) == referenceIndex) {
+						IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
+						referencePoints.add(originalReference.get(referenceIndex));
+						targetPoints.add(originalTarget.get(targetIndex));
+					}
+					else{
 						IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
 						referencePoints.add(originalReference.get(referenceIndex));
 						targetPoints.add(originalTarget.get(targetIndex));
@@ -84,27 +93,35 @@ public class ClosestPoint {
 		 * TODO: Orient around "joint" instead of centroid
 		 */
 
-
 		//initialOrientation();
+		//c_i.alignAxis(Math.PI - c_i.getOrientation());
+		
+		//TODO! Alignment
 		
 		c_i.alignAxis();
 		c_i.alignAxis(-c_j.getOrientation());
+		
 
 		referencePoints = Matrix.translate(c_i.getPoints(), c_j.getCentroid()[0] - c_i.getCentroid()[0],
 				c_j.getCentroid()[1] - c_i.getCentroid()[1]);
+		
+//		referencePoints = c_i.getPoints();
+		
 		targetPoints = c_j.getPoints();
 
 		// point association
 		sourceAssociation = new HashMap<>();
 		targetAssociation = new HashMap<>();
+		finalTransformedPoints = new ArrayList<>();
 		ProcrustesFit pro = new ProcrustesFit();
+		ColorProcessor results;
 
 		int iterations = 0;
 
 		while (tmp_error <= error && iterations < 10) {
 
-			ColorProcessor test = new ColorProcessor(Segmentation.width, Segmentation.height);
-			test.invert();
+			results = new ColorProcessor(Segmentation.width, Segmentation.height);
+			results.invert();
 
 			sourceAssociation = getAssociation(referencePoints, targetPoints);
 			targetAssociation = getAssociation(targetPoints, referencePoints);
@@ -122,45 +139,56 @@ public class ClosestPoint {
 				IJ.log("Size is 0 --> Return!");
 				return;
 			}
-			Visualize.drawPoints(test, referencePoints, Color.black);
-			Visualize.drawPoints(test, targetPoints, Color.blue);
-			Visualize.drawPoints(test, associations.referencePoints, Color.red);
-			Visualize.drawPoints(test, associations.targetPoints, Color.green);
-			Visualize.showImage(test, "Iteration: " + iterations);
+			Visualize.drawPoints(results, referencePoints, Color.black);
+			Visualize.drawPoints(results, targetPoints, Color.blue);
+			Visualize.drawPoints(results, associations.referencePoints, Color.red);
+			Visualize.drawPoints(results, associations.targetPoints, Color.green);
+			Visualize.showImage(results, "Iteration: " + iterations);
 
 			// calculate transformation between reference and target points
 			pro.fit(associations.targetPoints, associations.referencePoints);
 			tmp_error = pro.getError();
+			
 			IJ.log("error: " + tmp_error);
-
 			IJ.log("Rotation:" + pro.getR().getEntry(0, 0));
 			IJ.log("Transformation: " + pro.getT().getEntry(0) + "/" + pro.getT().getEntry(1));
-
-			if (tmp_error < error) {
-				error = tmp_error;
-				finalReferencePoints = associations.referencePoints;
-				finalTargetPoints = associations.targetPoints;
-			}
-
-			double[] centroid = calculateCentroid(finalReferencePoints);
-
+			
+			double[] centroid = calculateCentroid(associations.referencePoints);
+			
 			// apply transformation from procrustes
 			referencePoints = Matrix.translate(referencePoints, -centroid[0], -centroid[1]);
 			referencePoints = Matrix.rotate(referencePoints, Math.acos(pro.getR().getEntry(0, 0)));
 			referencePoints = Matrix.translate(referencePoints, centroid[0] + pro.getT().getEntry(0),
 					centroid[1] + pro.getT().getEntry(1));
 
+			if (tmp_error < error) {
+				error = tmp_error;
+				finalReferenceAssoc = associations.referencePoints;
+				finalTargetAssoc = associations.targetPoints;
+				finalTransformedPoints = referencePoints;
+			}
 			iterations++;
 		}
-
-		finalReferencePoints = Matrix.translate(finalReferencePoints, c_i.getCentroid()[0] - c_j.getCentroid()[0],
-				c_i.getCentroid()[1] - c_j.getCentroid()[1]);
+		
+//		finalReferenceAssoc = Matrix.translate(finalReferenceAssoc, c_i.getCentroid()[0] - c_j.getCentroid()[0],
+//				c_i.getCentroid()[1] - c_j.getCentroid()[1]);
+		
+		results = new ColorProcessor(Segmentation.width, Segmentation.height);
+		results.invert();
+		
+		Visualize.drawPoints(results, finalTransformedPoints, Color.blue);
+		Visualize.drawPoints(results, targetPoints, Color.red);
 
 		if (Input.showAssociations) {
-			Visualize.drawAssociations(Segmentation.finalAssoc, finalReferencePoints, finalTargetPoints);
-			Visualize.drawPoints(Segmentation.finalAssoc, finalReferencePoints, Color.blue);
-			Visualize.drawPoints(Segmentation.finalAssoc, finalTargetPoints, Color.red);
+			Visualize.drawAssociations(results, finalReferenceAssoc, finalTargetAssoc);
 		}
+		
+		String fileName = "LRP_" + distanceThreshold + "th_" + "iterations" + iterations;
+		if(reciprocalMatching){
+			fileName+= "_reciprocal";
+		}
+		
+		Visualize.showImage(results, fileName);
 	}
 
 	/**
@@ -231,9 +259,9 @@ public class ClosestPoint {
 		Cluster rotation2 = new Cluster(c_i);
 
 		rotation1.alignAxis();
-		rotation1.alignAxis(-c_j.getOrientation());
+		rotation1.alignAxis(c_j.getOrientation());
 
-		rotation2.alignAxis();
+		rotation2.alignAxis(Math.PI - c_i.getOrientation());
 		rotation2.alignAxis(c_j.getOrientation());
 		
 		IJ.log("Rotation 1: " + rotation1.getOrientation());
@@ -260,15 +288,15 @@ public class ClosestPoint {
 	}
 
 	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
-		return new Association(reference, target, c_i.getPoints(), targetPoints);
+		return new Association(reference, target, referencePoints, targetPoints);
 	}
 
 	public List<double[]> getTargetPoints() {
-		return finalTargetPoints;
+		return finalTargetAssoc;
 	}
 
 	public List<double[]> getReferencePoints() {
-		return finalReferencePoints;
+		return finalReferenceAssoc;
 	}
 
 }

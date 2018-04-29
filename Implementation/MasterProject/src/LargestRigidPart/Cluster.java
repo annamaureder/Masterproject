@@ -42,6 +42,7 @@ public class Cluster implements Comparable<Cluster> {
 		this.size = points.size();
 		this.centroid = calculateCentroid(points);
 		this.orientation = calculateOrientation();
+		IJ.log("orientation: " + orientation);
 		this.principalLength = getPrincipalRadius();
 		this.secondaryLength = getSecondaryRadius();
 	}
@@ -79,7 +80,6 @@ public class Cluster implements Comparable<Cluster> {
 			IJ.log("Removing done");
 			return clusters.get(0).points;
 		}
-
 		return pntlist;
 	}
 
@@ -96,7 +96,6 @@ public class Cluster implements Comparable<Cluster> {
 	}
 
 	private double calculateOrientation() {
-
 		return Math.atan2((2 * centralMoment(1, 1)), centralMoment(2, 0) - centralMoment(0, 2)) / 2.0;
 	}
 
