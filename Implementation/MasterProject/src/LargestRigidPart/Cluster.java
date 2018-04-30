@@ -42,9 +42,12 @@ public class Cluster implements Comparable<Cluster> {
 		this.size = points.size();
 		this.centroid = calculateCentroid(points);
 		this.orientation = calculateOrientation();
-		IJ.log("orientation: " + orientation);
 		this.principalLength = getPrincipalRadius();
 		this.secondaryLength = getSecondaryRadius();
+	}
+	
+	public Cluster(){
+		
 	}
 
 	/*
@@ -108,7 +111,7 @@ public class Cluster implements Comparable<Cluster> {
 		return moment;
 	}
 
-	public List<double[]> alignAxis(double orientation) {
+	public List<double[]> alignAxis(double orientation, double[] centroid) {
 		points = Matrix.translate(points, -centroid[0], -centroid[1]);
 		points = Matrix.rotate(points, orientation);
 		points = Matrix.translate(points, centroid[0], centroid[1]);
@@ -117,8 +120,8 @@ public class Cluster implements Comparable<Cluster> {
 		return points;
 	}
 	
-	public List<double[]> alignAxis(){
-		return alignAxis(-this.orientation);
+	public List<double[]> alignAxis(double[] centroid){
+		return alignAxis(-this.orientation, centroid);
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {
@@ -153,7 +156,7 @@ public class Cluster implements Comparable<Cluster> {
 
 	public int getPrincipalRadius() {
 		Cluster copy = new Cluster(this);
-		copy.alignAxis();
+		copy.alignAxis(copy.centroid);
 
 		int minX = Integer.MAX_VALUE;
 		int maxX = 0;
@@ -174,7 +177,7 @@ public class Cluster implements Comparable<Cluster> {
 
 	public int getSecondaryRadius() {
 		Cluster copy = new Cluster(this);
-		copy.alignAxis();
+		copy.alignAxis(copy.centroid);
 
 		int minY = Integer.MAX_VALUE;
 		int maxY = 0;

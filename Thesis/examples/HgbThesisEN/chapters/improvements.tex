@@ -28,81 +28,46 @@ Another improvement is the assurance that during the ICP procedure each point on
 The initial approach fails with articulated objects, whose parts are not simple linked as a chain, but a rigid part can have more than two linking rigid parts. An example would be the skeleton of humans and most animals. As a result, the objects are simply too complex to linearly subdivide them.
 One improvement proposition is thereby the initial alignment of the object, that the largest rigid part is aligned.  A similar approach was taken during the LRP algorithm \cite{guo2016correspondence}. Then, recursively linked parts of this largest rigid part are detected (see section \ref{LRP}).
 
-
-\section{Initial Alignment of the largest rigid part}
+\section{Largest rigid part}
 \label{LRP}
 
-As opposed to recursively subdividing $C_1$ and $C_2$ into sub clusters, as an initial step the largest rigid part (LRP) is detected. From there, all other linked parts can be detected by region growing an reapplying the algorithm.
+As opposed to recursively subdividing $C_1$ and $C_2$ into sub clusters, as an initial step the largest rigid part (LRP) is detected. From there, all other linked parts can be detected by region growing and reapplying the algorithm.
+The algorithm was applied on 3D point clouds by \ref{LRP}.
 
-\subsection{Functionality}
-As an initial step, the LRP algorithm attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ between them is the smallest in both directions. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to those point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest point cluster of $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected.align the two clusters according to their LRP.
+\subsection{Basic functionality}
+\label{functionalityLRP}
+As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ between them is the smallest in both directions. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+
+\subsection{Implementation steps}
+
+In order to re-implement the algorithm in 2D, modifications had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. As no local As no local descriptors are computed, the alignment depends on the ICP (see subsection \ref{correspondences}) General steps that are conducted are the following: 
 
 \begin{enumerate}
-	\item The PCA is adapted for the input clusters $C_1$ and $C_2$ to apply the same orientation. 
-	\item The ICP is conducted as a first guess to find a transformation $T_i$ for all cluster points from $C_1$ that results in the highest number of corresponding points $n$ in $C_2$, given the threshold $\tau$.
+	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to coincide their orientations. 
+	\item The ICP is conducted as a first guess to find a transformation $T_i$ for all cluster points from $C_1$ that result in the highest number of reciprocal corresponding points $n$ in $C_2$, given the threshold $\tau$.
 	\item The RANSAC approach is applied on those corresponding points to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
 	\item The LRP is assigned to the resulting biggest point cluster.
 	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. The algorithm is then reapplied on those clusters until all rigid parts have been discovered.
 \end{enumerate}
 
-\subsection{Rigid part discovery}
+\subsection{Detection of sparse correspondences}
+\label{correspondences}
 
-The remaining clusters from $C_1$ and $C_2$ that have not been registered yet are matched recursively by initiating with clusters connected to already matched parts. First, all matched parts are excluded from the input point clouds  \textit{G\textsubscript{s(l+1)}} = \textit{S\textsubscript{0}} - \textit{C\textsubscript{sl}} and \textit{G\textsubscript{t(l+1)}} = \textit{T\textsubscript{0}} - \textit{C\textsubscript{tl}} defining \textit{l} as the number of already matched parts \{1, ..., n\}, \textit{C\textsubscript{sl}}. For that clusters are formed, using region taking into account that they are attached to already registered parts. The algorithm explained is applied until all body parts have been discovered.
+Sparse correspondences of two input clusters $C_i$ and $C_j$ are achieved by applying the Iterative closest point algorithm. Thereby, corresponding points of $C_i$ and $C_j$ are only considered, if they are \textit{reciprocal} (see subsection \ref{functionalityLRP}). Furthermore, the euclidean distance between two cluster points $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ must be below a predefined threshold $\tau$. As a consequence, points being located far away from each other do not contribute to the alignment of $C_i$ and $C_j$ and are not stored as correspondence. Those are assumed to be small rigid parts with different transformations.
 
-\subsection{Steps}
+\subsection{Detection of the LRP}
+\label{detectionLRP}
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. The clusters are thereby grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output.
+
+\subsection{Cluster detection}
+\label{cluster}
+After successfully detecting the largest rigid part of the input clusters $C_i$ and $C_j$ all unclustered points are outlined by taking all points of $C_1$ and $C_2$ apart from all earlier detected largest rigid parts. Potential linked rigid parts are grown from the last detected largest rigid part as seed taking all unclustered points as input. In case of detecting more than one cluster, which might be the case of region growing from the torso, it must be verified which clusters of $C_1$ and $C_2$ match and taken again as input for the whole algorithm. Thereby, the actual seed the clusters are grown from are stored as joints. The clusters with the closest joints are then selected to match....
 
 
-%%
-%TODO: TEST RESULTS!
-%%
-Implementing those improvements, the algorithm can be considerably improved for simple objects tested before. But still, further considerations have to be done for articulated objects.
+
+%TODO: write push/pop algoirthm to recursively detect linked parts
+%TODO: PICTURES
 
 
-\section{Points-to-Ellipse fitting}
 
-In order to determine, where region growing stops, the collected points are checked to fit an ellipsoid.
 
-\subsection{Algorithm}
-
-This algorithm only requires one point cloud. The basic idea is to segment the non-rigid object  \textit{S\textsubscript{0}} into its rigid parts \textit{part\textsubscript{1}} and {part\textsubscript{2}} by fitting ellipses to its rigid parts. 
-\textit{S\textsubscript{0}} is divided perpendicular to its principal axis \textit{p\textsubscript{0}} into two assumed rigid parts \textit{S\textsubscript{left}} and \textit{S\textsubscript{right}}, initially defining the divider \textit{d} with the secondary axis \textit{s\textsubscript{0}}. The points of \textit{S\textsubscript{left}} and \textit{S\textsubscript{right}} are verified to 
-form an ellipse by using its formular
-
-\begin{equation*}
-\dfrac{x^2}{r_1^2} + \dfrac{y^2}{r_2^2} = 1
-\end{equation*}
-
-Assuming to verify \textit{S\textsubscript{left}} forming an ellipse, \textit{r\textsubscript{1}} is half the length of the principal axis \textit{p\textsubscript{left}} of \textit{S\textsubscript{left}} through its centroid \textit{c\textsubscript{left}}. Furthermore, \textit{r\textsubscript{2}} is half the length of the secondary axis {s\textsubscript{left}} of \textit{S\textsubscript{left}}. Thereby,the centroid \textit{c\textsubscript{left}} needs to be located in the origin (0,0). 
-Now, to check whether a point \textit{pt\textsubscript{i}} of \textit{S\textsubscript{left}} is located on the ellipse, the formular is remodeled and its x values is applied. 
-
-\begin{equation*}
-	(1 -  \dfrac{x^2}{r_1^2}) \cdot {r_2^2} = y^2
-\end{equation*}
-
-The resulting y-value of the ellipse is compared to the points actual y-value. Given a certain threshold $\tau$ a point either accounts to the number of total points lying on the ellipse \textit{n}, or not.
-
-\begin{equation*}
-	 n = \sum_{i=0}^{m}\{pt_i \vert \quad \|pt_i.y^2 - y^2 \| < \tau\}
-\end{equation*}
-
-The algorithm is repeated by sliding \textit{d} in the direction of the highest error \textit{e}. To be continued until the total error \textit{e\textsubscript{total} = e\textsubscript{left} + \textsubscript{right}} reaches its minimum.
-
-\subsection{Steps}
-
-\begin{enumerate}
-	\item The centroid \textit{c\textsubscript{0}}  of \textit{S\textsubscript{0}} is computed.
-	
-	\item The principal axis \textit{p\textsubscript{0}} is computed through \textit{c\textsubscript{0}} and \textit{S\textsubscript{0}} horizontally oriented. 
-	
-	\item The secondary axis \textit{s\textsubscript{0}}  perpendicular to \textit{p\textsubscript{0}} through \textit{c\textsubscript{0}} is computed.
-	
-	\item The divider \textit{d} is initialized with the secondary axis \textit{s\textsubscript{0}} to segment \textit{S\textsubscript{0}} into two assumed rigid parts .
-	
-	\item The points of \textit{S\textsubscript{0}} are either allocated to \textit{S\textsubscript{left}} or \textit{S\textsubscript{right}} depending on its position to \textit{d\textsubscript{0}}.
-	
-	\item The ellipse formular is applied on \textit{S\textsubscript{left}} and \textit{S\textsubscript{right}}.
-	
-	\item An error \textit{e\textsubscript{left}} and \textit{e\textsubscript{right}} is obtained implying how many points of \textit{S\textsubscript{left}} and \textit{S\textsubscript{right}} form an ellipse. 
-	
-	\item The divider \textit{d} is shifted to the direction of the highest error. To be continued from step 5 until the total error \textit{e\textsubscript{total}} doesn't get smaller. 
-\end{enumerate}

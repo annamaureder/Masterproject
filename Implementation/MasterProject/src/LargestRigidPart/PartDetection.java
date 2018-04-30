@@ -88,7 +88,7 @@ public class PartDetection {
 //			denseCorrespondances.add(denseCorrespondances_c1);
 //			denseCorrespondances.add(denseCorrespondances_c2);
 //
-//			Cluster[] currentLrps = new LargestRigidPart(c_i, c_j, denseCorrespondances).getClusters();
+//			Cluster[] currentLrps = new LargestRigidPart(c_i, c_j, denseCorrespondances).getLargestRigidParts();
 //			currentLrpReference = currentLrps[0];
 //			currentLrpTarget = currentLrps[1];
 //			
