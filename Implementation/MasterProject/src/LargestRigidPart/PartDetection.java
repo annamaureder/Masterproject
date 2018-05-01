@@ -106,7 +106,6 @@ public class PartDetection {
 			unclusteredReference.remove(lrp[0].getPoints());
 			unclusteredTarget.remove(lrp[1].getPoints());
 		}
-
 	}
 	
 	private void pushMatchingClusters(){
@@ -118,7 +117,6 @@ public class PartDetection {
 				Cluster target = matchingTarget(reference);
 				clusters.push(new Cluster[]{reference, target});
 			}
-			
 			IJ.log("Cluster size: " + clusters.size());;
 		}
 	}

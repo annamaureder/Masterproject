@@ -95,7 +95,7 @@ As a next step, adjacent sub clusters from $\mathcal{L}$ are iteratively merged 
 
 \subsection{Joint/skeleton estimation}
 
-After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are linked with joints. Their locations are thereby calculated by computing the points of intersection of all principal axis of $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axis might not represent the skeleton of an object. For this reason another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation an object point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select points that are located near a joint allocated to more neighboring rigid parts and from those selected points the location of a joint is computed. 
+After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are linked with joints. Their locations are thereby calculated by computing the points of intersection of all principal axis of $\mathcal{P} = \{ {P_1,\ldots,P_m}\}$. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axis might not represent the skeleton of an object. For this reason another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation an object point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select points that are located near a joint allocated to more neighboring rigid parts and from those selected points the location of a joint is computed. 
 
 \begin{figure}[H]
 	\centering\small
@@ -111,7 +111,7 @@ After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are
 
 \chapter{Implementation and Results}
 
-After planning the algorithm, it was initially implemented and for 2D point clouds, in order to be able to focus solely on developing and testing. Subsequently, the realization for 3D point clouds followed.
+After planning the algorithm, it was initially implemented and for 2D point clouds, in order to be able to focus solely on developing and testing.
 
 \section{Chosen environment}
 
@@ -122,12 +122,12 @@ The initial approach was implemented in Java, using ImageJ as processing library
 	\item available plug-in for image processing
 \end{itemize}
 %%
-As ImageJ is mainly used for 2D use cases, another implementation is planned in 3D by using PCL in C++. As a result, the attention can be brought to segmentation and visualization in 3D.
+As ImageJ is mainly used for 2D use cases, another implementation would be possible in 3D using PCL in C++. As a result, the attention can be brought to segmentation and visualization in 3D.
 
 \section{Architecture}
 
 The initial algorithm was realized with four classes to divide the ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.
-The main class \texttt{Segmentation} solely requires a stack of two point clouds in 2D.  A class \texttt{Cluster} was implemented to store the cluster's points, its centroid, the orientation $\theta$ as well as the principal and secondary axes. For the subdividing, a \texttt{ClusterTree} was implemented to simultaneously divide the main clusters $C_1$ and $C_2$ into sub clusters (see algorithm \ref{alg:subdivide}). Each node $N$ contains thereby two associated clusters $C_{1,i}$ and $C_{2,i}$. For the clustering and merging of clusters a \texttt{List<Clusters>} was used to dynamically add and remove Clusters. Furthermore, a class \texttt{ICP} was created, which takes two clusters to be matched as input. First, the noise removal and cluster detection is done in the \texttt{Cluster} class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
+The main class \texttt{Segmentation} solely requires a stack of two point clouds in 2D. As a first step, possible noise is removed from the input mesh $M$ (see algorithm \ref{alg:noiseRemoval}). The algorithm returns the biggest point cluster $C_i$ that is assumed to be an articulated object. A class \texttt{Cluster} was implemented to store the cluster's points, its centroid, the orientation $\theta$ as well as the principal and secondary axes. For the subdividing, a \texttt{ClusterTree} was implemented to simultaneously divide the main clusters $C_1$ and $C_2$ into sub clusters (see algorithm \ref{alg:subdivide}). Each node $N$ contains thereby two associated clusters $C_{1,i}$ and $C_{2,i}$. For the clustering and merging of clusters a \texttt{List<Clusters>} was used to dynamically add and remove Clusters. Furthermore, a class \texttt{ICP} was created, which takes two clusters to be matched as input, using Procrustes fitting. First, the noise removal and cluster detection is done in the \texttt{Cluster} class. As a next step, the detected main clusters $m$  $C_1,\cdots,C_{m}$ are taken as input with an empty list to get the matching sub clusters of all input clusters. Following, the divide and conquer algorithm (see algorithm \ref{alg:subdivide}) takes advantage of the ICP class to iteratively register two sub clusters of two main clusters $C_{i},\cdots,C_{j}$. As the segmentation is done depth first the verified sub clusters are stored in the list from left to right. The returned segmented list is taken as input to iteratively merge the sub clusters to detected rigid parts (see algorithm \ref{alg:merging}). As a return we get a list with sub clusters representing the rigid parts of the input clusters. Subsequently, the Visualization class is used, to color the cluster points differently and draw PCA related components, like the axis and interference points of different rigid parts.
 
 %TODO: add code snippets
 
@@ -137,6 +137,39 @@ The main class \texttt{Segmentation} solely requires a stack of two point clouds
 	\caption{UML diagram of the classes related to the implementation of the algorithm.}
 	\label{fig:UML}
 \end{figure}
+
+\begin{algorithm}[tbp]
+	\caption{Noise removal of an input point mesh $M$ in form a set of unclustered points $\{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$ by region growing. The first point of $M$ is used as seed and grows a cluster $C_{current}$ by iteratively adding neighboring points located inside a threshold $\tau$. Once, all points have been examined, the largest cluster $C_{max}$ is returned and defined as articulated object to be segmented.}
+	
+	\begin{algorithmic}[1]     % [1] = all lines are numbered
+		\label{noiseRemoval}
+		
+		\Procedure{RemoveNoise}{$M$} 
+		\State $\mathit{C_{max}} \gets ()$
+		\State $\mathit{C_{current}} \gets ()$
+		\State $n \gets \mathit{sizeOf}(M)$
+		\State $m \gets \mathit{sizeOf}(C_{current})$
+		
+		\While {$n$ > 0}
+		\State $\mathit{c_{current}} \gets \mathit{c_{current}} + \boldsymbol{u}_1$
+		\For{$i = 1,\ldots,m$}
+		\State $M \gets M - C_{current}$
+			\For{$j = 1,\ldots,n$}
+			\If {\Call{$d$}{$\boldsymbol{p}_i, \boldsymbol{u}_j}< \tau$}
+			\State $C_{current} \gets C_{current} + \boldsymbol{u}_j$
+			\EndIf
+			\EndFor
+		\EndFor
+		\State $M \gets M - C_{current}$
+		\If{$m > \mathit{sizeOf}(C_{max})$}
+		\State $C_{max} \gets C_{current}$
+		\EndIf
+		\State $C_{current} \gets ()$
+		\EndWhile
+		\State\Return $C_{max}$
+		\EndProcedure	
+	\end{algorithmic}
+\end{algorithm}
 
 \begin{algorithm}[tbp]
 	\caption{Recursive subdividing of two clusters $C_1$ and $C_2$, in the form of a Node $\mathit{N}$ in a Tree, into matching sub clusters. The ICP is applied on two corresponding clusters in $\mathit{N}$ to verify them to match, in which case they are stored in a list. Otherwise, if the two clusters do not match, they are further subdivided. The list with all matching subclusters is returned once the subdivide algorithm terminates.}
