@@ -179,12 +179,12 @@ public class LargestRigidPart {
 			ref.add(points1.get(entry.getKey()));
 			target.add(points2.get(entry.getValue()));
 		}
-		for (Cluster cluster : RegionGrowing.detectClusters(ref, null)) {
+		for (Cluster cluster : RegionGrowing.detectClusters(ref)) {
 			if (cluster.getPoints().size() > biggestClusterRef.getPoints().size()) {
 				biggestClusterRef = cluster;
 			}
 		}
-		for (Cluster cluster : RegionGrowing.detectClusters(target, null)) {
+		for (Cluster cluster : RegionGrowing.detectClusters(target)) {
 			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
 				biggestClusterTarget = cluster;
 			}

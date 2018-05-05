@@ -78,7 +78,7 @@ public class Cluster implements Comparable<Cluster> {
 		
 		if (Input.removeOutliers) {
 			IJ.log("Remove Noise");
-			List<Cluster> clusters = RegionGrowing.detectClusters(pntlist, null);
+			List<Cluster> clusters = RegionGrowing.detectClusters(pntlist);
 			Collections.sort(clusters);
 			IJ.log("Removing done");
 			return clusters.get(0).points;

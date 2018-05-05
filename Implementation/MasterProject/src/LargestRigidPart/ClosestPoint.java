@@ -66,7 +66,6 @@ public class ClosestPoint {
 		}
 
 		public void comparePoints() {
-
 			referencePoints = new ArrayList<>();
 			targetPoints = new ArrayList<>();
 			finalAssociations = new HashMap<>();
@@ -75,7 +74,7 @@ public class ClosestPoint {
 				Integer referenceIndex = entry.getKey();
 				Integer targetIndex = entry.getValue();
 
-				if (targetIndex != -1 && target.containsKey(targetIndex)) {
+				if (target.containsKey(targetIndex)) {
 					if (reciprocalMatching && target.get(targetIndex) == referenceIndex) {
 						if (logging)
 							IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
@@ -107,14 +106,14 @@ public class ClosestPoint {
 		if (c_i.getJoint() != null) {
 			c_i.alignAxis(c_i.getJoint());
 			c_i.alignAxis(c_j.getOrientation(), c_i.getJoint());
-			
+
 			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getJoint()[0] - c_i.getJoint()[0],
 					c_j.getJoint()[1] - c_i.getJoint()[1]);
-			
+
 		} else {
 			c_i.alignAxis(c_i.getCentroid());
 			c_i.alignAxis(c_j.getOrientation(), c_i.getCentroid());
-			
+
 			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getCentroid()[0] - c_i.getCentroid()[0],
 					c_j.getCentroid()[1] - c_i.getCentroid()[1]);
 		}
@@ -188,10 +187,6 @@ public class ClosestPoint {
 			iterations++;
 		}
 
-		// finalReferenceAssoc = Matrix.translate(finalReferenceAssoc,
-		// c_i.getCentroid()[0] - c_j.getCentroid()[0],
-		// c_i.getCentroid()[1] - c_j.getCentroid()[1]);
-
 		results = new ColorProcessor(Segmentation.width, Segmentation.height);
 		results.invert();
 
@@ -206,7 +201,6 @@ public class ClosestPoint {
 		if (reciprocalMatching) {
 			fileName += "_reciprocal";
 		}
-
 		Visualize.showImage(results, fileName);
 	}
 
@@ -223,7 +217,17 @@ public class ClosestPoint {
 
 		for (int i = 0; i < originalPositions.size(); i++) {
 			int closestPoint = closestPoint(originalPositions.get(i), targetPositions);
-			associations.put(i, closestPoint);
+
+			double distanceToJoint = 0;
+			double distanceJointCentroid = 0;
+
+			if (c_i.getJoint() != null) {
+				distanceToJoint = distance(originalPositions.get(i), c_i.getJoint());
+				distanceJointCentroid = distance(c_i.getJoint(), c_i.getCentroid());
+			}
+			if (closestPoint != -1 && distanceToJoint <= distanceJointCentroid) {
+				associations.put(i, closestPoint);
+			}
 		}
 		return associations;
 	}
@@ -312,17 +316,11 @@ public class ClosestPoint {
 		return new Association(reference, target, referencePoints, targetPoints);
 	}
 
-	public List<double[]> getTargetPoints() {
-		return finalTargetAssoc;
-	}
-
-	public List<double[]> getReferencePoints() {
-		return finalReferenceAssoc;
-	}
-
-	// TODO
 	public Map<Integer, Integer> getCorrespondences() {
 		return finalAssociation;
+	}
 
+	private double distance(double[] point1, double[] point2) {
+		return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
 	}
 }

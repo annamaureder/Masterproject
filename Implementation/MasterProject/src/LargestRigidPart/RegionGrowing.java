@@ -22,30 +22,21 @@ public class RegionGrowing {
 	 *            Seed points
 	 * @return
 	 */
-	public static List<Cluster> detectClusters(List<double[]> allPoints, List<double[]> seedPoints) {
+	public static List<Cluster> detectClusters(List<double[]> allPoints) {
 
-		List<double[]> seeds = new ArrayList<>();
 		List<double[]> inputPoints = new ArrayList<>();
-
 		inputPoints.addAll(allPoints);
-
-		if (seedPoints == null) {
-			seeds.addAll(allPoints);
-		} else {
-			seeds.addAll(seedPoints);
-		}
 
 		List<double[]> current = new ArrayList<>();
 		List<Cluster> clusters = new ArrayList<>();
 		double[] seed;
 
 		while (!inputPoints.isEmpty()) {
-			seed = seeds.get(0);
+			seed = inputPoints.get(0);
 			current.add(seed);
 
 			for (int c = 0; c < current.size(); c++) {
 				inputPoints.removeAll(current);
-				seeds.removeAll(current);
 				for (int i = 0; i < inputPoints.size(); i++) {
 					if (distance(current.get(c), inputPoints.get(i)) < distanceThreshold) {
 						current.add(inputPoints.get(i));
@@ -53,19 +44,13 @@ public class RegionGrowing {
 				}
 			}
 			inputPoints.removeAll(current);
-			seeds.removeAll(current);
 
 			if (current.size() > MIN_SIZE) {
 				Cluster c = new Cluster(current);
-
-				if (seedPoints != null) {
-					c.setJoint(seed);
-				}
 				clusters.add(c);
 			}
 			current = new ArrayList<double[]>();
 		}
-
 		return clusters;
 	}
 
