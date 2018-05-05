@@ -16,6 +16,7 @@ import org.apache.commons.math3.linear.SingularValueDecomposition;
 import ij.IJ;
 import ij.gui.ShapeRoi;
 import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 import procrustes.ProcrustesFit;
 import prototyping.ICP;
 
@@ -30,25 +31,26 @@ import prototyping.ICP;
 public class LargestRigidPart {
 
 	// variable declaration
+	private boolean logging = Input.logging;
 
 	private Cluster c_i;
 	private Cluster c_j;
 
 	List<double[]> points1;
 	List<double[]> points2;
-	
+
 	List<double[]> randomPoints1;
 	List<double[]> randomPoints2;
 
 	private final int numIterations = 1000;
 	private final int numRandom = 3;
 
-	private double distanceThreshold = Input.distanceThresholdICP;
+	private double distanceThreshold = Input.distanceThresholdRANSAC;
 
 	private Cluster[] lrp;
 	Cluster biggestClusterRef = new Cluster();
 	Cluster biggestClusterTarget = new Cluster();
-	
+
 	private Map<Integer, Integer> correspondances;
 
 	public LargestRigidPart(Cluster c_i, Cluster c_j, Map<Integer, Integer> correspondances) {
@@ -65,49 +67,89 @@ public class LargestRigidPart {
 		points2 = c_j.getPoints();
 
 		for (int n = 0; n < numIterations; n++) {
-			
+			if (logging)
+				IJ.log("RANSAC iteration #" + n);
+
 			randomPoints1 = new ArrayList<>();
 			randomPoints2 = new ArrayList<>();
 			getRandomPoints(numRandom);
 
+			if (logging)
+				IJ.log("Random points calculated");
+
 			// points from c1
-			List<double[]> pointsA = new ArrayList<>();
+			List<double[]> pointsA = randomPoints1;
 			double[][] affineMatrix = fillTransformMatrix(pointsA);
+
+			if (logging)
+				IJ.log("affine Matrix filled!");
 
 			// points from c2
 			double[] pointsB = new double[] { randomPoints2.get(0)[0], randomPoints2.get(0)[1], randomPoints2.get(1)[0],
 					randomPoints2.get(1)[1], randomPoints2.get(2)[0], randomPoints2.get(2)[1] };
 
+			if (logging)
+				IJ.log("points B filed!");
+
 			DecompositionSolver solver = new SingularValueDecomposition(MatrixUtils.createRealMatrix(affineMatrix))
 					.getSolver();
-			RealVector affineVector = solver.solve(MatrixUtils.createRealVector(pointsB));
+			RealVector affineTransformation = solver.solve(MatrixUtils.createRealVector(pointsB));
 
-//			double[][] transformationMatrix = {
-//					{ affineVector.getEntry(0), affineVector.getEntry(1), affineVector.getEntry(2) },
-//					{ affineVector.getEntry(3), affineVector.getEntry(4), affineVector.getEntry(5) }, { 0, 0, 1 } };
-//
-//			for (int i = 0; i < transformationMatrix.length; i++) {
-//				for (int j = 0; j < transformationMatrix[i].length; j++) {
-//					IJ.log(" " + transformationMatrix[i][j]);
-//				}
-//				IJ.log("\n");
-//			}
+			if (logging)
+				IJ.log("Transformation Matrix:");
+
+			double[][] transformationMatrix = {
+					{ affineTransformation.getEntry(0), affineTransformation.getEntry(1),
+							affineTransformation.getEntry(2) },
+					{ affineTransformation.getEntry(3), affineTransformation.getEntry(4),
+							affineTransformation.getEntry(5) },
+					{ 0, 0, 1 } };
+
+			for (int i = 0; i < transformationMatrix.length; i++) {
+				for (int j = 0; j < transformationMatrix[i].length; j++) {
+					if (logging)
+						IJ.log(" " + transformationMatrix[i][j]);
+				}
+				if (logging)
+					IJ.log("\n");
+			}
 
 			List<double[]> resultPoints;
 			double[] centroid = calculateCentroid(randomPoints1);
 
+			if (logging)
+				IJ.log("Centroid calculated!");
+
 			resultPoints = Matrix.translate(points1, -centroid[0], -centroid[1]);
-			resultPoints = Matrix.rotate(resultPoints, Math.acos(affineVector.getEntry(0)));
-			resultPoints = Matrix.translate(resultPoints, centroid[0] + affineVector.getEntry(2),
-					centroid[1] + affineVector.getEntry(5));
+			resultPoints = Matrix.rotate(resultPoints, Math.acos(affineTransformation.getEntry(0)));
+			resultPoints = Matrix.translate(resultPoints, centroid[0] + affineTransformation.getEntry(2),
+					centroid[1] + affineTransformation.getEntry(5));
+
+			if (logging)
+				IJ.log("Transformation of points done!");
 
 			Map<Integer, Integer> associations = getAssociation(resultPoints, points2);
+
+			if (logging)
+				IJ.log("associations found: " + associations.size());
+
 			findBiggestCluster(associations);
+
+			if (logging)
+				IJ.log("Cluster detected!");
 		}
+
+		if (logging)
+			IJ.log("Final LRP found!");
+		ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
+		results.invert();
+
+		Visualize.drawPoints(results, biggestClusterRef.getPoints(), Color.blue);
+		Visualize.drawPoints(results, biggestClusterTarget.getPoints(), Color.red);
+		Visualize.showImage(results, "Final LRP");
 	}
 
 	private double[][] fillTransformMatrix(List<double[]> vertices) {
-
 		double[][] matrix = { { vertices.get(0)[0], vertices.get(0)[1], 1, 0, 0, 0 },
 				{ 0, 0, 0, vertices.get(0)[0], vertices.get(0)[1], 1 },
 				{ vertices.get(1)[0], vertices.get(1)[1], 1, 0, 0, 0 },
@@ -126,7 +168,6 @@ public class LargestRigidPart {
 			avgX += points.get(i)[0];
 			avgY += points.get(i)[1];
 		}
-
 		return new double[] { avgX / points.size(), avgY / points.size() };
 	}
 
@@ -156,7 +197,9 @@ public class LargestRigidPart {
 
 		for (int i = 0; i < originalPositions.size(); i++) {
 			int closestPoint = closestPoint(originalPositions.get(i), targetPositions);
-			associations.put(i, closestPoint);
+			if (closestPoint != -1) {
+				associations.put(i, closestPoint);
+			}
 		}
 		return associations;
 	}
@@ -167,7 +210,6 @@ public class LargestRigidPart {
 		double distanceNew = 0;
 
 		for (int i = 0; i < referencePoints.size(); i++) {
-
 			distanceNew = Math.pow(point[0] - referencePoints.get(i)[0], 2)
 					+ Math.pow(point[1] - referencePoints.get(i)[1], 2);
 
@@ -178,15 +220,21 @@ public class LargestRigidPart {
 		}
 		return closestPoint;
 	}
-	
-	private void getRandomPoints(int num){
-		int index = (int) (Math.random() * correspondances.size());
+
+	private void getRandomPoints(int num) {
+		int index;
+
+		if (logging)
+			IJ.log("Number of correspondances: " + correspondances.size());
 		Integer[] keys = correspondances.keySet().toArray(new Integer[0]);
 		Integer[] values = correspondances.values().toArray(new Integer[0]);
-		
-		for(int i = 0; i < num; i++){
+
+		for (int i = 0; i < num; i++) {
+			index = (int) (Math.random() * correspondances.size());
 			randomPoints1.add(points1.get(keys[index]));
 			randomPoints2.add(points2.get(values[index]));
+			if (logging)
+				IJ.log("Random index: " + index);
 		}
 	}
 

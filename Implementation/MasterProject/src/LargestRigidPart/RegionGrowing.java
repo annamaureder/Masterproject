@@ -1,18 +1,20 @@
 package LargestRigidPart;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import ij.IJ;
+
 public class RegionGrowing {
-	
-	//ToDo: Check algorithm
-	
-	private static double distanceThreshold = Input.distanceThreshold;
+
+	private static double distanceThreshold = Input.distanceThresholdRG;
+	private final static int MIN_SIZE = 5;
 
 	/**
 	 * This method detects all clusters of the input points, optionally taking
-	 * the seeds as starting point in the region growing.
-	 * The output is a list of all detected clusters including their initial seeds.
+	 * the seeds as starting point in the region growing. The output is a list
+	 * of all detected clusters including their initial seeds.
 	 * 
 	 * @param allPoints
 	 *            Input points
@@ -21,34 +23,49 @@ public class RegionGrowing {
 	 * @return
 	 */
 	public static List<Cluster> detectClusters(List<double[]> allPoints, List<double[]> seedPoints) {
+
+		List<double[]> seeds = new ArrayList<>();
+		List<double[]> inputPoints = new ArrayList<>();
+
+		inputPoints.addAll(allPoints);
+
 		if (seedPoints == null) {
-			seedPoints = allPoints;
+			seeds.addAll(allPoints);
+		} else {
+			seeds.addAll(seedPoints);
 		}
 
 		List<double[]> current = new ArrayList<>();
 		List<Cluster> clusters = new ArrayList<>();
 		double[] seed;
 
-		while (!allPoints.isEmpty()) {
-			seed = seedPoints.get(0);
+		while (!inputPoints.isEmpty()) {
+			seed = seeds.get(0);
 			current.add(seed);
 
 			for (int c = 0; c < current.size(); c++) {
-				allPoints.removeAll(current);
-				for (int i = 0; i < allPoints.size(); i++) {
-					if (distance(current.get(c), allPoints.get(i)) < distanceThreshold) {
-						current.add(allPoints.get(i));
+				inputPoints.removeAll(current);
+				seeds.removeAll(current);
+				for (int i = 0; i < inputPoints.size(); i++) {
+					if (distance(current.get(c), inputPoints.get(i)) < distanceThreshold) {
+						current.add(inputPoints.get(i));
 					}
 				}
 			}
-			allPoints.removeAll(current);
-			Cluster c = new Cluster(current);
-			c.setJoint(seed);
+			inputPoints.removeAll(current);
+			seeds.removeAll(current);
 
-			clusters.add(c);
+			if (current.size() > MIN_SIZE) {
+				Cluster c = new Cluster(current);
 
+				if (seedPoints != null) {
+					c.setJoint(seed);
+				}
+				clusters.add(c);
+			}
 			current = new ArrayList<double[]>();
 		}
+
 		return clusters;
 	}
 

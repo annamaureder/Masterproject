@@ -72,10 +72,13 @@ public class Segmentation implements PlugInFilter {
 		c1 = new Cluster(p1);
 		c2 = new Cluster(p2);
 		
+		IJ.log("Cluster1: " + c1.getPoints().size() + " points");
+		IJ.log("Cluster2: " + c2.getPoints().size() + " points");
+		
 		PartDetection detect = new PartDetection(c1, c2);
 		rigidParts = detect.getRigidParts();
 
-		//showResults();
+		showResults();
 	}
 	
 	/**

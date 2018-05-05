@@ -1,10 +1,11 @@
 \chapter{Related work}
 \label{cha:RelatedWork}
 
-A main approach for non-rigid registration is proposed by Anguelov \cite{Anguelov04} applying the correlated correspondence algorithm \cite{CorrelatedCorrespondance}. 
+By focusing on approaches computing the segmentation of articulated objects from 3D data, many different ones could be detected. They face similar challenges (see subsection \ref{Challenges}) but solve them in different ways
 %%
-\subsection{Correlated Correspondence}
-The algorithm takes a \textit{template} Mesh $D_0$ and other Meshes $D_1,\ldots,D_n$ in different configurations as input. The algorithm then performs a probabilistic framework and Expectation-Maximization (EM) to iterate between finding a decomposition of the \textit{template} into rigid parts and detecting them in the other meshes. Furthermore, a random clustering is applied to facilitate the detection of associated rigid parts.
+\section{Correlated Correspondence}
+
+A main approach for non-rigid registration is proposed by Anguelov \cite{Anguelov04} applying the correlated correspondence algorithm \cite{CorrelatedCorrespondance}. The algorithm takes a \textit{template} Mesh $D_0$ and other Meshes $D_1,\ldots,D_n$ in different configurations as input. The algorithm then performs a probabilistic framework and Expectation-Maximization (EM) to iterate between finding a decomposition of the \textit{template} into rigid parts and detecting them in the other meshes. Furthermore, a random clustering is applied to facilitate the detection of associated rigid parts.
 %%
 \begin{figure}
 	\centering
@@ -15,15 +16,15 @@ The algorithm takes a \textit{template} Mesh $D_0$ and other Meshes $D_1,\ldots,
 %%
 A different approach proposes the recursive detection of body parts by the LRP -- ``largest rigid part'' algorithm \cite {guo2016correspondence}. 
 %%
-\subsection{LRP}
+\section{LRP}
 The LRP algorithm discovers the articulated parts of two objects in different configurations by initially detecting the largest rigid part. This would be the biggest point cluster by applying a single rigid transformation. To reach that, sparse correspondences in combination with RANSAC are implemented. From there, the linking parts are recursively detected by growing clusters from the LRP and reapplying the algorithm. 
 %%
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{LRP_body}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{LRP_body}} &	
 		\fbox{\includegraphics[width=0.45\textwidth]{LRP_arm}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Detecting the largest rigid part of an object~(a), and align the object to recursively detect linking parts to the LRP~(b) \cite{guo2016correspondence}.} 
@@ -35,14 +36,19 @@ Another approach is achieved by Symmetrization \cite{Mitra07}, by detecting and 
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{Symmetrization1}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{Symmetrization1}} &
 		\fbox{\includegraphics[width=0.45\textwidth]{Symmetrization2}} 
-		\\	% PNG file
+		\\
 		(a) & (b) 
 	\end{tabular}
 	\caption{Detection of the rigid parts of an object by local~(a) and global~(b) Symmetrization \cite{Mitra07}.} 
 	\label{fig:Symmetrization}
 \end{figure}
 %%
-\subsection{Possible improvements}
+
+%TODO: Add other references
+\section{Possible improvements}
+
+%TODO: What are the main deficits of the algorithms?
+
 The proposed approaches achieve convincing results concerning the accuracy of the segmentation and the detection of rigid parts. However, they are all computationally expensive and require a considerable number of computation steps to iteratively detect rigid parts in two associated objects. This reflects on the run time of the algorithm which offers therefore great potential for improvements.

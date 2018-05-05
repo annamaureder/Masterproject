@@ -21,6 +21,11 @@ public class Visualize {
 		}
 	}
 	
+	public static void drawDot(ColorProcessor cp, double[] point, Color color){
+		cp.setColor(color);
+		cp.drawOval((int)point[0], (int)point[1], 5, 5);
+	}
+	
 	public static void colorClusters(List<Cluster[]> segments, String title) {
 		ColorProcessor segmentation = new ColorProcessor(Segmentation.width, Segmentation.height);
 		ColorProcessor segmentation2 = new ColorProcessor(Segmentation.width, Segmentation.height);
