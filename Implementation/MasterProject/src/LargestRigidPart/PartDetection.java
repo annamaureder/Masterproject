@@ -109,7 +109,7 @@ public class PartDetection {
 			}
 
 			currentClusters = clusters.pop();
-			ClosestPoint cp = new ClosestPoint(currentClusters[0], currentClusters[1]);
+			ClosestPoint2 cp = new ClosestPoint2(currentClusters[0], currentClusters[1]);
 			IJ.log("Finished ICP!");
 
 			Map<Integer, Integer> denseCorrespondances = cp.getCorrespondences();

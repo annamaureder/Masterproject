@@ -121,7 +121,7 @@ public class LargestRigidPart {
 				IJ.log("Centroid calculated!");
 
 			resultPoints = Matrix.translate(points1, -centroid[0], -centroid[1]);
-			resultPoints = Matrix.rotate(resultPoints, Math.acos(affineTransformation.getEntry(0)));
+			resultPoints = Matrix.rotate(resultPoints, affineTransformation.getEntry(0), affineTransformation.getEntry(1), affineTransformation.getEntry(3), affineTransformation.getEntry(4));
 			resultPoints = Matrix.translate(resultPoints, centroid[0] + affineTransformation.getEntry(2),
 					centroid[1] + affineTransformation.getEntry(5));
 
@@ -143,10 +143,23 @@ public class LargestRigidPart {
 			IJ.log("Final LRP found!");
 		ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
 		results.invert();
-
+		
 		Visualize.drawPoints(results, biggestClusterRef.getPoints(), Color.blue);
 		Visualize.drawPoints(results, biggestClusterTarget.getPoints(), Color.red);
 		Visualize.showImage(results, "Final LRP");
+		
+		List<double[]> list1 = new ArrayList<>();
+		List<double[]> list2 = new ArrayList<>();
+		
+		for (Map.Entry<Integer, Integer> entry : correspondances.entrySet()) {
+			list1.add(c_i.getPoints().get(entry.getKey()));
+			list2.add(c_j.getPoints().get(entry.getValue()));
+		}
+		
+//		Visualize.drawAssociations(results, list1, list2);
+//		Visualize.drawPoints(results, c_i.getPoints(), Color.blue);
+//		Visualize.drawPoints(results, c_j.getPoints(), Color.red);
+//		Visualize.showImage(results, "RANSAC input");
 	}
 
 	private double[][] fillTransformMatrix(List<double[]> vertices) {

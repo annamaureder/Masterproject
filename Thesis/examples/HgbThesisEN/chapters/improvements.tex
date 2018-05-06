@@ -60,15 +60,15 @@ The dense point correspondences from the previous computation step (see subsecti
 
 \subsection{Cluster detection by region growing}
 \label{cluster}
-After successfully detecting a ``largest rigid part'' for each input clusters $C_i$ and $C_j$ they are added to a list of rigid parts $\mathcal{P}$. Subsequently, all unclustered points $\mathcal{U} =  \{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$ are collected. Those comprise all cluster points of $C_1$ and $C_2$ excluding already detected largest rigid parts $\mathcal{P}$. Potential linked rigid parts are grown from the most recent detected largest rigid part $P_i$ as seed, taking all unclustered points as input. The region growing initiates with the first point $\boldsymbol{p}_1$ of the seed to form a cluster $C_i$. A point of the unclustered points $\boldsymbol{u}_j$ is added to $C_i$, if the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{u}_j)$ to any point in $C_i$ is below the threshold $\tau$. If no further unclustered points are added, the region growing is conducted with the next point of the seed until all points traversed the region growing procedure. The result is a set of clusters $\mathcal{C}$ for each $C_i$ and $C_j$. Furthermore, a preliminary joint $\boldsymbol{j}_i$ is stored, which is the actual seed point $\boldsymbol{p}_i$ the resulting cluster is grown from. It is then required for following cluster correspondence and joint weights for the ICP (see subsection \ref{CorrespondingClusters} and \ref{JointWeights}).
+After successfully detecting a ``largest rigid part'' $P_i$ and $P_j$ for each input clusters $C_i$ and $C_j$ they are added to a list of rigid parts $\mathcal{P}$. Potential linked rigid parts are detected from region growing of all unclustered points $\mathcal{U} =  \{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$. Those comprise all cluster points of $C_1$ and $C_2$ excluding already detected largest rigid parts $\mathcal{P}$. The region growing initiates with the first point $\boldsymbol{u}_1$ of the unclustered points $\mathcal{U}$ to form a cluster $C_i$. Another point of the unclustered points $\boldsymbol{u}_j$ is added to $C_i$, if the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{u}_j)$ to any point in $C_i$ is below the threshold $\tau$. If no further unclustered points can be added, the region growing initiates again with the first unclustered point $\boldsymbol{u}_1$ that has not been added by region growing until all points traversed the procedure. The result is a set of clusters $\mathcal{C}$ for each $C_i$ and $C_j$. Subsequently, a preliminary joint $\boldsymbol{j}_i$ for each output clusters is stored, by detecting the two nearest points of $C_i$ and $P_i$. The joints are required for following cluster correspondence and joint weights for the ICP (see subsection \ref{CorrespondingClusters} and \ref{JointWeights}).
 
 \subsection{Establishment of corresponding clusters}
 \label{CorrespondingClusters}
-In case of detecting more than one cluster for each $C_i$ and $C_j$, which might be for example the case for the extremities linked to the torso, it must be verified which clusters correspond to each other. This step is essential, as the algorithm is called recursively (starting from \ref{correspondences}) with two new input clusters. Thereby, the actual seed $\boldsymbol{p}_i$ a cluster $C_k$ is grown from is stored as provisional joint $\boldsymbol{j}_i$. Two clusters from $C_i$ and $C_j$ are taken as input if they are closest from each other, presuming that $C_1$ and $C_2$ are aligned. 
+In case of detecting more than one cluster for each $C_i$ and $C_j$, which might be for example the case for the extremities linked to the torso, it must be verified which clusters correspond to each other. This step is essential, as the algorithm is called recursively (starting from \ref{correspondences}) with two new input clusters. Thereby, the provisional joints $\boldsymbol{j}_i$ are used to associate two clusters of $C_i$ and $C_j$ by detecting the closest joint with the euclidean distance $d(\boldsymbol{j}_i,\boldsymbol{j}_j)$.
 
 \subsection{Joint weights}
 \label{JointWeights}
-In order to recursively detect largest rigid parts that are actually linked to another detected LRP, the joints from region growing are used as weights. Thereby, points being located far away from joints, do not contribute as much to the correspondence as point located near a joint.
+In order to recursively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the correspondence as point located near a joint. By doing so, allows to enforce joint consistency across two poses. 
 
 
 \section{Implementation}
@@ -90,19 +90,21 @@ Similar to the ICP, a closest point procedure with a threshold $\tau$ is conduct
 \label{RegionGrowing}
 The region growing algorithm is quite similar to the earlier described algorithm (see algorithm \ref{noiseRemoval}). There is also an adaptation, which does not only return the largest cluster, but all clusters above a certain size. The detected clusters are handled in a \texttt{Stack<Cluster>} in case of more than one detected clusters. Thereby, all clusters are pushed on the stack. With each recursion two corresponding cluster $C_i$ and $C_j$ are popped from the stack and taken as input for the whole algorithm. If again more clusters are detected they are pushed on the stack and treated before recently added clusters.
 
-
-%TODO: write push/pop algorithm to recursively detect linked parts
-%TODO: PICTURES
-%TODO: CodeSnipts
-
 \section{Results}
 \label{ResultsLRP}
 
+As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is  required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part are not linked 3dimensional but only in a 2dimensional way. In case of one missing cluster point on a rigid part, it can not be detected. To counteract this behavior, joints were added to each rigid part, that more links for region growing are available. 
+
+For the initial alignment, therefore the assumption was made, that the orientation of the two poses are the initially right.
 
 \subsection{Main drawbacks}
-Initial alignment --> directly dependent on symmetry of object, too less symmetry --> initial alignment might fail --> whole algorithm might fail as the lrp might be not found, as the ICP will not find it (not similar alignment). It is assumed that the lrp contributes most to the principal axis, initial alignment, ... but a shift in another direction is possible, if all linked parts direct there.
+The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. Thereby, it is directly dependent on the symmetry of the pose. The less symmetry the higher the changes that the initial alignment on the largest rigid part might fail. The reason is that the ICP expects a good starting alignment. As it is assumed that the major largest rigid part contributes most to the principal axis and the initial alignment, it would work. But in case of an unbalance of the linked parts, the alignment of the LRP might shift in a certain direction and it might not be detected during the ICP. As a result the whole algorithm fails.
 
-Solution: using features, not as dependent on vertex positions
+Touching and occluded rigid parts can not be detected, as those might not me detected or wrong detected by region growing.
+
+\subsection{Possible solutions}
+
+A possible solution to the main drawbacks is the usage of point features for the initial alignment. Those are more reliable across two poses than the anticipated symmetry of the points on linked parts. A similar implementation was done in 3D by Mitra \cite{Mitra07} (see section \ref{functionalityLRP}). 
 
 %TODO: Write what fails, whar are problems, what are solutions? --> 3D features?
 

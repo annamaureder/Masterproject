@@ -103,25 +103,23 @@ public class ClosestPoint {
 	private void run() {
 
 		// align joints of c_1 and c_2
-		if (c_i.getJoint() != null) {
-			c_i.alignAxis(c_i.getJoint());
-			c_i.alignAxis(c_j.getOrientation(), c_i.getJoint());
+		if (c_i.getJoint() != null) {			
+			initialOrientation(c_i.getJoint());
 
 			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getJoint()[0] - c_i.getJoint()[0],
 					c_j.getJoint()[1] - c_i.getJoint()[1]);
 
 		} else {
-			c_i.alignAxis(c_i.getCentroid());
-			c_i.alignAxis(c_j.getOrientation(), c_i.getCentroid());
+			//TODO: initial alignment!!!
+			// c_i.alignAxis(c_i.getCentroid());
+			// c_i.alignAxis(c_j.getOrientation(), c_i.getCentroid());
 
-			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getCentroid()[0] - c_i.getCentroid()[0],
-					c_j.getCentroid()[1] - c_i.getCentroid()[1]);
+			// referencePoints = Matrix.translate(c_i.getPoints(),
+			// c_j.getCentroid()[0] - c_i.getCentroid()[0],
+			// c_j.getCentroid()[1] - c_i.getCentroid()[1]);
+
+			referencePoints = Matrix.translate(c_i.getPoints(), 0, 0);
 		}
-
-		// TODO! Initial orientation!
-
-		referencePoints = Matrix.translate(c_i.getPoints(), c_j.getCentroid()[0] - c_i.getCentroid()[0],
-				c_j.getCentroid()[1] - c_i.getCentroid()[1]);
 
 		targetPoints = c_j.getPoints();
 
@@ -170,12 +168,18 @@ public class ClosestPoint {
 			IJ.log("Transformation: " + pro.getT().getEntry(0) + "/" + pro.getT().getEntry(1));
 
 			double[] centroid = calculateCentroid(associations.referencePoints);
+			
+			if(c_i.getJoint() != null){
+				centroid = c_i.getJoint();
+			}
 
 			// apply transformation from procrustes
 			referencePoints = Matrix.translate(referencePoints, -centroid[0], -centroid[1]);
 			referencePoints = Matrix.rotate(referencePoints, Math.acos(pro.getR().getEntry(0, 0)));
-			referencePoints = Matrix.translate(referencePoints, centroid[0] + pro.getT().getEntry(0),
-					centroid[1] + pro.getT().getEntry(1));
+//			referencePoints = Matrix.translate(referencePoints, centroid[0] + pro.getT().getEntry(0),
+//					centroid[1] + pro.getT().getEntry(1));
+			referencePoints = Matrix.translate(referencePoints, centroid[0],
+					centroid[1]);
 
 			if (tmp_error < error) {
 				error = tmp_error;
@@ -255,6 +259,8 @@ public class ClosestPoint {
 				closestPoint = i;
 			}
 		}
+
+		distanceTotal += distanceNew;
 		return closestPoint;
 	}
 
@@ -273,44 +279,35 @@ public class ClosestPoint {
 		return new double[] { avgX / points.size(), avgY / points.size() };
 	}
 
-	/*
-	 * TODO initial orientation
-	 */
+	private void initialOrientation(double[] rotationPoint) {
+		Cluster rotation1 = new Cluster(c_i);
+		Cluster rotation2 = new Cluster(c_i);
 
-	// private void initialOrientation() {
-	// c_i.alignAxis(c_i.getCentroid());
-	// Cluster rotation1 = new Cluster(c_i);
-	// Cluster rotation2 = new Cluster(c_i);
-	//
-	// rotation1.alignAxis(rotation1.getCentroid());
-	// rotation1.alignAxis(c_j.getOrientation(), rotation1.getCentroid());
-	//
-	// rotation2.alignAxis(Math.PI - c_i.getOrientation(),
-	// rotation2.getCentroid());
-	// rotation2.alignAxis(c_j.getOrientation(), rotation2.getCentroid());
-	//
-	// IJ.log("Rotation 1: " + rotation1.getOrientation());
-	// IJ.log("Rotation 2: " + rotation2.getOrientation());
-	//
-	// IJ.log("BEGIN: " + distanceTotal);
-	//
-	// getAssociation(rotation1.getPoints(), c_j.getPoints());
-	// //double error1 = distanceTotal;
-	//
-	// IJ.log("Error 1: " + distanceTotal);
-	//
-	// getAssociation(rotation2.getPoints(), c_j.getPoints());
-	// //double error2 = distanceTotal;
-	//
-	// IJ.log("Error 2: " + distanceTotal);
-	//
-	// if (true) {
-	// c_i = rotation1;
-	// }
-	// else {
-	// c_i = rotation2;
-	// }
-	// }
+		rotation1.alignAxis(rotationPoint);
+		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
+
+		rotation2.alignAxis(rotationPoint);
+		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
+
+		IJ.log("Rotation 1: " + rotation1.getOrientation());
+		IJ.log("Rotation 2: " + rotation2.getOrientation());
+
+		getAssociation(rotation1.getPoints(), c_j.getPoints());
+		double error1 = distanceTotal;
+
+		IJ.log("Error 1: " + distanceTotal);
+
+		getAssociation(rotation2.getPoints(), c_j.getPoints());
+		double error2 = distanceTotal;
+
+		IJ.log("Error 2: " + distanceTotal);
+
+		if (error1 < error2) {
+			c_i = rotation1;
+		} else {
+			c_i = rotation2;
+		}
+	}
 
 	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
 		return new Association(reference, target, referencePoints, targetPoints);

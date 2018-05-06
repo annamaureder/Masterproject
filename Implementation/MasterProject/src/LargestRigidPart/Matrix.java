@@ -44,4 +44,16 @@ public class Matrix {
 		}
 		return rotatedPoints;
 	}
+	
+	public static List<double[]> rotate(List<double[]> points, double angle1, double angle2, double angle3, double angle4) {
+		List<double[]> rotatedPoints = new ArrayList<double[]>();
+
+		double[][] R = new double[][] { { angle1, angle2, 0 },
+				{ angle3, angle4, 0 }, { 0, 0, 1 } };
+
+		for (int i = 0; i < points.size(); i++) {
+			rotatedPoints.add(Matrix.multiplication(R, points.get(i)));
+		}
+		return rotatedPoints;
+	}
 }
