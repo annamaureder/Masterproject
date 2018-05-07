@@ -24,6 +24,7 @@ public class PartDetection {
 	private Cluster c_j;
 
 	private final int MIN_SIZE = 10;
+	Cluster[] currentClusters = null;
 
 	List<double[]> unclusteredReference = new ArrayList<>();
 	List<double[]> unclusteredTarget = new ArrayList<>();
@@ -46,20 +47,19 @@ public class PartDetection {
 	}
 
 	private void run() {
-		Cluster currentLrpReference = null;
-		Cluster currentLrpTarget = null;
 		int iteration = 1;
 
-		Cluster[] currentClusters = null;
+		List<double[]> currentLrpReference = null;
+		List<double[]> currentLrpTarget = null;
 		Cluster[] currentLrps = null;
 
-		while (unclusteredReference.size() > MIN_SIZE || clusters.isEmpty()) {
-
-			if (iteration == 5) {
-				return;
-			}
+		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
 
 			IJ.log("Iteration #" + iteration++);
+			
+			if(iteration == 10){
+				return;
+			}
 
 			removeAllLRPs();
 			IJ.log("All LRPs removed from unclustered points");
@@ -70,6 +70,13 @@ public class PartDetection {
 
 			referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
 			targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
+			
+			for(Cluster c : referenceClusters){
+				ColorProcessor test = new ColorProcessor(Segmentation.width, Segmentation.height);
+				test.invert();
+				Visualize.drawPoints(test, c.getPoints(), Color.red);
+				Visualize.showImage(test, "cluster detected");
+			}
 
 			IJ.log("Number of Reference Clusters: " + referenceClusters.size());
 			IJ.log("Number of Target Clusters: " + referenceClusters.size());
@@ -81,16 +88,18 @@ public class PartDetection {
 			if (currentClusters != null) {
 				detectJoints(currentLrps, referenceClusters, targetClusters);
 			}
-
-			pushMatchingClusters();
-			IJ.log("All clusters matched: " + clusters.size());
+			
+			if(referenceClusters.size() != 0 || currentClusters == null){
+				IJ.log("All clusters matched: " + clusters.size());
+				pushMatchingClusters();
+			}
 
 			ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
 			results.invert();
 
 			if (currentLrpReference != null) {
-				Visualize.drawPoints(results, currentLrpReference.getPoints(), Color.yellow);
-				Visualize.drawPoints(results, currentLrpTarget.getPoints(), Color.green);
+				Visualize.drawPoints(results, currentLrpReference, Color.yellow);
+				Visualize.drawPoints(results, currentLrpTarget, Color.green);
 			}
 			for (Cluster[] cluster : clusters) {
 				if (cluster[0].getJoint() != null) {
@@ -116,7 +125,16 @@ public class PartDetection {
 
 			currentLrps = new LargestRigidPart(currentClusters[0], currentClusters[1], denseCorrespondances)
 					.getLargestRigidParts();
+			
+			if (currentLrps[0].getPoints().size() < 15){
+				IJ.log("largest cluster from correspondences");
+				currentLrps = getLargestClusters(denseCorrespondances);
+			}
+			
 			largestRigidParts.add(currentLrps);
+			
+			currentLrpReference = currentLrps[0].getPoints();
+			currentLrpTarget = currentLrps[1].getPoints();
 		}
 	}
 
@@ -160,12 +178,24 @@ public class PartDetection {
 
 	private void detectJoints(Cluster[] currentLRPs, List<Cluster> referenceClusters, List<Cluster> targetClusters) {
 		
-		for(Cluster cluster : referenceClusters){
+		List<Cluster> copyClusters = new ArrayList();
+		copyClusters.addAll(referenceClusters);
+		
+		for(Cluster cluster : copyClusters){
 			cluster.setJoint(getJoint(cluster, currentLRPs[0]));
+			if(cluster.getJoint() == null){
+				referenceClusters.remove(cluster);
+			}
 		}
 		
-		for(Cluster cluster : targetClusters){
+		copyClusters = new ArrayList();
+		copyClusters.addAll(targetClusters);
+		
+		for(Cluster cluster : copyClusters){
 			cluster.setJoint(getJoint(cluster, currentLRPs[1]));
+			if(cluster.getJoint() == null){
+				targetClusters.remove(cluster);
+			}
 		}
 	}
 	
@@ -184,7 +214,7 @@ public class PartDetection {
 			}
 		}
 		if(numberPoints == 0){
-			IJ.log("No joints could be calculated!");
+			IJ.log("No joint could be calculated!");
 			return null;
 		}
 		return new double[]{x/numberPoints, y/numberPoints};
@@ -192,5 +222,41 @@ public class PartDetection {
 	
 	private double distance(double[] point1, double[] point2) {
 		return Math.sqrt(Math.pow(point1[0]-point2[0], 2) + Math.pow(point1[1]-point2[1], 2));
+	}
+	
+	public Cluster[] getLargestClusters(Map<Integer, Integer> denseCorrespondances){
+		List<double[]> referencePoints = new ArrayList<>();
+		List<double[]> targetPoints = new ArrayList<>();
+		
+		Cluster biggestClusterReference = new Cluster();
+		Cluster biggestClusterTarget = new Cluster();
+		
+		for (Map.Entry<Integer, Integer> entry : denseCorrespondances.entrySet()) {
+			referencePoints.add(currentClusters[0].getPoints().get(entry.getKey()));
+			targetPoints.add(currentClusters[1].getPoints().get(entry.getValue()));
+		}
+		
+		for (Cluster cluster : RegionGrowing.detectClusters(referencePoints)) {
+			if (cluster.getPoints().size() > biggestClusterReference.getPoints().size()) {
+				biggestClusterReference = cluster;
+			}
+		}
+		
+		for (Cluster cluster : RegionGrowing.detectClusters(targetPoints)) {
+			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
+				biggestClusterTarget = cluster;
+			}
+		}
+		
+		ColorProcessor input = new ColorProcessor(Segmentation.width, Segmentation.height);
+		input.invert();
+		//Visualize.drawAssociations(input, referencePoints, targetPoints);
+		Visualize.drawPoints(input, referencePoints, Color.blue);
+		Visualize.drawPoints(input, targetPoints, Color.red);
+		//Visualize.drawPoints(input, biggestClusterReference.getPoints(), Color.blue);
+		//Visualize.drawPoints(input, biggestClusterTarget.getPoints(), Color.red);
+		Visualize.showImage(input, "biggest cluster correspondences");
+		
+		return new Cluster[]{new Cluster(referencePoints), new Cluster(targetPoints)};
 	}
 }

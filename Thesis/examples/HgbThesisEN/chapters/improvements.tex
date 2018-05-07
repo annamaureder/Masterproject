@@ -68,7 +68,9 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Joint weights}
 \label{JointWeights}
-In order to recursively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the correspondence as point located near a joint. By doing so, allows to enforce joint consistency across two poses. 
+In order to recursively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the correspondence as point located near a joint. By doing so, joint consistency across two poses is enforced. 
+
+%TODO: Add images!
 
 
 \section{Implementation}

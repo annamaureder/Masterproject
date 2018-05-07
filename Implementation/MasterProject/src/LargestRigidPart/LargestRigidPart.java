@@ -144,6 +144,9 @@ public class LargestRigidPart {
 		ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
 		results.invert();
 		
+		ColorProcessor input = new ColorProcessor(Segmentation.width, Segmentation.height);
+		input.invert();
+		
 		Visualize.drawPoints(results, biggestClusterRef.getPoints(), Color.blue);
 		Visualize.drawPoints(results, biggestClusterTarget.getPoints(), Color.red);
 		Visualize.showImage(results, "Final LRP");
@@ -156,10 +159,10 @@ public class LargestRigidPart {
 			list2.add(c_j.getPoints().get(entry.getValue()));
 		}
 		
-//		Visualize.drawAssociations(results, list1, list2);
-//		Visualize.drawPoints(results, c_i.getPoints(), Color.blue);
-//		Visualize.drawPoints(results, c_j.getPoints(), Color.red);
-//		Visualize.showImage(results, "RANSAC input");
+		Visualize.drawAssociations(input, list1, list2);
+		Visualize.drawPoints(input, c_i.getPoints(), Color.blue);
+		Visualize.drawPoints(input, c_j.getPoints(), Color.red);
+		Visualize.showImage(input, "RANSAC input");
 	}
 
 	private double[][] fillTransformMatrix(List<double[]> vertices) {
@@ -254,5 +257,4 @@ public class LargestRigidPart {
 	public Cluster[] getLargestRigidParts() {
 		return lrp;
 	}
-
 }

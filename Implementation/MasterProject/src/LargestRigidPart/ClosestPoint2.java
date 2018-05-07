@@ -186,6 +186,11 @@ public class ClosestPoint2 {
 		results = new ColorProcessor(Segmentation.width, Segmentation.height);
 		results.invert();
 		
+		finalReferenceAssoc = Matrix.translate(finalReferenceAssoc, 100.0, 100.0);
+		finalTargetAssoc = Matrix.translate(finalTargetAssoc, 100.0, 100.0);
+		finalTransformedPoints = Matrix.translate(finalTransformedPoints, 100.0, 100.0);
+		targetPoints = Matrix.translate(targetPoints, 100.0, 100.0);
+		
 		if (Input.showAssociations) {
 			Visualize.drawAssociations(results, finalReferenceAssoc, finalTargetAssoc);
 		}
