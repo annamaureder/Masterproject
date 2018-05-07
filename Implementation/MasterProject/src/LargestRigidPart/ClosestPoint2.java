@@ -70,7 +70,6 @@ public class ClosestPoint2 {
 		}
 
 		public void comparePoints() {
-			
 			referencePoints = new ArrayList<>();
 			targetPoints = new ArrayList<>();
 			finalAssociations = new HashMap<>();

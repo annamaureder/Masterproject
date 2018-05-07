@@ -52,11 +52,11 @@ In order to re-implement the algorithm in 2D, modifications had to be accomplish
 \subsection{Detection of sparse correspondences}
 \label{correspondences}
 
-Sparse correspondences of two input clusters $C_i$ and $C_j$ are achieved by applying the Iterative closest point algorithm. For the initial alignment the clusters are similar translated and rotated. In case of existing joints $\boldsymbol{j}_i$ and $\boldsymbol{j}_j$ determined in \ref{cluster}, those are determined to be rotation point. Following , corresponding points of $C_i$ and $C_j$ are only considered, if they are \textit{reciprocal} (see subsection \ref{functionalityLRP}). Furthermore, the euclidean distance between two cluster points $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ must be below a predefined threshold $\tau$. As a consequence, points being located far away from each other do not contribute to the alignment of $C_i$ and $C_j$ and are not stored as correspondence. Those are assumed to be small rigid parts with different transformations.
+Sparse correspondences of two input clusters $C_i$ and $C_j$ are achieved by applying the Iterative closest point algorithm on the initial iteration. Thereby, the two input clusters are similar translated and rotated. In case of existing joints $\boldsymbol{j}_i$ and $\boldsymbol{j}_j$ determined in \ref{cluster}, another approach is chosen (see subsection \ref{JointWeights}). Following , corresponding points of $C_i$ and $C_j$ are only considered, if they are \textit{reciprocal} (see subsection \ref{functionalityLRP}). Furthermore, the euclidean distance between two cluster points $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ must be below a predefined threshold $\tau$. As a consequence, points being located far away from each other do not contribute to the alignment of $C_i$ and $C_j$ and are not stored as correspondence. Those are assumed to be small rigid parts with different transformations.
 
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. The clusters are thereby grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output. In case of symmetric poses, the RANSAC would not be required, as the largest rigid part (the torso) would be almost perfectly aligned and taken as input for the region growing. But still, to cover as many cases as possible, this computation step is necessary. 
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output. In case of symmetric poses, the RANSAC would not be required, as the largest rigid part (the torso) would be almost perfectly aligned and taken as input for the region growing. But still, to cover as many cases as possible, this computation step is necessary. 
 
 \subsection{Cluster detection by region growing}
 \label{cluster}
@@ -68,17 +68,37 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Joint weights}
 \label{JointWeights}
-In order to recursively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the correspondence as point located near a joint. By doing so, joint consistency across two poses is enforced. 
+In order to iteratively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the matching error as point located near a joint. By doing so, joint consistency across two poses is enforced. As an alternative to the ICP clusters with calculated joints only need to be rotated around them. As a result, a matching error $e$ 
+%
+\begin{equation}
+	e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \| \boldsymbol{p}_i - \boldsymbol{j}_i\|
+\end{equation}
+%
+is achieved which combines the distance to the closest point and to the cluster's joint. Thereby, not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. 
 
 %TODO: Add images!
-
 
 \section{Implementation}
 \label{ImplementationLRP}
 The individual steps of the largest rigid part algorithm have also been split in the implementation for better overview. 
 
 \subsection{ICP}
-One main part of the algorithm is the modified implementation of the ICP using Procrustes fitting to compute a transformation that detects sparse point correspondences. Thereby, only reciprocal correspondences within a specific distance $\tau$ contribute to the calculation. The final point correspondences of $C_i$ and $C_j$ are stored in a \texttt{Map<Integer, Integer>} containing the indices of the corresponding points. This is because the storage of points in the form $\boldsymbol{p}_i(x,y)$ would underly a specific transformation, which is applied during the ICP and initial alignment. For further computations using the RANSAC, no transformations are desired. As the main difficulty is the right initial alignment of the actual largest rigid part (torso) the value of the distance threshold $\tau$ is chosen generously. As a result, also more wrong point correspondences are detected which have to be compensated by RANSAC (see subsection \ref{RANSAC}).
+One main part of the algorithm is the modified implementation of the ICP using Procrustes fitting to compute a transformation that detects sparse point correspondences. Thereby, only reciprocal correspondences within a specific distance $\tau$ contribute to the calculation. The final point correspondences of $C_i$ and $C_j$ are stored in a \texttt{Map<Integer, Integer>} containing the indices of the corresponding points. This is because the storage of points in the form $\boldsymbol{p}_i(x,y)$ would underly a specific transformation, which is applied during the ICP and initial alignment. For further computations using the RANSAC, no transformations are desired. As the main difficulty is the right initial alignment of the actual largest rigid part (torso) the value of the distance threshold $\tau$ is chosen generously. As a result, a higher number of false point correspondences is detected which has to be compensated by RANSAC (see subsection \ref{RANSAC}).
+
+\begin{lstlisting}
+...
+for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
+Integer referenceIndex = entry.getKey();
+Integer targetIndex = entry.getValue();
+
+	if (target.containsKey(targetIndex) && target.get(targetIndex) == referenceIndex) {
+		referencePoints.add(originalReference.get(referenceIndex));
+		targetPoints.add(originalTarget.get(targetIndex));
+		finalAssociations.put(referenceIndex, targetIndex);
+	}
+}
+...
+\end{lstlisting}
 
 \subsection{RANSAC}
 \label{RANSAC}
@@ -86,6 +106,26 @@ The RANSAC algorithm takes the computed dense correspondences between $C_i$ and 
 %
 %TODO: Add code snippets
 %
+\begin{lstlisting}
+public LargestRigidPart(Cluster c_i, Cluster c_j, Map<Integer, Integer> correspondences)
+...
+points1 = c_i.getPoints();
+points2 = c_j.getPoints();
+...
+private void getRandomPoints(int num) {
+	Integer[] keys = correspondances.keySet().toArray(new Integer[0]);
+	Integer[] values = correspondances.values().toArray(new Integer[0]);
+
+	for (int i = 0; i < num; i++) {
+		index = (int) (Math.random() * correspondances.size());
+		randomPoints1.add(points1.get(keys[index]));
+		randomPoints2.add(points2.get(values[index]));
+	}
+}
+...
+\end{lstlisting}
+
+
 Similar to the ICP, a closest point procedure with a threshold $\tau$ is conducted. The value is thereby considerably smaller than in the ICP as a right alignment during any iteration is assumed. Unlikely the ICP, no error during the Procrustes fit is accumulated, instead the detected point correspondences are taken as input in the region growing \ref{RegionGrowing} procedure. The biggest cluster is stored and after all iterations returned as largest rigid part.
 
 \subsection{Region growing}
@@ -95,14 +135,16 @@ The region growing algorithm is quite similar to the earlier described algorithm
 \section{Results}
 \label{ResultsLRP}
 
-As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is  required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part are not linked 3dimensional but only in a 2dimensional way. In case of one missing cluster point on a rigid part, it can not be detected. To counteract this behavior, joints were added to each rigid part, that more links for region growing are available. 
+As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the gaps. To counteract this behavior, joints are added to each rigid part, that more links for region growing are available. 
 
-For the initial alignment, therefore the assumption was made, that the orientation of the two poses are the initially right.
+
+%TODO: add pictures of results
+
+
+The first main difficulty is the first alignment of the two input clusters $C_1$ and $C_2$. As the execution of the algorithm is only dependent on a succesful alignment, for test cases the assumption was made, that the orientation of the two poses are initially right. Thereby, the focus could be l
 
 \subsection{Main drawbacks}
-The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. Thereby, it is directly dependent on the symmetry of the pose. The less symmetry the higher the changes that the initial alignment on the largest rigid part might fail. The reason is that the ICP expects a good starting alignment. As it is assumed that the major largest rigid part contributes most to the principal axis and the initial alignment, it would work. But in case of an unbalance of the linked parts, the alignment of the LRP might shift in a certain direction and it might not be detected during the ICP. As a result the whole algorithm fails.
-
-Touching and occluded rigid parts can not be detected, as those might not me detected or wrong detected by region growing.
+The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. Thereby, it is directly dependent on the symmetry of the pose. The less symmetry the higher the changes that the initial alignment on the largest rigid part might fail. The reason is that the ICP expects a good starting alignment. As it is assumed that the major largest rigid part contributes most to the principal axis and the initial alignment, it would work. But in case of an unbalance of the linked parts, the alignment of the LRP might shift in a certain direction and it might not be detected during the ICP. As a result the whole algorithm fails. Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters. 
 
 \subsection{Possible solutions}
 

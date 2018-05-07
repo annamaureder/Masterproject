@@ -19,22 +19,24 @@ Pose and motion estimation of objects is an active field of research due to the 
 %
 % ToDo: Write down use case!
 %
-The initial project idea was to create a tool for 3D animation purposes using a small puppet to capture its poses in real-time. However, the idea addressed many different challenges, like 3D reconstruction, segmentation, joint and skeleton estimation as well as creating an interface with a 3D animation program. As the implementation of these tasks would go beyond the scope of a thesis project, it was indispensable to break it down into its main areas. While doing researches on pose estimation, the issue of segmenting an articulated object into its rigid part frequently emerged and for this reason the thesis project focuses on this field. 
-
+The initial project idea was to create a tool for 3D animation purposes using a small puppet to capture its poses in real-time. However, the idea addressed many different challenges, like 3D reconstruction, segmentation, joint and skeleton estimation as well as creating an interface with a 3D animation program. As the implementation of these tasks would go beyond the scope of a thesis project, it was indispensable to break it down into its main areas.  
 %TODO: - good structur: what is the problem? What has been done? --> other papers Quickly get to the problem
 
+\section{Main considerations}
+To take the puppet pose capture as occasion, following considerations have to be done:
+%%
+\begin{itemize}
+	\item How and in which form is the input data (puppet) received?
+	\item What are the rigid parts of the puppet?
+	\item What are the joints of the puppet?
+	\item Which joints/rigid parts correspond to each other in two different poses?	
+\end{itemize}
+%%
+To answer those questions extensive research has been conducted on pose estimation to get an idea of the general workflow (see section \ref{PoseCapture}), possible difficulties and potential approaches (see chapter \ref{cha:RelatedWork}). Thereby, the main issue of segmenting an articulated object into its rigid part frequently emerged and for this reason the thesis project focuses on this field.
 
-\section{Estimate pose of puppet}
-It has to be known 
-
-%TODO: new image
-
-- where are the body parts
-- where are the joints
-- which joint/rigid parts correspondence in two successive poses
-
-\section{General pose capture approach}
-Generally, there are two major steps to capture the pose of an object. First, the object has to be digitalized, which is achieved by a 3D scanning and reconstruction approach. The data might be in form of a point cloud or voxels depending on the reconstruction method (see section \ref{sec:reconstruction}). The second major step includes the analysis of the data to recognize body parts and subsequently joints and extract the object's skeleton. Depending on the chosen approach, which is usually a segmentation step (see section \ref{sec:segmentation}), there might be a subdivision into sub steps.
+\section{General pose capture workflow}
+\label{PoseCapture}
+Generally, there are two major steps to capture the pose of an object. First, the object has to be digitalized, which is achieved by a 3D scanning and reconstruction approach. The data might be in form of a point cloud or voxels depending on the reconstruction method (see section \ref{sec:reconstruction}). The second major step includes the analysis of the data to recognize body parts and subsequently joints and if required the skeleton. Depending on the chosen approach, which is usually a segmentation step (see section \ref{sec:segmentation}), there might be a subdivision into sub steps.
 %
 %TODO: new image with puppet! --> picture, point cloud, skeleton
 %
@@ -52,7 +54,7 @@ Generally, there are two major steps to capture the pose of an object. First, th
 %
 Scanning means collecting a real shape as 3D data. Reconstruction means the approach to convert the raw data to a mesh or process the input data.
 
-Voxelization, Shape from Shilouette, Shape from Shading, Shape from 2D, Markers, sensors, ... 
+Voxelization, Shape from Shilouette, Shape from Shading, Depth camera, stereo camera
 %
 %TODO: add references
 %
@@ -64,15 +66,12 @@ Voxelization, Shape from Shilouette, Shape from Shading, Shape from 2D, Markers,
 % 2) markerless methods
 %
 How it is done: markers, sensors, shape fitting (already known)
-Cite all papers (Voxelization, ....). 
-
-There are previous approaches with markers and sensors which will not be treated in this work in detail, as markerless options are taken as focus.
+Cite all papers (Voxelization, ....). There are previous approaches with markers and sensors which will not be treated in this work in detail, as markerless options are taken as focus.
 
 \subsubsection{Supervised methods}
 Many already existing methods don't require markers and sensors but already assume or know the hierarchical structure or the body parts of the object to be captured (see \cite{multiLayerSkeleton}, \cite{baker2005shape}, \cite{de2008hierarchical} and \cite{michoud2007real}).
 
 \subsubsection{Unsupervised methods}
-
 Although the approaches mentioned in section \ref{sec:currentApproaches} work quite well depending on the application, improvements can be made that are more independent from user inputs.... which leads us to the non-rigid registration \ref{nonrigidregistration}.
 
 \section{Non-rigid registration}
@@ -80,7 +79,7 @@ Although the approaches mentioned in section \ref{sec:currentApproaches} work qu
 
 Generally, registration means the alignment of rigid point clouds (see figure \ref{fig:registration}). A well-known approach to achieve this, is the iterative closest point (ICP) \cite{ICP}, which requires the input point clouds to be aligned quite similar to avoid a local optimum. After registration, a matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered point clouds. In case of two non-rigid objects (e.g. a human in different poses which is composed of rigid parts) the ICP won't lead to a satisfying registration as associated parts are transformed differently. In order to register a non-rigid object, a segmentation into its rigid parts is required.
 
-\subsection{prerequisites}
+\subsection{Prerequisites}
 \label{prerequisites}
 Assuming, a 3D reconstructed model in form of a point cloud is already available to fully focus on the segmentation of an articulated object in form of a mesh into its rigid parts.
 
