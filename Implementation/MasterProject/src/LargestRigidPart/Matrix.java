@@ -5,8 +5,8 @@ import java.util.List;
 
 public class Matrix {
 
-	public static double[] multiplication(double[][] matrix, double[] point) {
-		double[] vector = new double[] { point[0], point[1], 1 };
+	public static ClusterPoint multiplication(double[][] matrix, ClusterPoint point) {
+		double[] vector = new double[] { point.getX(), point.getY(), 1 };
 		double[] resultVector = new double[vector.length];
 
 		for (int i = 0; i < matrix.length; i++) {
@@ -16,11 +16,11 @@ public class Matrix {
 			}
 			resultVector[i] = result;
 		}
-		return new double[] { resultVector[0] / resultVector[2], resultVector[1] / resultVector[2] };
+		return new ClusterPoint(resultVector[0] / resultVector[2], resultVector[1] / resultVector[2]);
 	}
 
-	public static List<double[]> translate(List<double[]> points, double translateX, double translateY) {
-		List<double[]> translatedPoints = new ArrayList<double[]>();
+	public static List<ClusterPoint> translate(List<ClusterPoint> points, double translateX, double translateY) {
+		List<ClusterPoint> translatedPoints = new ArrayList<>();
 		double[][] T = new double[][] { { 1, 0, translateX }, { 0, 1, translateY }, { 0, 0, 1.0 } };
 
 		for (int i = 0; i < points.size(); i++) {
@@ -33,8 +33,8 @@ public class Matrix {
 		return translatedPoints;
 	}
 
-	public static List<double[]> rotate(List<double[]> points, double angle) {
-		List<double[]> rotatedPoints = new ArrayList<double[]>();
+	public static List<ClusterPoint> rotate(List<ClusterPoint> points, double angle) {
+		List<ClusterPoint> rotatedPoints = new ArrayList<>();
 
 		double[][] R = new double[][] { { Math.cos(angle), -Math.sin(angle), 0 },
 				{ Math.sin(angle), Math.cos(angle), 0 }, { 0, 0, 1 } };
@@ -45,8 +45,8 @@ public class Matrix {
 		return rotatedPoints;
 	}
 	
-	public static List<double[]> rotate(List<double[]> points, double angle1, double angle2, double angle3, double angle4) {
-		List<double[]> rotatedPoints = new ArrayList<double[]>();
+	public static List<ClusterPoint> rotate(List<ClusterPoint> points, double angle1, double angle2, double angle3, double angle4) {
+		List<ClusterPoint> rotatedPoints = new ArrayList<>();
 
 		double[][] R = new double[][] { { angle1, angle2, 0 },
 				{ angle3, angle4, 0 }, { 0, 0, 1 } };

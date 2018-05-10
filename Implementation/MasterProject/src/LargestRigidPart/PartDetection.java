@@ -26,8 +26,8 @@ public class PartDetection {
 	private final int MIN_SIZE = 10;
 	Cluster[] currentClusters = null;
 
-	List<double[]> unclusteredReference = new ArrayList<>();
-	List<double[]> unclusteredTarget = new ArrayList<>();
+	List<ClusterPoint> unclusteredReference = new ArrayList<>();
+	List<ClusterPoint> unclusteredTarget = new ArrayList<>();
 
 	// cluster pairs of each a reference and target cluster
 	private Stack<Cluster[]> clusters = new Stack<>();
@@ -49,15 +49,15 @@ public class PartDetection {
 	private void run() {
 		int iteration = 1;
 
-		List<double[]> currentLrpReference = null;
-		List<double[]> currentLrpTarget = null;
+		List<ClusterPoint> currentLrpReference = null;
+		List<ClusterPoint> currentLrpTarget = null;
 		Cluster[] currentLrps = null;
 
 		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
 
 			IJ.log("Iteration #" + iteration++);
 			
-			if(iteration == 10){
+			if(iteration == 3){
 				return;
 			}
 
@@ -165,8 +165,7 @@ public class PartDetection {
 		double distance = Double.MAX_VALUE;
 
 		for (Cluster target : targetClusters) {
-			double distanceNew = Math.pow(reference.getJoint()[0] - target.getJoint()[0], 2)
-					+ Math.pow(reference.getJoint()[1] - target.getJoint()[1], 2);
+			double distanceNew = reference.getJoint().distance(target.getJoint());
 
 			if (distanceNew < distance) {
 				distance = distanceNew;
@@ -178,7 +177,7 @@ public class PartDetection {
 
 	private void detectJoints(Cluster[] currentLRPs, List<Cluster> referenceClusters, List<Cluster> targetClusters) {
 		
-		List<Cluster> copyClusters = new ArrayList();
+		List<Cluster> copyClusters = new ArrayList<>();
 		copyClusters.addAll(referenceClusters);
 		
 		for(Cluster cluster : copyClusters){
@@ -188,7 +187,7 @@ public class PartDetection {
 			}
 		}
 		
-		copyClusters = new ArrayList();
+		copyClusters = new ArrayList<>();
 		copyClusters.addAll(targetClusters);
 		
 		for(Cluster cluster : copyClusters){
@@ -199,16 +198,16 @@ public class PartDetection {
 		}
 	}
 	
-	private double[] getJoint(Cluster c1, Cluster c2){
+	private ClusterPoint getJoint(Cluster c1, Cluster c2){
 		double x = 0;
 		double y = 0;
 		double numberPoints = 0;
 		
-		for(double[] point1 : c1.getPoints()){
-			for(double[] point2 : c2.getPoints()){
-				if(distance(point1, point2) < Input.distanceThresholdRG){
-					x += point1[0] + point2[0];
-					y += point1[1] + point2[1];
+		for(ClusterPoint point1 : c1.getPoints()){
+			for(ClusterPoint point2 : c2.getPoints()){
+				if(point1.distance(point2) < Input.distanceThresholdRG){
+					x += point1.getX() + point2.getX();
+					y += point1.getY() + point2.getY();
 					numberPoints+=2;
 				}
 			}
@@ -217,16 +216,12 @@ public class PartDetection {
 			IJ.log("No joint could be calculated!");
 			return null;
 		}
-		return new double[]{x/numberPoints, y/numberPoints};
-	}
-	
-	private double distance(double[] point1, double[] point2) {
-		return Math.sqrt(Math.pow(point1[0]-point2[0], 2) + Math.pow(point1[1]-point2[1], 2));
+		return new ClusterPoint(x/numberPoints, y/numberPoints);
 	}
 	
 	public Cluster[] getLargestClusters(Map<Integer, Integer> denseCorrespondances){
-		List<double[]> referencePoints = new ArrayList<>();
-		List<double[]> targetPoints = new ArrayList<>();
+		List<ClusterPoint> referencePoints = new ArrayList<>();
+		List<ClusterPoint> targetPoints = new ArrayList<>();
 		
 		Cluster biggestClusterReference = new Cluster();
 		Cluster biggestClusterTarget = new Cluster();

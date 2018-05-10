@@ -19,11 +19,11 @@ import ij.process.ImageProcessor;
 
 public class Cluster implements Comparable<Cluster> {
 
-	private List<double[]> points = new ArrayList<double[]>();
+	private List<ClusterPoint> points = new ArrayList<>();
 	private int size;
 
-	private double[] centroid;
-	private double[] joint;
+	private ClusterPoint centroid;
+	private ClusterPoint joint;
 	private double orientation;
 	private int principalLength;
 	private int secondaryLength;
@@ -37,7 +37,7 @@ public class Cluster implements Comparable<Cluster> {
 		this.secondaryLength = getSecondaryRadius();
 	}
 
-	public Cluster(List<double[]> p) {
+	public Cluster(List<ClusterPoint> p) {
 		this.points = p;
 		this.size = points.size();
 		this.centroid = calculateCentroid(points);
@@ -61,17 +61,17 @@ public class Cluster implements Comparable<Cluster> {
 		this.orientation = c.orientation;
 	}
 
-	private List<double[]> getPoints(ImageProcessor ip) {
+	private List<ClusterPoint> getPoints(ImageProcessor ip) {
 		int w = ip.getWidth();
 		int h = ip.getHeight();
 
-		List<double[]> pntlist = new ArrayList<double[]>();
+		List<ClusterPoint> pntlist = new ArrayList<>();
 
 		for (int v = 0; v < h; v++) {
 			for (int u = 0; u < w; u++) {
 				int p = ip.getPixel(u, v);
 				if (p < -1) {
-					pntlist.add(new double[] { u, v });
+					pntlist.add(new ClusterPoint(u,v));
 				}
 			}
 		}
@@ -86,16 +86,15 @@ public class Cluster implements Comparable<Cluster> {
 		return pntlist;
 	}
 
-	private double[] calculateCentroid(List<double[]> points) {
+	private ClusterPoint calculateCentroid(List<ClusterPoint> points) {
 		double avgX = 0.0;
 		double avgY = 0.0;
 
 		for (int i = 0; i < points.size(); i++) {
-			avgX += points.get(i)[0];
-			avgY += points.get(i)[1];
+			avgX += points.get(i).getX();
+			avgY += points.get(i).getY();
 		}
-
-		return new double[] { avgX / points.size(), avgY / points.size() };
+		return new ClusterPoint(avgX / points.size(), avgY / points.size());
 	}
 
 	private double calculateOrientation() {
@@ -105,30 +104,30 @@ public class Cluster implements Comparable<Cluster> {
 	private double centralMoment(int p, int q) {
 		double moment = 0.0;
 
-		for (double[] point : points) {
-			moment += Math.pow((point[0] - centroid[0]), p) * Math.pow((point[1] - centroid[1]), q);
+		for (ClusterPoint point : points) {
+			moment += Math.pow((point.getX() - centroid.getX()), p) * Math.pow((point.getY() - centroid.getY()), q);
 		}
 		return moment;
 	}
 
-	public List<double[]> alignAxis(double orientation, double[] rotationPoint) {
-		points = Matrix.translate(points, -rotationPoint[0], -rotationPoint[1]);
+	public List<ClusterPoint> alignAxis(double orientation, ClusterPoint rotationPoint) {
+		points = Matrix.translate(points, -rotationPoint.getX(), -rotationPoint.getY());
 		points = Matrix.rotate(points, orientation);
-		points = Matrix.translate(points, rotationPoint[0], rotationPoint[1]);
+		points = Matrix.translate(points, rotationPoint.getX(), rotationPoint.getY());
 		this.orientation += orientation;
 
 		return points;
 	}
 	
-	public List<double[]> alignAxis(double[] rotationPoint){
+	public List<ClusterPoint> alignAxis(ClusterPoint rotationPoint){
 		return alignAxis(-this.orientation, rotationPoint);
 	}
 
 	public void drawPrincipalAxis(ImageProcessor cp) {
-		int x1 = (int) centroid[0];
-		int y1 = (int) centroid[1];
+		int x1 = (int) centroid.getX();
+		int y1 = (int) centroid.getY();
 
-		int x_test = (int) centroid[0] - 30;
+		int x_test = (int) centroid.getX() - 30;
 
 		int x2 = (int) (x1 + principalLength * Math.cos(orientation));
 		int y2 = (int) (y1 + principalLength * Math.sin(orientation));
@@ -142,8 +141,8 @@ public class Cluster implements Comparable<Cluster> {
 	}
 
 	public void drawSecondaryAxis(ImageProcessor cp) {
-		int x1 = (int) centroid[0];
-		int y1 = (int) centroid[1];
+		int x1 = (int) centroid.getX();
+		int y1 = (int) centroid.getY();
 
 		int x2 = (int) (x1 + secondaryLength * Math.cos(orientation + 1.5707963268));
 		int y2 = (int) (y1 + secondaryLength * Math.sin(orientation + 1.5707963268));
@@ -163,12 +162,12 @@ public class Cluster implements Comparable<Cluster> {
 
 		for (int i = 0; i < copy.points.size(); i++) {
 
-			if (copy.points.get(i)[0] < minX) {
-				minX = (int) copy.points.get(i)[0];
+			if (copy.points.get(i).getX() < minX) {
+				minX = (int) copy.points.get(i).getX();
 			}
 
-			if (copy.points.get(i)[0] > maxX) {
-				maxX = (int) copy.points.get(i)[0];
+			if (copy.points.get(i).getY() > maxX) {
+				maxX = (int) copy.points.get(i).getY();
 			}
 
 		}
@@ -184,24 +183,24 @@ public class Cluster implements Comparable<Cluster> {
 
 		for (int i = 0; i < copy.points.size(); i++) {
 
-			if (copy.points.get(i)[1] < minY) {
-				minY = (int) copy.points.get(i)[1];
+			if (copy.points.get(i).getY() < minY) {
+				minY = (int) copy.points.get(i).getY();
 			}
 
-			if (copy.points.get(i)[1] > maxY) {
-				maxY = (int) copy.points.get(i)[1];
+			if (copy.points.get(i).getY() > maxY) {
+				maxY = (int) copy.points.get(i).getY();
 			}
 		}
 		return (maxY - minY) / 2;
 	}
 
 	private int getMinPoint(Cluster c) {
-		double[] minPoint = c.getPoints().get(0);
+		ClusterPoint minPoint = c.getPoints().get(0);
 		int minPointIndex = 0;
 		int i = 0;
 
-		for (double[] point : c.getPoints()) {
-			if (point[0] < minPoint[0]) {
+		for (ClusterPoint point : c.getPoints()) {
+			if (point.getX() < minPoint.getX()) {
 				minPoint = point;
 				minPointIndex = i; 
 			}
@@ -210,11 +209,11 @@ public class Cluster implements Comparable<Cluster> {
 		return minPointIndex;
 	}
 
-	public List<double[]> getPoints() {
+	public List<ClusterPoint> getPoints() {
 		return points;
 	}
 
-	public double[] getCentroid() {
+	public ClusterPoint getCentroid() {
 		return centroid;
 	}
 
@@ -222,11 +221,11 @@ public class Cluster implements Comparable<Cluster> {
 		return orientation;
 	}
 	
-	public double[] getJoint() {
+	public ClusterPoint getJoint() {
 		return joint;
 	}
 	
-	public void setJoint(double[] joint){
+	public void setJoint(ClusterPoint joint){
 		this.joint = joint;
 	}
 

@@ -31,29 +31,29 @@ public class ClosestPoint2 {
 	private Map<Integer, Integer> targetAssociation;
 	private Map<Integer, Integer> finalAssociation;
 
-	private List<double[]> referencePoints;
-	private List<double[]> targetPoints;
+	private List<ClusterPoint> referencePoints;
+	private List<ClusterPoint> targetPoints;
 
-	private List<double[]> finalReferenceAssoc;
-	private List<double[]> finalTargetAssoc;
+	private List<ClusterPoint> finalReferenceAssoc;
+	private List<ClusterPoint> finalTargetAssoc;
 
-	private List<double[]> finalTransformedPoints;
+	private List<ClusterPoint> finalTransformedPoints;
 
 	private Association associations;
 	private boolean reciprocalMatching = Input.reciprocalMatching;
 
 	protected class Association {
-		protected List<double[]> referencePoints;
-		protected List<double[]> targetPoints;
-		protected List<double[]> originalReference;
-		protected List<double[]> originalTarget;
+		protected List<ClusterPoint> referencePoints;
+		protected List<ClusterPoint> targetPoints;
+		protected List<ClusterPoint> originalReference;
+		protected List<ClusterPoint> originalTarget;
 		private Map<Integer, Integer> reference;
 		private Map<Integer, Integer> target;
 		private Map<Integer, Integer> finalAssociations;
 		private double totalError = 0.0;
 
 		public Association(Map<Integer, Integer> reference, Map<Integer, Integer> target,
-				List<double[]> originalReference, List<double[]> originalTarget) {
+				List<ClusterPoint> originalReference, List<ClusterPoint> originalTarget) {
 			this.reference = reference;
 			this.target = target;
 			this.originalReference = originalReference;
@@ -78,12 +78,12 @@ public class ClosestPoint2 {
 				Integer referenceIndex = entry.getKey();
 				Integer targetIndex = entry.getValue();
 				
-				double[] referencePoint = originalReference.get(referenceIndex);
-				double[] targetPoint = originalTarget.get(targetIndex);
+				ClusterPoint referencePoint = originalReference.get(referenceIndex);
+				ClusterPoint targetPoint = originalTarget.get(targetIndex);
 				
 				if(c_i.getJoint()!=null){
-					double currentError = distance(referencePoint, targetPoint);
-					totalError += currentError*Math.pow(distance(c_i.getJoint(), referencePoint),2);
+					double currentError = referencePoint.distance(targetPoint);
+					totalError += currentError*Math.pow(c_i.getJoint().distance(referencePoint),2);
 				}
 				
 				if (target.containsKey(targetIndex)) {
@@ -114,11 +114,11 @@ public class ClosestPoint2 {
 		if (c_i.getJoint() != null) {			
 			initialOrientation(c_i.getJoint());
 
-			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint()[0],
-					-c_i.getJoint()[1]);
+			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(),
+					-c_i.getJoint().getY());
 			
-			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint()[0],
-					-c_j.getJoint()[1]);
+			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(),
+					-c_j.getJoint().getY());
 
 		} else {
 			
@@ -211,7 +211,7 @@ public class ClosestPoint2 {
 	 * @param targetPositions
 	 * @return List with points with the same sorting as resultPoitns
 	 */
-	private Map<Integer, Integer> getAssociation(List<double[]> originalPositions, List<double[]> targetPositions) {
+	private Map<Integer, Integer> getAssociation(List<ClusterPoint> originalPositions, List<ClusterPoint> targetPositions) {
 		Map<Integer, Integer> associations = new HashMap<>();
 
 		for (int i = 0; i < originalPositions.size(); i++) {
@@ -232,15 +232,13 @@ public class ClosestPoint2 {
 	 * @return
 	 */
 
-	private int closestPoint(double[] point, List<double[]> referencePoints) {
+	private int closestPoint(ClusterPoint point, List<ClusterPoint> referencePoints) {
 		int closestPoint = -1;
 		double distance = Double.MAX_VALUE;
 		double distanceNew = 0;
 
 		for (int i = 0; i < referencePoints.size(); i++) {
-
-			distanceNew = Math.pow(point[0] - referencePoints.get(i)[0], 2)
-					+ Math.pow(point[1] - referencePoints.get(i)[1], 2);
+			distanceNew = point.distance(referencePoints.get(i));
 
 			if (distanceNew < distance) {
 				distance = distanceNew;
@@ -256,7 +254,7 @@ public class ClosestPoint2 {
 		return error;
 	}
 
-	private void initialOrientation(double[] rotationPoint) {
+	private void initialOrientation(ClusterPoint rotationPoint) {
 		Cluster rotation1 = new Cluster(c_i);
 		Cluster rotation2 = new Cluster(c_i);
 
@@ -285,9 +283,5 @@ public class ClosestPoint2 {
 
 	public Map<Integer, Integer> getCorrespondences() {
 		return finalAssociation;
-	}
-
-	private double distance(double[] point1, double[] point2) {
-		return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
 	}
 }

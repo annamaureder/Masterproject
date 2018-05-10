@@ -32,28 +32,28 @@ public class ClosestPoint {
 	private Map<Integer, Integer> targetAssociation;
 	private Map<Integer, Integer> finalAssociation;
 
-	private List<double[]> referencePoints;
-	private List<double[]> targetPoints;
+	private List<ClusterPoint> referencePoints;
+	private List<ClusterPoint> targetPoints;
 
-	private List<double[]> finalReferenceAssoc;
-	private List<double[]> finalTargetAssoc;
+	private List<ClusterPoint> finalReferenceAssoc;
+	private List<ClusterPoint> finalTargetAssoc;
 
-	private List<double[]> finalTransformedPoints;
+	private List<ClusterPoint> finalTransformedPoints;
 
 	private Association associations;
 	private boolean reciprocalMatching = Input.reciprocalMatching;
 
 	protected class Association {
-		protected List<double[]> referencePoints;
-		protected List<double[]> targetPoints;
-		protected List<double[]> originalReference;
-		protected List<double[]> originalTarget;
+		protected List<ClusterPoint> referencePoints;
+		protected List<ClusterPoint> targetPoints;
+		protected List<ClusterPoint> originalReference;
+		protected List<ClusterPoint> originalTarget;
 		private Map<Integer, Integer> reference;
 		private Map<Integer, Integer> target;
 		private Map<Integer, Integer> finalAssociations;
 
 		public Association(Map<Integer, Integer> reference, Map<Integer, Integer> target,
-				List<double[]> originalReference, List<double[]> originalTarget) {
+				List<ClusterPoint> originalReference, List<ClusterPoint> originalTarget) {
 			this.reference = reference;
 			this.target = target;
 			this.originalReference = originalReference;
@@ -106,9 +106,8 @@ public class ClosestPoint {
 		if (c_i.getJoint() != null) {			
 			initialOrientation(c_i.getJoint());
 
-			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getJoint()[0] - c_i.getJoint()[0],
-					c_j.getJoint()[1] - c_i.getJoint()[1]);
-
+			referencePoints = Matrix.translate(c_i.getPoints(), c_j.getJoint().getX() - c_i.getJoint().getX(),
+					c_j.getJoint().getY() - c_i.getJoint().getY());
 		} else {
 			//TODO: initial alignment!!!
 			// c_i.alignAxis(c_i.getCentroid());
@@ -160,26 +159,26 @@ public class ClosestPoint {
 			Visualize.showImage(results, "Iteration: " + iterations);
 
 			// calculate transformation between reference and target points
-			pro.fit(associations.targetPoints, associations.referencePoints);
+			pro.fit(convertClusterPoints(associations.targetPoints), convertClusterPoints(associations.referencePoints));
 			tmp_error = pro.getError();
 
 			IJ.log("error: " + tmp_error);
 			IJ.log("Rotation:" + pro.getR().getEntry(0, 0));
 			IJ.log("Transformation: " + pro.getT().getEntry(0) + "/" + pro.getT().getEntry(1));
 
-			double[] centroid = calculateCentroid(associations.referencePoints);
+			ClusterPoint centroid = calculateCentroid(associations.referencePoints);
 			
 			if(c_i.getJoint() != null){
 				centroid = c_i.getJoint();
 			}
 
 			// apply transformation from procrustes
-			referencePoints = Matrix.translate(referencePoints, -centroid[0], -centroid[1]);
+			referencePoints = Matrix.translate(referencePoints, -centroid.getX(), -centroid.getY());
 			referencePoints = Matrix.rotate(referencePoints, Math.acos(pro.getR().getEntry(0, 0)));
 //			referencePoints = Matrix.translate(referencePoints, centroid[0] + pro.getT().getEntry(0),
 //					centroid[1] + pro.getT().getEntry(1));
-			referencePoints = Matrix.translate(referencePoints, centroid[0],
-					centroid[1]);
+			referencePoints = Matrix.translate(referencePoints, centroid.getX(),
+					centroid.getY());
 
 			if (tmp_error < error) {
 				error = tmp_error;
@@ -215,7 +214,7 @@ public class ClosestPoint {
 	 * @param targetPositions
 	 * @return List with points with the same sorting as resultPoitns
 	 */
-	private Map<Integer, Integer> getAssociation(List<double[]> originalPositions, List<double[]> targetPositions) {
+	private Map<Integer, Integer> getAssociation(List<ClusterPoint> originalPositions, List<ClusterPoint> targetPositions) {
 		Map<Integer, Integer> associations = new HashMap<>();
 		distanceTotal = 0.0;
 
@@ -226,8 +225,8 @@ public class ClosestPoint {
 			double distanceJointCentroid = 0;
 
 			if (c_i.getJoint() != null) {
-				distanceToJoint = distance(originalPositions.get(i), c_i.getJoint());
-				distanceJointCentroid = distance(c_i.getJoint(), c_i.getCentroid());
+				distanceToJoint = originalPositions.get(i).distance(c_i.getJoint());
+				distanceJointCentroid = c_i.getCentroid().distance(c_i.getJoint());
 			}
 			if (closestPoint != -1 && distanceToJoint <= distanceJointCentroid) {
 				associations.put(i, closestPoint);
@@ -244,22 +243,19 @@ public class ClosestPoint {
 	 * @return
 	 */
 
-	private int closestPoint(double[] point, List<double[]> referencePoints) {
+	private int closestPoint(ClusterPoint point, List<ClusterPoint> referencePoints) {
 		int closestPoint = -1;
 		double distance = Double.MAX_VALUE;
 		double distanceNew = 0;
 
 		for (int i = 0; i < referencePoints.size(); i++) {
-
-			distanceNew = Math.pow(point[0] - referencePoints.get(i)[0], 2)
-					+ Math.pow(point[1] - referencePoints.get(i)[1], 2);
+			distanceNew = point.distance(referencePoints.get(i));
 
 			if (distanceNew < distance && Math.sqrt(distanceNew) < distanceThreshold) {
 				distance = distanceNew;
 				closestPoint = i;
 			}
 		}
-
 		distanceTotal += distanceNew;
 		return closestPoint;
 	}
@@ -268,18 +264,18 @@ public class ClosestPoint {
 		return error;
 	}
 
-	private double[] calculateCentroid(List<double[]> points) {
+	private ClusterPoint calculateCentroid(List<ClusterPoint> points) {
 		double avgX = 0.0;
 		double avgY = 0.0;
 
 		for (int i = 0; i < points.size(); i++) {
-			avgX += points.get(i)[0];
-			avgY += points.get(i)[1];
+			avgX += points.get(i).getX();
+			avgY += points.get(i).getY();
 		}
-		return new double[] { avgX / points.size(), avgY / points.size() };
+		return new ClusterPoint(avgX / points.size(), avgY / points.size());
 	}
 
-	private void initialOrientation(double[] rotationPoint) {
+	private void initialOrientation(ClusterPoint rotationPoint) {
 		Cluster rotation1 = new Cluster(c_i);
 		Cluster rotation2 = new Cluster(c_i);
 
@@ -316,8 +312,12 @@ public class ClosestPoint {
 	public Map<Integer, Integer> getCorrespondences() {
 		return finalAssociation;
 	}
-
-	private double distance(double[] point1, double[] point2) {
-		return Math.sqrt(Math.pow(point1[0] - point2[0], 2) + Math.pow(point1[1] - point2[1], 2));
+	
+	private List<double[]> convertClusterPoints(List<ClusterPoint> clusterPoints){
+		List<double[]> finalPoints = new ArrayList<>();
+		for(ClusterPoint point : clusterPoints){
+			finalPoints.add(new double[]{point.getX(), point.getY()});
+		}
+		return finalPoints;
 	}
 }

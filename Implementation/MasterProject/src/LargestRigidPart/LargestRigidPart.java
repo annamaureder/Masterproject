@@ -36,11 +36,11 @@ public class LargestRigidPart {
 	private Cluster c_i;
 	private Cluster c_j;
 
-	List<double[]> points1;
-	List<double[]> points2;
+	List<ClusterPoint> points1;
+	List<ClusterPoint> points2;
 
-	List<double[]> randomPoints1;
-	List<double[]> randomPoints2;
+	List<ClusterPoint> randomPoints1;
+	List<ClusterPoint> randomPoints2;
 
 	private final int numIterations = 1000;
 	private final int numRandom = 3;
@@ -78,15 +78,15 @@ public class LargestRigidPart {
 				IJ.log("Random points calculated");
 
 			// points from c1
-			List<double[]> pointsA = randomPoints1;
+			List<ClusterPoint> pointsA = randomPoints1;
 			double[][] affineMatrix = fillTransformMatrix(pointsA);
 
 			if (logging)
 				IJ.log("affine Matrix filled!");
 
 			// points from c2
-			double[] pointsB = new double[] { randomPoints2.get(0)[0], randomPoints2.get(0)[1], randomPoints2.get(1)[0],
-					randomPoints2.get(1)[1], randomPoints2.get(2)[0], randomPoints2.get(2)[1] };
+			double[] pointsB = new double[] { randomPoints2.get(0).getX(), randomPoints2.get(0).getY(), randomPoints2.get(1).getX(),
+					randomPoints2.get(1).getY(), randomPoints2.get(2).getX(), randomPoints2.get(2).getY() };
 
 			if (logging)
 				IJ.log("points B filed!");
@@ -114,7 +114,7 @@ public class LargestRigidPart {
 					IJ.log("\n");
 			}
 
-			List<double[]> resultPoints;
+			List<ClusterPoint> resultPoints;
 			double[] centroid = calculateCentroid(randomPoints1);
 
 			if (logging)
@@ -151,8 +151,8 @@ public class LargestRigidPart {
 		Visualize.drawPoints(results, biggestClusterTarget.getPoints(), Color.red);
 		Visualize.showImage(results, "Final LRP");
 		
-		List<double[]> list1 = new ArrayList<>();
-		List<double[]> list2 = new ArrayList<>();
+		List<ClusterPoint> list1 = new ArrayList<>();
+		List<ClusterPoint> list2 = new ArrayList<>();
 		
 		for (Map.Entry<Integer, Integer> entry : correspondances.entrySet()) {
 			list1.add(c_i.getPoints().get(entry.getKey()));
@@ -165,31 +165,31 @@ public class LargestRigidPart {
 		Visualize.showImage(input, "RANSAC input");
 	}
 
-	private double[][] fillTransformMatrix(List<double[]> vertices) {
-		double[][] matrix = { { vertices.get(0)[0], vertices.get(0)[1], 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(0)[0], vertices.get(0)[1], 1 },
-				{ vertices.get(1)[0], vertices.get(1)[1], 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(1)[0], vertices.get(1)[1], 1 },
-				{ vertices.get(2)[0], vertices.get(2)[1], 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(2)[0], vertices.get(2)[1], 1 }, };
+	private double[][] fillTransformMatrix(List<ClusterPoint> vertices) {
+		double[][] matrix = { { vertices.get(0).getX(), vertices.get(0).getY(), 1, 0, 0, 0 },
+				{ 0, 0, 0, vertices.get(0).getX(), vertices.get(0).getY(), 1 },
+				{ vertices.get(1).getX(), vertices.get(1).getY(), 1, 0, 0, 0 },
+				{ 0, 0, 0, vertices.get(1).getX(), vertices.get(1).getY(), 1 },
+				{ vertices.get(2).getX(), vertices.get(2).getY(), 1, 0, 0, 0 },
+				{ 0, 0, 0, vertices.get(2).getX(), vertices.get(2).getY(), 1 }, };
 
 		return matrix;
 	}
 
-	private double[] calculateCentroid(List<double[]> points) {
+	private double[] calculateCentroid(List<ClusterPoint> points) {
 		double avgX = 0.0;
 		double avgY = 0.0;
 
 		for (int i = 0; i < points.size(); i++) {
-			avgX += points.get(i)[0];
-			avgY += points.get(i)[1];
+			avgX += points.get(i).getX();
+			avgY += points.get(i).getY();
 		}
 		return new double[] { avgX / points.size(), avgY / points.size() };
 	}
 
 	private final void findBiggestCluster(Map<Integer, Integer> associations) {
-		List<double[]> ref = new ArrayList<>();
-		List<double[]> target = new ArrayList<>();
+		List<ClusterPoint> ref = new ArrayList<>();
+		List<ClusterPoint> target = new ArrayList<>();
 
 		for (Map.Entry<Integer, Integer> entry : associations.entrySet()) {
 			ref.add(points1.get(entry.getKey()));
@@ -208,7 +208,7 @@ public class LargestRigidPart {
 		lrp = new Cluster[] { biggestClusterRef, biggestClusterTarget };
 	}
 
-	private Map<Integer, Integer> getAssociation(List<double[]> originalPositions, List<double[]> targetPositions) {
+	private Map<Integer, Integer> getAssociation(List<ClusterPoint> originalPositions, List<ClusterPoint> targetPositions) {
 		Map<Integer, Integer> associations = new HashMap<>();
 
 		for (int i = 0; i < originalPositions.size(); i++) {
@@ -220,16 +220,15 @@ public class LargestRigidPart {
 		return associations;
 	}
 
-	private int closestPoint(double[] point, List<double[]> referencePoints) {
+	private int closestPoint(ClusterPoint point, List<ClusterPoint> referencePoints) {
 		int closestPoint = -1;
 		double distance = Double.MAX_VALUE;
 		double distanceNew = 0;
 
 		for (int i = 0; i < referencePoints.size(); i++) {
-			distanceNew = Math.pow(point[0] - referencePoints.get(i)[0], 2)
-					+ Math.pow(point[1] - referencePoints.get(i)[1], 2);
-
-			if (distanceNew < distance && Math.sqrt(distanceNew) < distanceThreshold) {
+			distanceNew = point.distance(referencePoints.get(i));
+			
+			if (distanceNew < distance && distanceNew < distanceThreshold) {
 				distance = distanceNew;
 				closestPoint = i;
 			}

@@ -14,16 +14,16 @@ public class Visualize {
 	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta
 			};
 		
-	public static void drawPoints(ColorProcessor cp, List<double[]> points, Color color) {
+	public static void drawPoints(ColorProcessor cp, List<ClusterPoint> points, Color color) {
 		cp.setColor(color);
 		for (int i = 0; i < points.size(); i++) {
-			cp.drawDot((int) points.get(i)[0], (int) points.get(i)[1]);
+			cp.drawDot((int) points.get(i).getX(), (int) points.get(i).getY());
 		}
 	}
 	
-	public static void drawDot(ColorProcessor cp, double[] point, Color color){
+	public static void drawDot(ColorProcessor cp, ClusterPoint point, Color color){
 		cp.setColor(color);
-		cp.drawOval((int)point[0], (int)point[1], 5, 5);
+		cp.drawOval((int)point.getX(), (int)point.getY(), 5, 5);
 	}
 	
 	public static void colorClusters(List<Cluster[]> segments, String title) {
@@ -49,14 +49,14 @@ public class Visualize {
 		showImage(segmentation2, title);
 	}
 	
-	public static void drawAssociations(ColorProcessor ip, List<double[]> points1, List<double[]> association) {
+	public static void drawAssociations(ColorProcessor ip, List<ClusterPoint> points1, List<ClusterPoint> association) {
 		ip.setColor(Color.green);
 		for (int i = 0; i < points1.size(); i++) {
 
 			if (association.get(i) != null) {
 				Path2D line = new Path2D.Double();
-				line.moveTo(points1.get(i)[0], points1.get(i)[1]);
-				line.lineTo(association.get(i)[0], association.get(i)[1]);
+				line.moveTo(points1.get(i).getX(), points1.get(i).getY());
+				line.lineTo(association.get(i).getX(), association.get(i).getY());
 				ShapeRoi roi1 = new ShapeRoi(line);
 				roi1.setStrokeWidth(0.2f);
 				roi1.setStrokeColor(Color.green);

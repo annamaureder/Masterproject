@@ -22,10 +22,10 @@ public class RegionGrowing {
 	 *            Seed points
 	 * @return
 	 */
-	public static List<Cluster> detectClusters(List<double[]> allPoints, List<double[]> seedPoints) {
+	public static List<Cluster> detectClusters(List<ClusterPoint> allPoints, List<ClusterPoint> seedPoints) {
 
-		List<double[]> seeds = new ArrayList<>();
-		List<double[]> inputPoints = new ArrayList<>();
+		List<ClusterPoint> seeds = new ArrayList<>();
+		List<ClusterPoint> inputPoints = new ArrayList<>();
 
 		inputPoints.addAll(allPoints);
 
@@ -35,9 +35,9 @@ public class RegionGrowing {
 			seeds.addAll(seedPoints);
 		}
 
-		List<double[]> current = new ArrayList<>();
+		List<ClusterPoint> current = new ArrayList<>();
 		List<Cluster> clusters = new ArrayList<>();
-		double[] seed;
+		ClusterPoint seed;
 
 		while (!seeds.isEmpty()) {
 			seed = seeds.get(0);
@@ -48,7 +48,7 @@ public class RegionGrowing {
 				inputPoints.removeAll(current);
 				seeds.removeAll(current);
 				for (int i = 0; i < inputPoints.size(); i++) {
-					if (distance(current.get(c), inputPoints.get(i)) < distanceThreshold) {
+					if (current.get(c).distance(inputPoints.get(i)) < distanceThreshold) {
 						current.add(inputPoints.get(i));
 					}
 				}
@@ -60,19 +60,12 @@ public class RegionGrowing {
 				Cluster c = new Cluster(current);
 				clusters.add(c);
 			}
-			current = new ArrayList<double[]>();
+			current = new ArrayList<>();
 		}
 		return clusters;
 	}
 	
-	public static List<Cluster> detectClusters(List<double[]> allPoints) {
+	public static List<Cluster> detectClusters(List<ClusterPoint> allPoints) {
 		return detectClusters(allPoints, null);
-	}
-
-	private static double distance(double[] current, double[] point) {
-		double x = Math.abs(current[0] - point[0]);
-		double y = Math.abs(current[1] - point[1]);
-
-		return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
 	}
 }

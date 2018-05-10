@@ -59,12 +59,23 @@ Sparse correspondences of two input clusters $C_i$ and $C_j$ were initially achi
 As the intermediate results of the detection of the largest rigid part when applying only the ICP were insufficient for further computations (see section \ref{ResultsLRP}) another approach had to be applied. As proposed in \cite{Mitra07} a fast point feature histogram \cite{FPFH} was implemented in 2D. It is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. The choice of those features are the following: 
 %%
 \begin{itemize}
-	\item rotation-invariant features
+	\item rotation- and scale-invariant features
 	\item easy comparison of features
-	\item low complex implementation
+	\item straightforward implementation
+	\item approval of approach
 \end{itemize}
 %%
-By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. As a first step, the normals of all points from the input clusters $C_1$ and $C_2$ need to be estimated. Those is achieved by taking all points within a radius $r$ from a point $\boldsymbol{p}$. The normals need to be re-oriented and are calculated by using the approach from \cite{normals}. The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is then computed by using three geometric features. Between $\boldsymbol{p}$ and each of its $n$ neighbors $\boldsymbol{p_n}$ given a threshold $\tau$, those features are computed -- $\boldsymbol{p_i}$ is thereby the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p_j}$ the remaining point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. The following angles
+By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. 
+
+\subsubsection{PCA to compute normals}
+
+As a first step, the normals of all points from the input clusters $C_1$ and $C_2$ need to be estimated. Those is achieved by taking all points within a radius $r$ from a point $\boldsymbol{p}$. The normals need to be re-oriented and are calculated by using the approach from \cite{normals}. 
+
+%TODO: Write normal computation
+
+\subsubsection{SPFH and FPFH}
+
+The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is then computed by using three geometric features. Between $\boldsymbol{p}$ and each of its $n$ neighbors $\boldsymbol{p_n}$ given a threshold $\tau$, those features are computed -- $\boldsymbol{p_i}$ is thereby the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p_j}$ the remaining point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. The following angles
 %%
 \begin{equation}
 \begin{split}
@@ -77,7 +88,7 @@ By using a histogram the neighborhoods' geometrical properties can be provided i
 \label{eq:AngularVariations}
 \end{equation}
 %%
-are computed. In a second step for each point $\boldsymbol{p_i}$ again all $n$ neighbor points given a threshold $tau$ are computed. The final histogram of $p$ is then weighted to the final histogram (FPFH)
+are computed. In a second step for each point $\boldsymbol{p_i}$ again all $n$ neighbor points given a threshold $\tau$ are computed. The final histogram of $p$ is then weighted to the final histogram (FPFH)
 %%
 \begin{equation}
 FPFH(\boldsymbol{p}) = SPF(\boldsymbol{p}) + \frac{1}{n} \cdot \displaystyle\sum_{i=1}^{n}\frac{1}{w_i} \cdot SPF(p_i)
@@ -88,11 +99,21 @@ where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.4\linewidth]{FPFH_region}
-	\caption{The point region for the calculation of the feature histogram for a query point $\boldsymbol{p}_q$. The histogram of $\boldsymbol{p}_q$ and its neighbors (inside the grey circle) is weighted with the further linked neighbors (colored circles).}
+	\caption{The point region for the calculation of the feature histogram for a query point $\boldsymbol{p}_q$. The histogram of $\boldsymbol{p}_q$ and its neighbors (inside the grey circle) is weighted with the further linked neighbors (colored circles) \cite{FPFH}.}
 	\label{fig:FPFHregion}
 \end{figure}
 %%
-The resulting features are added into histograms with 125 bins. As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed, they can be compared and the most similar histograms are selected as correspondence if they are \textit{reciprocal}. Before, a persistence analysis is computed, which only takes salient histograms for comparison. 
+
+\subsubsection{Allocation of features into histograms}
+The resulting feature values in form of an angle between each two points are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in case of FPFH those are 3. After the allocation the associated bin at the index $idx$
+%%
+\begin{equation}
+idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
+\end{equation}
+%%
+is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed, they can be compared and the most similar histograms are selected as correspondence if they are \textit{reciprocal}. Before, a persistence analysis is computed, which only takes salient histograms for comparison. As a resulting histogram might contain a lot of zero values, each feature gets is own histogram, resulting in $f$ histograms with $q$ bins.
+
+%TODO: image of histograms + most unique feature points
 
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
