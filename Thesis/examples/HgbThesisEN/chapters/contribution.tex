@@ -103,6 +103,17 @@ After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they are
 
 After planning the algorithm, it was initially implemented and for 2D point clouds, in order to be able to focus solely on developing and testing.
 
+\subsection{Chosen environment}
+
+The initial approach was implemented in Java, using ImageJ as processing library. The chosen environment depends on the following factors:
+\begin{itemize}
+	\item familiarity and prior experience
+	\item complexity
+	\item available plug-in for image processing
+\end{itemize}
+%%
+As ImageJ is mainly used for 2D use cases, another implementation would be possible in 3D using PCL in C++. As a result, the attention can be brought to segmentation and visualization in 3D.
+
 \subsection{Architecture}
 
 The initial algorithm was realized with four classes to divide the ``divide and conquer'' algorithm from the Cluster object as well as the Visualization and the registration process of sub clusters.

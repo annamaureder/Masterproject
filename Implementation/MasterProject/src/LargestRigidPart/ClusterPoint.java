@@ -1,9 +1,14 @@
 package LargestRigidPart;
 
-public class ClusterPoint {
+import java.awt.geom.Point2D;
+import java.util.List;
+
+public class ClusterPoint extends Point2D implements Comparable<ClusterPoint>{
 	
 	private double[] coordinates = new double[2];
 	private double[] normal = new double[2];
+	
+	List<ClusterPoint> neighbors;
 	private int[] FPFH;
 	
 	public ClusterPoint(double x, double y){
@@ -15,13 +20,14 @@ public class ClusterPoint {
 		coordinates = points;
 	}
 	
-	public double distance(ClusterPoint point2) {
-		double x = Math.abs(this.coordinates[0] - point2.coordinates[0]);
-		double y = Math.abs(this.coordinates[1] - point2.coordinates[1]);
-
-		return Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+	public double[] subtract(ClusterPoint p){
+		double[] result = new double[p.coordinates.length];
+		for (int i = 0; i < p.coordinates.length; i++){
+			result[i] = this.coordinates[i] - p.coordinates[i];
+		}
+		return result;
 	}
-
+	
 	public double[] getCoordinates() {
 		return coordinates;
 	}
@@ -33,9 +39,17 @@ public class ClusterPoint {
 	public double[] getNormal() {
 		return normal;
 	}
+	
+	public void setNormal(double[] normal) {
+		this.normal = normal;
+	}
 
 	public int[] getFPFH() {
 		return FPFH;
+	}
+	
+	public void setFPFH(int[] featureHistogram) {
+		FPFH = featureHistogram;
 	}
 	
 	public double getX(){
@@ -46,4 +60,23 @@ public class ClusterPoint {
 		return coordinates[1];
 	}
 	
+	public List<ClusterPoint> getNeighborhood() {
+		return neighbors;
+	}
+
+	public void setNeighbors(List<ClusterPoint> neighbors) {
+		this.neighbors = neighbors;
+	}
+
+	public void setLocation(double x, double y) {
+		coordinates[0] = x;
+		coordinates[1] = y;
+		
+	}
+
+	@Override
+	public int compareTo(ClusterPoint o) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
