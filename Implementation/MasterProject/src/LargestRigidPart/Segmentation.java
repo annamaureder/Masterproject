@@ -75,10 +75,48 @@ public class Segmentation implements PlugInFilter {
 		IJ.log("Cluster1: " + c1.getPoints().size() + " points");
 		IJ.log("Cluster2: " + c2.getPoints().size() + " points");
 		
-		PartDetection detect = new PartDetection(c1, c2);
-		rigidParts = detect.getRigidParts();
+		c1.calculateFeatures();
+		c2.calculateFeatures();
+		
+		showNormals();
+		
+		//PartDetection detect = new PartDetection(c1, c2);
+		//rigidParts = detect.getRigidParts();
+		
 
-		showResults();
+		//showResults();
+	}
+
+	private void showNormals() {
+		ColorProcessor cp = new ColorProcessor(width, height);
+		cp.invert();
+		
+		for(ClusterPoint point : c1.getPoints()){
+			if(point.getNormal()==null){
+				IJ.log("Normal is null");
+				return;
+			}
+		}
+		
+		Visualize.showImage(cp, "Normals C1");
+		
+		ColorProcessor cp2 = new ColorProcessor(width, height);
+		cp2.invert();
+		
+		for(ClusterPoint point : c2.getPoints()){
+			if(point.getNormal()==null){
+				IJ.log("Normal is null");
+				return;
+			}
+			
+			IJ.log("normal: " + point.getNormal()[0] + "/" + point.getNormal()[1]);
+			Visualize.drawDot(cp2, point, Color.black, 4);
+			ClusterPoint target = new ClusterPoint(point.getX() + point.getNormal()[0] * 10, point.getY() + point.getNormal()[1] * 10);
+			Visualize.drawLine(cp2, point, target, Color.green);
+			Visualize.drawDot(cp2, target, Color.red,2);
+		}
+		
+		Visualize.showImage(cp2, "Normals C2");
 	}
 	
 	/**

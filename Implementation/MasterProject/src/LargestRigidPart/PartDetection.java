@@ -54,7 +54,6 @@ public class PartDetection {
 		Cluster[] currentLrps = null;
 
 		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
-
 			IJ.log("Iteration #" + iteration++);
 			
 			if(iteration == 3){

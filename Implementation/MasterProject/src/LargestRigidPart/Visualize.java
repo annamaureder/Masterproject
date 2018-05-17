@@ -10,22 +10,21 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 public class Visualize {
-	
-	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta
-			};
-		
+
+	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta };
+
 	public static void drawPoints(ColorProcessor cp, List<ClusterPoint> points, Color color) {
 		cp.setColor(color);
 		for (int i = 0; i < points.size(); i++) {
 			cp.drawDot((int) points.get(i).getX(), (int) points.get(i).getY());
 		}
 	}
-	
-	public static void drawDot(ColorProcessor cp, ClusterPoint point, Color color){
+
+	public static void drawDot(ColorProcessor cp, ClusterPoint point, Color color, int size) {
 		cp.setColor(color);
-		cp.drawOval((int)point.getX(), (int)point.getY(), 5, 5);
+		cp.fillOval((int) point.getX(), (int) point.getY(), size, size);
 	}
-	
+
 	public static void colorClusters(List<Cluster[]> segments, String title) {
 		ColorProcessor segmentation = new ColorProcessor(Segmentation.width, Segmentation.height);
 		ColorProcessor segmentation2 = new ColorProcessor(Segmentation.width, Segmentation.height);
@@ -42,13 +41,13 @@ public class Visualize {
 			drawPoints(segmentation, cluster1.getPoints(), colors[i % colors.length]);
 			drawPoints(segmentation2, cluster2.getPoints(), colors[i % colors.length]);
 		}
-		if(Input.drawAxis){
+		if (Input.drawAxis) {
 			drawSkeleton(segmentation, segmentation2, segments);
 		}
 		showImage(segmentation, title);
 		showImage(segmentation2, title);
 	}
-	
+
 	public static void drawAssociations(ColorProcessor ip, List<ClusterPoint> points1, List<ClusterPoint> association) {
 		ip.setColor(Color.green);
 		for (int i = 0; i < points1.size(); i++) {
@@ -64,17 +63,27 @@ public class Visualize {
 			}
 		}
 	}
-	
-	public static void drawSkeleton(ColorProcessor cp, ColorProcessor cp2, List<Cluster[]> segments){
-		for(int i = 0; i < segments.size(); i++){
+
+	public static void drawLine(ColorProcessor ip, ClusterPoint point1, ClusterPoint point2, Color color) {
+		ip.setColor(color);
+
+		Path2D line = new Path2D.Double();
+		line.moveTo(point1.getX(), point1.getY());
+		line.lineTo(point2.getX(), point2.getY());
+		ShapeRoi roi1 = new ShapeRoi(line);
+		roi1.setStrokeWidth(0.2f);
+		roi1.setStrokeColor(color);
+		ip.draw(roi1);
+	}
+
+	public static void drawSkeleton(ColorProcessor cp, ColorProcessor cp2, List<Cluster[]> segments) {
+		for (int i = 0; i < segments.size(); i++) {
 			segments.get(i)[0].drawPrincipalAxis(cp);
 			segments.get(i)[1].drawPrincipalAxis(cp2);
 		}
 	}
-	
+
 	public static void showImage(ImageProcessor ip, String title) {
 		(new ImagePlus(title, ip)).show();
 	}
-	
-
 }

@@ -1,41 +1,15 @@
 \chapter{Feature-based approach}
 \label{cha:FeatureApproach}
 
-\section{Largest rigid part}
-\label{LRP}
+To solve the main drawbacks of finding reliable point correspondences between $C_1$ and $C_2$ another approach is drawn on the an initial alignment on point features. The approach is closely related to Mitra \cite{Mitra07} and only proposes slight deviations of the approach to be compared with the reference approach. The main part of the approach is the computation of point feature histograms, namely FPFH \cite{FPFH} as proposed by Mitra et al \cite{Mitra07}.
 
-As opposed to recursively subdividing $C_1$ and $C_2$ into sub clusters, as an initial step the largest rigid part (LRP) is detected. From there, all other linked parts can be detected by region growing and reapplying the algorithm.
-The algorithm was applied on 3D point clouds by \ref{LRP}.
-
-\subsection{Basic functionality}
-\label{functionalityLRP}
-As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors (FPFH) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that two points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
-
-\subsection{Implementation steps}
-
-In order to re-implement the algorithm in 2D, modifications had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). The initial idea was to detect correspondences by applying the ICP only proceeding the iterative transformation calculation with the most reliable correspondences. However, this approach did not manage to detect the desired correspondences of the largest rigid part (see section \ref{ResultsLRP}). Building on the reference paper by Mitra \cite{Mitra07} features for all points of $C_1$ and $C_2$ are computed to use those for point correspondences between two clusters $C_1$ and $C_2$.
-
-\begin{enumerate}
-	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate normals of all points.
-	\item Point features are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
-	\item The RANSAC approach is applied on those correspondences to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
-	\item The LRP is assigned to the resulting biggest point cluster.
-	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. The algorithm is then reapplied on those clusters until all rigid parts have been discovered.
-\end{enumerate}
-
-\subsection{Detection of sparse correspondences}
-\label{correspondences}
-
-As a first step, the 2D hulls of an articulated object in two different poses are taken as input (see Figure XX).
-
-%TODO: add articulated puppet in two poses for input PICTURE
-
-\subsubsection{Point features}
-As the intermediate results of the detection of the largest rigid part when applying only the ICP were insufficient for further computations (see section \ref{ResultsLRP}) another approach had to be applied. As proposed in \cite{Mitra07} a fast point feature histogram \cite{FPFH} was implemented in 2D. It is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. The choice of those features are the following: 
+\section{FPFH}
+\label{FPFH}
+The ``Fast Point Feature histograms'' algorithm is implemented in 2D. It is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. The choice of those features are the following: 
 %%
 \begin{itemize}
 	\item rotation- and scale-invariant features
-	\item easy comparison of features
+	\item easy comparison of feature histograms
 	\item straightforward implementation
 	\item approval of approach
 	\item easy adaption from different dimensions (2D and 3D)
@@ -43,7 +17,7 @@ As the intermediate results of the detection of the largest rigid part when appl
 %%
 By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. 
 
-\subsubsection{Normal estimation}
+\subsection{Normal estimation}
 
 As a first step, the normals of all points from the input clusters $C_1$ and $C_2$ need to be estimated. Those is achieved by taking all points $k$ within a radius $r$ from a point $\boldsymbol{p}$. Subsequently, a least error fit straight line $X$ in the form $ax + by +c = 0$ to all $k$ points is computed by minimizing the squared distances from all points $\boldsymbol{p_i(x_i,y_i)}$
 %%
@@ -58,16 +32,16 @@ e =   \displaystyle\sum_{i=1}^{k} dist^2(x_i, y_i)
 to $X$. This is done by computing the unknown parameters $a, b$ with the covariance matrix 
 %%
 \begin{equation}
- \begin{pmatrix}
- \overline{x^2} - \overline{x} \cdot \overline{x} & \overline{xy} -\overline{x} \cdot \overline{y}\\
- \overline{xy} -\overline{y} \cdot \overline{x} & \overline{y^2} -\overline{y} \cdot \overline{y}
- \end{pmatrix} \cdot \begin{pmatrix}
-  a \\
-  b
-  \end{pmatrix} = \lambda \cdot \begin{pmatrix}
-    a \\
-    b
-    \end{pmatrix}
+\begin{pmatrix}
+\overline{x^2} - \overline{x} \cdot \overline{x} & \overline{xy} -\overline{x} \cdot \overline{y}\\
+\overline{xy} -\overline{y} \cdot \overline{x} & \overline{y^2} -\overline{y} \cdot \overline{y}
+\end{pmatrix} \cdot \begin{pmatrix}
+a \\
+b
+\end{pmatrix} = \lambda \cdot \begin{pmatrix}
+a \\
+b
+\end{pmatrix}
 \end{equation}
 %%
 resulting in two eigenpairs $(a_1,\lambda_1)$ and $(a_2,\lambda_2)$. The normal of $\boldsymbol{p}$ is computed solving the linear equation for the normal vector $\vec{n}$ which is represented by $\lambda_2$.
@@ -84,9 +58,9 @@ ax + by = c
 \label{eq:normalEstimation}
 \end{equation}
 %%
-which equals to .  Furthermore, it is required the all the normals are equally oriented. For that, the approach from NORMALS is used.
+which equals to .  Furthermore, it is required the all the normals are equally oriented. For that, the approach from NORMALS is used. Basically, all computed normals are traversed globally, and neighboring normals need to be almost equal oriented. To choose the right normal to start this approach, blablabla.
 
-\subsubsection{SPFH and FPFH}
+\subsection{SPFH and FPFH}
 
 The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is then computed by using three geometric features. Between $\boldsymbol{p}$ and each of its $n$ neighbors $\boldsymbol{p_n}$ given a threshold $\tau$, those features are computed -- $\boldsymbol{p_i}$ is thereby the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p_j}$ the remaining point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. The following angles
 %%
@@ -117,17 +91,47 @@ where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_
 \end{figure}
 %%
 
-\subsubsection{Feature histograms}
+\subsection{Feature histograms}
 The resulting feature values in form of an angle between each two points are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in case of FPFH those are 3. After the allocation the associated bin at the index $idx$
 %%
 \begin{equation}
 idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
 \end{equation}
 %%
-is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed, they can be compared and the most similar histograms are selected as correspondence if they are \textit{reciprocal}. Before, a persistence analysis is computed, which only takes salient histograms for comparison. This can be done with a normal distribution over all histograms $h$ to reject all histograms being similar to the mass. As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins.
+is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$. This can be done with a normal distribution over all histograms $h$ to reject all histograms being similar to the mass. As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins.
 
 \subsubsection{Adaptions for 2D}
 In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 
+
+\section{Initial alignment: Largest rigid part}
+\label{LRP}
+
+As opposed to recursively subdividing $C_1$ and $C_2$ into sub clusters, as an initial step the largest rigid part (LRP) is detected. From there, all other linked parts can be detected by region growing and reapplying the algorithm.
+The algorithm was originally applied on 3D point clouds.
+
+\subsection{Basic functionality}
+\label{functionalityLRP}
+As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors (FPFH) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that two points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+
+\subsection{Implementation steps}
+
+In order to re-implement the algorithm in 2D, modifications had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). The initial idea was to detect correspondences by applying the ICP only proceeding the iterative transformation calculation with the most reliable correspondences. However, this approach did not manage to detect the desired correspondences of the largest rigid part (see section \ref{ResultsLRP}). Building on the reference paper by Mitra \cite{Mitra07} features for all points of $C_1$ and $C_2$ are computed to use those for point correspondences between two clusters $C_1$ and $C_2$.
+
+\begin{enumerate}
+	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate normals of all points.
+	\item Point features are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
+	\item The RANSAC approach is applied on those correspondences to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
+	\item The LRP is assigned to the resulting biggest point cluster.
+	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. The algorithm is then reapplied on those clusters until all rigid parts have been discovered.
+\end{enumerate}
+
+\subsection{Detection of sparse correspondences}
+\label{correspondences}
+
+As a first step, the 2D hulls of an articulated object in two different poses are taken as input (see Figure XX). Subsequently, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences the feature histograms are compared by means of normal distribution, mean and peak. The most similar histograms are selected as correspondence if they are \textit{reciprocal}.
+As some of those correspondences might be wrong (see figure XX), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+
+%TODO: add articulated puppet in two poses for input PICTURE
 
 %TODO: image of histograms + most unique feature points
 

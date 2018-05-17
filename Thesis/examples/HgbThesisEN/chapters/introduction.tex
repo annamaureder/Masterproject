@@ -1,57 +1,35 @@
 \chapter{Introduction}
 \label{cha:Introduction}
 
-%TODO: fluent text without sections
+Pose and motion estimation of objects is an active field of research due to the growing digitalization of day-to-day processes. %TODO: Write more about pose capture! --> see papers, puppet pose capture!
 
-%TODO: problem
-
-\section{Problem}
-
-Pose and motion estimation of objects is an active field of research due to the growing digitalization of day-to-day processes. A vast majority of existing pose estimation methods take advantage of sensors and markers as indicators for joints. Additionally, the rigid parts of an object and its joints are already known. However, unsupervised methods that are completely independent of user input and detect the pose of an unknown object, constitute a great challenge. Among those methods, the non-rigid registration (see section \ref{nonrigidregistration}) is a well-known approach \cite{survey}. The initial project idea was to create a tool for 3D animation purposes using a small puppet to capture its poses in real-time. However, the idea addressed many different challenges, like 3D reconstruction, segmentation, joint and skeleton estimation as well as creating an interface with a 3D animation program. As the implementation of these tasks would go beyond the scope of a thesis project, it was indispensable to break it down into its main areas.  
-
-pose capture --> digitalization, segmentation, correspondence of rigid parts, joints, computational expensive, input of user --> unknown parameters. To take the puppet pose capture as occasion, following considerations have to be done:
+\section{Problem statement}
+A vast majority of existing pose estimation approaches take advantage of labeling for joints and the rigid parts to state basic information about the object to be captured. Often combined with a machine learning approach the results are promising with growing learning phase. However, unsupervised methods that detect the pose of an unknown object, constitute a great potential as the detection of a pose operates completely independent from user input. Among those methods, the non-rigid registration (see section \ref{nonrigidregistration}) is a well-known approach \cite{survey}. The input of this algorithm are two or more poses of one articulated object. By merging one \textit{template} pose onto another \textit{query} pose, part correspondences can be made and the articulated object is segmented into its rigid parts. 
+Thereby, some core questions need to be considered:
 %%
-\begin{itemize}
-	\item How and in which form is the input data (puppet) received?
-	\item What are the rigid parts of the puppet?
-	\item What are the joints of the puppet?
-	\item Which joints/rigid parts correspond to each other in two different poses?	
+\\\begin{itemize}
+	\item How and in which form is the input data received?
+	\item What are the rigid parts of the articulated object?
+	\item Where are the joints linking those rigid parts?
+	\item Which joints/rigid parts correspond to each other in two different poses?
 \end{itemize}
 %%
+Many challenges have to be overcome emerging from different stages of the pose capture procedure (see section \ref{PoseCapture}). To name the most crucial ones, digital input data of an articulated object in the real worlds has to be captured. Thereby, input noise depending on the resolution and capture form is a important factor for an successful pose estimation. Furthermore, the ambiguity of body parts is one main problem especially if the articulated object has symmetric body parts which is the case for most living beings. One of the main drawbacks of current methods is the computational expensive procedure to detect rigid parts. As this directly influences the run time many improvements need to be done in this area, especially if real-time applications are required.
 
-\section{State of the art}
-%TODO: state of the art
-
-already existing approaches solve this problem with user input, pose capture contains much more than segmentation --> see chapter state of the art
-
-
-%TODO: goal + asssumptions + what will not be done
 \section{Goal}
 
-goal: having a 2d contour of an unknown articulated object, detect the rigid parts, joints between two different poses. Focus lies on segmentation, data is already available (no scanning/reconstruction). 
-
-To answer those questions extensive research has been conducted on pose estimation to get an idea of the general workflow (see section \ref{PoseCapture}), possible difficulties and potential approaches (see chapter \ref{cha:RelatedWork}). Thereby, the main issue of segmenting an articulated object into its rigid part frequently emerged and for this reason the thesis project focuses on this field.
-
-\section{Main Goal}
-
-The goal is to segment an articulated mesh $M$ into its unknown number $n$ of rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$ and extract all joints $m$ $\mathcal{J} =  \{J_1,\ldots,J_m\}$ linking those parts in form of a skeleton structure. In general, this is done by non-rigid registration of the point clouds $C_1$ and $C_2$ of an object in two different poses. $C_1$ is thereby used as a \textit{template} to be registered with $C_2$. The main task is to determine a part assignment $P_i$ and the corresponding transformation $T_i$ for all points of the \textit{template} that aligns them with all points of $C_2$. Basically, a divide and conquer approach is implemented to recursively subdivide $C_1$ and $C_2$ into matching sub clusters. 
-
-\section{Assumptions}
-
-The input mesh $M$ is assumed to solely consist of rigid parts that can not be deformed or stretched (e.g. rigid parts of a human) and are linked by joints. Comparing two poses being adopted by the articulated object, the geodesic distance $g(\boldsymbol{p}_i,\boldsymbol{p}_j)$ between two mesh points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ remains constant. Thereby, it is taken advantage of the knowledge that points located on a rigid part $P_i$ have the same transformation $T_i$ . Furthermore, it is assumed that the two poses of $M$ are oriented in the same direction.
-
+By means of current approaches in this particular field (see chapter \ref{cha:StateOfTheArt}), my thesis addresses the issue to detect the initial pose of an unknown articulated object given in two poses.
+Assuming, a 3D or 2D reconstructed model in form of a point cloud is already available, the thesis fully focuses on the segmentation of an articulated object into its rigid parts. The scanning and reconstruction step is therefore passed over. The main goal is then to segment an articulated object $M$ into its unknown number $n$ of rigid parts $\mathcal{P} =  \{P_1,\ldots,P_n\}$ and extract all joints $m$ $\mathcal{J} =  \{J_1,\ldots,J_m\}$ linking those parts in form of a skeleton structure. The input poses are constituted by two point clouds $C_1$ and $C_2$ of $M$ in two different poses. $C_1$ is thereby used as a \textit{template} to be registered with $C_2$. The main task is to determine a part assignment $P_i$ and the corresponding transformation $T_i$ for all points of the \textit{template} that aligns them with all points of $C_2$. The main difficulty is that only a number of unsorted points of $C_1$ and $C_2$ are present, no further information, like labeling by the user or PCA (principal component analysis) related variables are available. The only assumption that can be made is that $M$ only consists of rigid parts that can not be deformed or stretched (e.g. the rigid parts of a human) and are linked by joints. Comparing two poses being adopted by the articulated object, the geodesic distance $g(\boldsymbol{p}_i,\boldsymbol{p}_j)$ between two mesh points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ remains constant. Thereby, it is taken advantage of the knowledge that points located on a rigid part $P_i$ have the same transformation $T_i$ .
 
 %TODO: method
-\section{Method, research question}
+\section{Method}
 
-doing experiments with State of the art as help, chapter "Initial" proposes a quite naive linear approach, taking no image features, only divide and conquer . chapter "improvements" focuses on the drawbacks and continues where this simple approach fails --> articulated objects. Starting with an initial alignment to get the largest rigid part of the object --> recursively detect other parts from there. Relates to \cite{Mitra}.
+To answer the questions posed in the beginning, two segmentation approaches are implemented being inspired by State of the Art approaches. The first approach is quite straightforward and linear (see chapter \ref{cha:LinearApproach}) which aims to reduce the computation steps of previous approaches. This is reached by iteratively subdividing $C_1$ and $C_2$ with a ``divide and conquer'' approach. Assumed corresponding sub clusters are verified to match and in this case those clusters are not subdivided any further. This attempt does only depend on the point coordinates of $C_1$ and $C_2$ and the orientation of the clusters being compared. In case of many linked parts or too dissimilar transformations between $C_1$ and $C_2$ this approach is not reliable. To address the segmentation with focus on articulated objects with a typical skeleton structure (e.g. a human), a feature-based approach (\ref{cha:FeatureApproach}) is implemented which offers more information about the points of $C_1$ and $C_2$ apart from their coordinates. Those support for the initial alignment of the input clusters to find a reliable corresponding rigid part. Proceeding from there, joints can be estimated and all linked rigid parts are detected iteratively. The reference paper for this approach is from Mitra et al \cite{Mitra07}.
 
 %TODO: roadmap, start position
-\section{Roadmap}
-Showing the outcomes from the different approaches implemented, the drawbacks are listed and future work is proposed.
+\section{Conclusion}
+By showing the outcomes from the two approaches, emerged drawbacks, main difficulties and possible potentials are outlined. Furthermore, planned future work is proposed to compensate originated difficulties. All those offer a solid base for further improvements in this area. 
 
-\subsection{Prerequisites}
-\label{prerequisites}
-Assuming, a 3D reconstructed model in form of a point cloud is already available to fully focus on the segmentation of an articulated object in form of a mesh into its rigid parts.
+
 
 

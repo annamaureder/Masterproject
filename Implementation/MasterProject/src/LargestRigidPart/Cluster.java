@@ -28,7 +28,7 @@ public class Cluster implements Comparable<Cluster> {
 	private int principalLength;
 	private int secondaryLength;
 	private final int k = 20;
-	private final double r = 20;
+	private final double r = 12;
 
 	public Cluster(ImageProcessor ip) {
 		this.points = getPoints(ip);
@@ -215,7 +215,6 @@ public class Cluster implements Comparable<Cluster> {
 		List<ClusterPoint> neighbors = new ArrayList<>();
 		
 		//TODO: find k neighbors of point --> without radius?
-
 		for(int i = 0; i < points.size(); i++){
 			double distance = points.get(i).distance(point);
 			if(distance < r){
@@ -230,23 +229,18 @@ public class Cluster implements Comparable<Cluster> {
 		//PCA normals
 		for(int i = 0; i < points.size(); i++){
 			getNeighborhood(points.get(i), k);
-			IJ.log("Number of neighbors: " + points.get(i).getNeighborhood().size());
 			calculateNormal(points.get(i));
 		}
 		
-		FPFH feature;
-		
-		for(int i = 0; i < points.size(); i++){
-			feature = new FPFH(points.get(i));
-			feature.detectFeatures();
-		}
+//		FPFH feature;
+//		
+//		for(int i = 0; i < points.size(); i++){
+//			feature = new FPFH(points.get(i));
+//			feature.detectFeatures();
+//		}
 	}
 	
 	public void calculateNormal(ClusterPoint point){
-		
-		double[] normal = null;
-		
-		
 		if(point.getNeighborhood().size()!= 1){
 			//TODO calculate normal: RANSAC - best fitting line
 			NormalEstimation n = new NormalEstimation(point);
@@ -257,7 +251,6 @@ public class Cluster implements Comparable<Cluster> {
 			IJ.log("No neighbors found!");
 			return;
 		} 
-		point.setNormal(normal);
 	}
 	
 	//TODO
