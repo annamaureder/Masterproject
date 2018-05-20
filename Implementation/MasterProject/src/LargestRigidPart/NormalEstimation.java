@@ -75,8 +75,6 @@ public class NormalEstimation {
 			normal[1] = 0;
 		}
 		
-		IJ.log("normal Y: " + normal[1]);
-
 		//normalize vector to length 1
 		
 		double length = Math.sqrt(Math.pow(normal[0], 2) + Math.pow(normal[1], 2));

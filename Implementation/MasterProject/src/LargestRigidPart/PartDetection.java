@@ -102,8 +102,8 @@ public class PartDetection {
 			}
 			for (Cluster[] cluster : clusters) {
 				if (cluster[0].getJoint() != null) {
-					Visualize.drawDot(results, cluster[0].getJoint(), Color.red);
-					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue);
+					Visualize.drawDot(results, cluster[0].getJoint(), Color.red, 4);
+					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue, 4);
 				}
 				Visualize.drawPoints(results, cluster[0].getPoints(), Color.red);
 				Visualize.drawPoints(results, cluster[1].getPoints(), Color.blue);

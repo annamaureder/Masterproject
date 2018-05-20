@@ -96,6 +96,11 @@ public class Segmentation implements PlugInFilter {
 				IJ.log("Normal is null");
 				return;
 			}
+			
+			Visualize.drawDot(cp, point, Color.black, 4);
+			ClusterPoint target = new ClusterPoint(point.getX() + point.getNormal()[0] * 10, point.getY() + point.getNormal()[1] * 10);
+			Visualize.drawLine(cp, point, target, Color.green);
+			Visualize.drawDot(cp, target, Color.red,2);
 		}
 		
 		Visualize.showImage(cp, "Normals C1");
@@ -109,7 +114,6 @@ public class Segmentation implements PlugInFilter {
 				return;
 			}
 			
-			IJ.log("normal: " + point.getNormal()[0] + "/" + point.getNormal()[1]);
 			Visualize.drawDot(cp2, point, Color.black, 4);
 			ClusterPoint target = new ClusterPoint(point.getX() + point.getNormal()[0] * 10, point.getY() + point.getNormal()[1] * 10);
 			Visualize.drawLine(cp2, point, target, Color.green);

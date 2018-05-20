@@ -35,13 +35,13 @@ Voxelization, Shape from Shilouette, Shape from Shading, Depth camera, stereo ca
 How it is done: markers, sensors, shape fitting (already known)
 Cite all papers (Voxelization, ....). There are previous approaches with markers and sensors which will not be treated in this work in detail, as markerless options are taken as focus.
 
-\subsubsection{Supervised methods}
+\section{Supervised methods}
 Many already existing methods don't require markers and sensors but already assume or know the hierarchical structure or the body parts of the object to be captured (see \cite{multiLayerSkeleton}, \cite{baker2005shape}, \cite{de2008hierarchical} and \cite{michoud2007real}).
 
-\subsubsection{Unsupervised methods}
+\section{Unsupervised methods}
 Although the approaches mentioned in section \ref{sec:currentApproaches} work quite well depending on the application, improvements can be made that are more independent from user inputs.... which leads us to the non-rigid registration \ref{nonrigidregistration}.
 
-\section{Non-rigid registration}
+\subsection{Non-rigid registration}
 \label{nonrigidregistration}
 
 Generally, registration means the alignment of rigid point clouds (see figure \ref{fig:registration}). A well-known approach to achieve this, is the iterative closest point (ICP) \cite{ICP}, which requires the input point clouds to be aligned quite similar to avoid a local optimum. After registration, a matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered point clouds. In case of two non-rigid objects (e.g. a human in different poses which is composed of rigid parts) the ICP won't lead to a satisfying registration as associated parts are transformed differently. In order to register a non-rigid object, a segmentation into its rigid parts is required.
@@ -50,7 +50,7 @@ Generally, registration means the alignment of rigid point clouds (see figure \r
 \label{Challenges}
 There are many challenges regarding the non-rigid registration of point clouds in 2D, as well as in 3D. First off, the input data can be noisy by means of points not belonging to the object. Furthermore, the approach is computationally expensive and time-consuming, as the corresponding body parts of two meshes need to be detected iteratively. Additionally, the inevitable difficulty of finding the global optimum, related to ambiguous body parts, has to be overcome.
 
-\section{Related work}
+\subsection{Related work}
 \label{sec:RelatedWork}
 
 By focusing on approaches computing the segmentation of articulated objects from 3D data, many different ones could be detected. They face similar challenges (see subsection \ref{Challenges}) but solve them in different ways

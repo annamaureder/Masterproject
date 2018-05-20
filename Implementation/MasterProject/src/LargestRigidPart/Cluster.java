@@ -47,9 +47,9 @@ public class Cluster implements Comparable<Cluster> {
 		this.principalLength = getPrincipalRadius();
 		this.secondaryLength = getSecondaryRadius();
 	}
-	
-	public Cluster(){
-		
+
+	public Cluster() {
+
 	}
 
 	/*
@@ -73,11 +73,11 @@ public class Cluster implements Comparable<Cluster> {
 			for (int u = 0; u < w; u++) {
 				int p = ip.getPixel(u, v);
 				if (p < -1) {
-					pntlist.add(new ClusterPoint(u,v));
+					pntlist.add(new ClusterPoint(u, v));
 				}
 			}
 		}
-		
+
 		if (Input.removeOutliers) {
 			IJ.log("Remove Noise");
 			List<Cluster> clusters = RegionGrowing.detectClusters(pntlist);
@@ -120,8 +120,8 @@ public class Cluster implements Comparable<Cluster> {
 
 		return points;
 	}
-	
-	public List<ClusterPoint> alignAxis(ClusterPoint rotationPoint){
+
+	public List<ClusterPoint> alignAxis(ClusterPoint rotationPoint) {
 		return alignAxis(-this.orientation, rotationPoint);
 	}
 
@@ -204,61 +204,94 @@ public class Cluster implements Comparable<Cluster> {
 		for (ClusterPoint point : c.getPoints()) {
 			if (point.getX() < minPoint.getX()) {
 				minPoint = point;
-				minPointIndex = i; 
+				minPointIndex = i;
 			}
 			i++;
 		}
 		return minPointIndex;
 	}
-	
-	private void getNeighborhood(ClusterPoint point, int number){
+
+	private void getNeighborhood(ClusterPoint point, int number) {
 		List<ClusterPoint> neighbors = new ArrayList<>();
-		
-		//TODO: find k neighbors of point --> without radius?
-		for(int i = 0; i < points.size(); i++){
+		ClusterPoint closestPoint = null;
+		double closestPointDistance = Double.MAX_VALUE;
+
+		// TODO: find k neighbors of point --> without radius?
+		for (int i = 0; i < points.size(); i++) {
 			double distance = points.get(i).distance(point);
-			if(distance < r){
+			if (distance < r) {
 				neighbors.add(points.get(i));
+				if (distance < closestPointDistance && !points.get(i).equals(point)) {
+					closestPoint = points.get(i);
+					closestPointDistance = distance;
+				}
 			}
+			point.setClosestPoint(closestPoint);
 		}
 		point.setNeighbors(neighbors);
 	}
-	
-	public void calculateFeatures(){
-		
-		//PCA normals
-		for(int i = 0; i < points.size(); i++){
+
+	public void calculateFeatures() {
+
+		// PCA normals
+		for (int i = 0; i < points.size(); i++) {
 			getNeighborhood(points.get(i), k);
 			calculateNormal(points.get(i));
 		}
-		
-//		FPFH feature;
-//		
-//		for(int i = 0; i < points.size(); i++){
-//			feature = new FPFH(points.get(i));
-//			feature.detectFeatures();
-//		}
+		//orientNormals();
+
+		for (int i = 0; i < points.size(); i++) {
+			FPFH feature = new FPFH(points.get(i));
+			feature.detectFeatures();
+		}
 	}
-	
-	public void calculateNormal(ClusterPoint point){
-		if(point.getNeighborhood().size()!= 1){
-			//TODO calculate normal: RANSAC - best fitting line
+
+	public void calculateNormal(ClusterPoint point) {
+		if (point.getNeighborhood().size() != 1) {
+			// TODO calculate normal: RANSAC - best fitting line
 			NormalEstimation n = new NormalEstimation(point);
 			n.estimateNormal();
 		}
-		
-		else{
+
+		else {
 			IJ.log("No neighbors found!");
 			return;
-		} 
+		}
 	}
-	
-	//TODO
-	public void detectKeyFeatures(){
+
+	public void orientNormals() {
+		List<ClusterPoint> ref = new ArrayList<>();
+		ref.addAll(points);
+
+		ClusterPoint parent = ref.get(0);
+		List<ClusterPoint> neighbors = new ArrayList<>();
+
+		while (!ref.isEmpty()) {
+			for (int i = 0; i < points.size(); i++) {
+				ClusterPoint current = points.get(i);
+				if (ref.contains(current) && parent.distance(current) < 12) {
+					if (parent.dot(current) < 0) {
+						points.get(i).setNormal(flip(current.getNormal()));
+					}
+					neighbors.add(current);
+				}
+			}
+			parent = neighbors.get(0);
+			ref.removeAll(neighbors);
+			neighbors.remove(parent);
+		}
 	}
-	
-	//TODO
-	public void findFeatureCorrespondences(){
+
+	public double[] flip(double[] normal) {
+		return new double[] { normal[0] * -1, normal[1] * -1 };
+	}
+
+	// TODO
+	public void detectKeyFeatures() {
+	}
+
+	// TODO
+	public void findFeatureCorrespondences() {
 	}
 
 	public List<ClusterPoint> getPoints() {
@@ -272,18 +305,18 @@ public class Cluster implements Comparable<Cluster> {
 	public double getOrientation() {
 		return orientation;
 	}
-	
+
 	public ClusterPoint getJoint() {
 		return joint;
 	}
-	
-	public void setJoint(ClusterPoint joint){
+
+	public void setJoint(ClusterPoint joint) {
 		this.joint = joint;
 	}
 
 	@Override
 	public int compareTo(Cluster c) {
 		int size = c.points.size();
-        return size - this.points.size();
+		return size - this.points.size();
 	}
 }
