@@ -241,9 +241,13 @@ public class Cluster implements Comparable<Cluster> {
 		//orientNormals();
 
 		for (int i = 0; i < points.size(); i++) {
+			IJ.log("Features for point " + i+1);
 			FPFH feature = new FPFH(points.get(i));
+			IJ.log("FPFH created!");
 			feature.detectFeatures();
 		}
+		
+		points.get(0).getFPFH().showTestData();
 	}
 
 	public void calculateNormal(ClusterPoint point) {

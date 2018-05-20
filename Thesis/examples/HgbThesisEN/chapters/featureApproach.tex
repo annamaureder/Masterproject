@@ -1,11 +1,13 @@
 \chapter{Feature-based approach}
 \label{cha:FeatureApproach}
 
-To solve the main drawbacks of finding reliable point correspondences between $C_1$ and $C_2$ another approach is drawn on the an initial alignment on point features. The approach is closely related to Mitra \cite{Mitra07} and only proposes slight deviations of the approach to be compared with the reference approach. The main part of the approach is the computation of point feature histograms, namely FPFH \cite{FPFH} as proposed by Mitra et al \cite{Mitra07}.
+%TODO: why features? adding another important information to point coordinates --> curvature of points
 
-\section{FPFH}
+To solve the main drawbacks of finding reliable point correspondences between $C_1$ and $C_2$ another approach is drawn on point features for an initial alignment. The approach is closely related to Mitra \cite{Mitra07} and only proposes slight deviations of the approach to be compared with the reference approach. The main part of the approach is the computation of point feature histograms, namely FPFH \cite{FPFH} as proposed by Mitra et al \cite{Mitra07}. Basically, the computed features describe the curvature between specific points. By computing those features for all points, depending on the curvature, which might be an implied curve for an ellipsoid rigid part, in case of intersections of rigid parts, different features are proposed. Taking only \textit{unique} feature histograms for correspondence estimation which are features considerably deviating from the mean histogram $\mu$ of all point feature histograms of a cluster $C_i$  allows to reduce computation time. It is thereby assumed that those unique features are those located between rigid parts.
+
+\section{Fast point feature histograms}
 \label{FPFH}
-The ``Fast Point Feature histograms'' algorithm is implemented in 2D. It is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. The choice of those features are the following: 
+The ``Fast Point Feature histograms'' (FPFH) algorithm is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. It focuses on computing features, depending on a points normal $\vec{n}$ and its $k$ neighbors.  The choice of those features are the following: 
 %%
 \begin{itemize}
 	\item rotation- and scale-invariant features
@@ -15,11 +17,12 @@ The ``Fast Point Feature histograms'' algorithm is implemented in 2D. It is an i
 	\item easy adaption from different dimensions (2D and 3D)
 \end{itemize}
 %%
-By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. 
+By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. As in the unordered list of points no surface and following no point normals are provided, those have to be computed in a initial step (see subsection \ref{normal}).
 
 \subsection{Normal estimation}
+\label{normal}
 
-As a first step, the normals of all points from the input clusters $C_1$ and $C_2$ need to be estimated \cite{normals}. Those is achieved by taking all points $k$ within a radius $r$ from a point $\boldsymbol{p}$. Subsequently, a least error fit straight line $X$ in the form $ax + by +c = 0$ to all $k$ points is computed by minimizing the squared distances from all points $\boldsymbol{p_i(x_i,y_i)}$
+As a first step, the normals of all unordered points from the input clusters $C_1$ and $C_2$ need to be estimated \cite{normals}. Those is achieved by taking all points $k$ within a radius $r$ from a point $\boldsymbol{p}$. Subsequently, a least error fit straight line $X$ in the form $ax + by +c = 0$ to all $k$ points is computed by minimizing the squared distances from all points $\boldsymbol{p_i(x_i,y_i)}$
 %%
 \begin{equation}
 \begin{split}
@@ -94,14 +97,19 @@ where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_
 \end{figure}
 %%
 
-\subsection{Feature histograms}
-The resulting feature values in form of three angles between each two points are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
+\subsection{Analyzing feature histograms}
+The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
 %%
 \begin{equation}
 idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
 \end{equation}
 %%
-is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$. This can be done with a normal distribution over all histograms $h$ to reject histograms being similar to the mass. As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins.
+is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$.
+%TODO: Write feature histogram comparison
+In order to achieve that the mean of all feature histograms $\mu$ of a cluster $C_i$ is computed. Subsequently, the distance of a feature histogram $h_i$ is compared to $h_\mu$ and in case of being outside the value $\mu \pm \theta \cdot \sigma$ denoted as \textit{unique}. \cite{surfletPairRelation}
+
+
+As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins.
 
 \subsection{Adaptions for 2D}
 In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 

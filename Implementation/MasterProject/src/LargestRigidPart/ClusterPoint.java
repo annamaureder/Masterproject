@@ -20,7 +20,7 @@ public class ClusterPoint extends Point2D implements Comparable<ClusterPoint>{
 		this.closestPoint = closestPoint;
 	}
 
-	private int[] FPFH;
+	private Histogram FPFH;
 	
 	public ClusterPoint(double x, double y){
 		coordinates[0] = x;
@@ -55,11 +55,11 @@ public class ClusterPoint extends Point2D implements Comparable<ClusterPoint>{
 		this.normal = normal;
 	}
 
-	public int[] getFPFH() {
+	public Histogram getFPFH() {
 		return FPFH;
 	}
 	
-	public void setFPFH(int[] featureHistogram) {
+	public void setFPFH(Histogram featureHistogram) {
 		FPFH = featureHistogram;
 	}
 	
