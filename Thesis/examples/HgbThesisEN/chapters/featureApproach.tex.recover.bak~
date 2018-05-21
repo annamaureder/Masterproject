@@ -108,7 +108,7 @@ where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_
 \end{figure}
 %%
 \subsection{Creation of feature histograms}
-The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram $H \{bin_1,\ldots,bin_b\}$ with $b = q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
+The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
 %%
 \begin{equation}
 idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
@@ -132,25 +132,25 @@ is incremented by 1. The function $q(f)$ returns the interval the feature is all
 %%
 \subsection{Comparison of histograms}
 
-As a next step, all \textit{unique} feature histograms of $C_1$ are verified to find the closest match from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_j$ and $H_k$ with each $b$ bins. In order to detect the best fitting histogram three main criteria mentioned most often in reference papers \cite{surfletPairRelation} \cite{localFeatureHistograms} were selected. As first criterion the squared euclidean distance (L2)
-%%
-\begin{equation}
-\varepsilon(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i))^2
-\end{equation}
-%%
-is computed. In the reference paper of Mitra et al. \cite{Mitra07} the euclidean distance was the only criterian for correspondence computation. Subsequently, the statistical Chi-Square ($\chi^2$) divergence
-%%
-\begin{equation}
-\chi^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}\frac{(H_j(i) - H_k(i))^2}{(H_j(i) + H_k(i))}
-\end{equation}
-%%
-is examined. Finally, the Kullback-Leibler (KL) divergence
-%%
-\begin{equation}
-\kappa^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i)) \cdot ln \frac{H_j(i)}{H_k(i)}
-\end{equation}
-%%
-is calculated, which is the most computational expensive one. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm containing 0, for calculation the value 1 is assumed.
+As a next step, all \textit{unique} feature histograms of $C_1$ are verified to find the closest match from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_i$ and $H_j$. In order to reduce computation time only the three main criteria mentioned most often in reference papers \cite{surfletPairRelation} were selected. As first criterion the squared euclidean distance (L2)
+
+$E(H_i, H_j) = 
+
+is computed. Subsequently, the statistical $X^2$ test 
+
+
+
+
+is examined. In a final step, the Kullback-Leibler (KL) divergence
+
+
+
+is computed, which is the most computational expensive one. 
+
+
+
+
+As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins. 
 
 \subsection{Adaptions for 2D}
 In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 
@@ -164,7 +164,7 @@ As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub cluste
 
 \subsection{Basic functionality}
 \label{functionalityLRP}
-As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
 
 \subsection{Implementation steps}
 
@@ -190,7 +190,7 @@ As some of those correspondences might be wrong (see figure XX), a RANSAC approa
 
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output.
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output. In case of symmetric poses, the RANSAC would not be required, as the largest rigid part (the torso) would be almost perfectly aligned and taken as input for the region growing. But still, to cover as many cases as possible, this computation step is necessary. 
 
 \subsection{Cluster detection by region growing}
 \label{cluster}
