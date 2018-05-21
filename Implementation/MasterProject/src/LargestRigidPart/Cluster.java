@@ -252,7 +252,6 @@ public class Cluster implements Comparable<Cluster> {
 
 	public void calculateNormal(ClusterPoint point) {
 		if (point.getNeighborhood().size() != 1) {
-			// TODO calculate normal: RANSAC - best fitting line
 			NormalEstimation n = new NormalEstimation(point);
 			n.estimateNormal();
 		}
@@ -322,5 +321,14 @@ public class Cluster implements Comparable<Cluster> {
 	public int compareTo(Cluster c) {
 		int size = c.points.size();
 		return size - this.points.size();
+	}
+	
+	public List<Histogram> getHistograms(){
+		List<Histogram> histograms = new ArrayList<>();
+		
+		for(ClusterPoint point: points){
+			histograms.add(point.getFPFH());
+		}
+		return histograms;
 	}
 }

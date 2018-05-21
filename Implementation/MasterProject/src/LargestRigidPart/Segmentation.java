@@ -80,8 +80,8 @@ public class Segmentation implements PlugInFilter {
 		
 		showNormals();
 		
-		//PartDetection detect = new PartDetection(c1, c2);
-		//rigidParts = detect.getRigidParts();
+		PartDetection detect = new PartDetection(c1, c2);
+		rigidParts = detect.getRigidParts();
 		
 
 		//showResults();

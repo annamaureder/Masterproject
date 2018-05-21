@@ -66,7 +66,6 @@ public class PartDetection {
 			IJ.log("Unclustered Target: " + unclusteredTarget.size());
 
 			// grow regions from current lrp
-
 			referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
 			targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
 			
@@ -117,17 +116,22 @@ public class PartDetection {
 			}
 
 			currentClusters = clusters.pop();
-			ClosestPoint2 cp = new ClosestPoint2(currentClusters[0], currentClusters[1]);
+			ClosestPoint3 cp = new ClosestPoint3(currentClusters[0], currentClusters[1]);
 			IJ.log("Finished ICP!");
 
 			Map<Integer, Integer> denseCorrespondances = cp.getCorrespondences();
+			
+			if(denseCorrespondances.size() < 3){
+				IJ.log("Too few correspondences detected!");
+				return;
+			}
 
 			currentLrps = new LargestRigidPart(currentClusters[0], currentClusters[1], denseCorrespondances)
 					.getLargestRigidParts();
 			
 			if (currentLrps[0].getPoints().size() < 15){
-				IJ.log("largest cluster from correspondences");
-				currentLrps = getLargestClusters(denseCorrespondances);
+				IJ.log("No LRP found! --> Show largest cluster");
+				return;
 			}
 			
 			largestRigidParts.add(currentLrps);
@@ -216,41 +220,5 @@ public class PartDetection {
 			return null;
 		}
 		return new ClusterPoint(x/numberPoints, y/numberPoints);
-	}
-	
-	public Cluster[] getLargestClusters(Map<Integer, Integer> denseCorrespondances){
-		List<ClusterPoint> referencePoints = new ArrayList<>();
-		List<ClusterPoint> targetPoints = new ArrayList<>();
-		
-		Cluster biggestClusterReference = new Cluster();
-		Cluster biggestClusterTarget = new Cluster();
-		
-		for (Map.Entry<Integer, Integer> entry : denseCorrespondances.entrySet()) {
-			referencePoints.add(currentClusters[0].getPoints().get(entry.getKey()));
-			targetPoints.add(currentClusters[1].getPoints().get(entry.getValue()));
-		}
-		
-		for (Cluster cluster : RegionGrowing.detectClusters(referencePoints)) {
-			if (cluster.getPoints().size() > biggestClusterReference.getPoints().size()) {
-				biggestClusterReference = cluster;
-			}
-		}
-		
-		for (Cluster cluster : RegionGrowing.detectClusters(targetPoints)) {
-			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
-				biggestClusterTarget = cluster;
-			}
-		}
-		
-		ColorProcessor input = new ColorProcessor(Segmentation.width, Segmentation.height);
-		input.invert();
-		//Visualize.drawAssociations(input, referencePoints, targetPoints);
-		Visualize.drawPoints(input, referencePoints, Color.blue);
-		Visualize.drawPoints(input, targetPoints, Color.red);
-		//Visualize.drawPoints(input, biggestClusterReference.getPoints(), Color.blue);
-		//Visualize.drawPoints(input, biggestClusterTarget.getPoints(), Color.red);
-		Visualize.showImage(input, "biggest cluster correspondences");
-		
-		return new Cluster[]{new Cluster(referencePoints), new Cluster(targetPoints)};
 	}
 }

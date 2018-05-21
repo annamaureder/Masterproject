@@ -159,10 +159,10 @@ public class LargestRigidPart {
 			list2.add(c_j.getPoints().get(entry.getValue()));
 		}
 		
-		Visualize.drawAssociations(input, list1, list2);
-		Visualize.drawPoints(input, c_i.getPoints(), Color.blue);
-		Visualize.drawPoints(input, c_j.getPoints(), Color.red);
-		Visualize.showImage(input, "RANSAC input");
+//		Visualize.drawAssociations(input, list1, list2);
+//		Visualize.drawPoints(input, c_i.getPoints(), Color.blue);
+//		Visualize.drawPoints(input, c_j.getPoints(), Color.red);
+//		Visualize.showImage(input, "RANSAC input");
 	}
 
 	private double[][] fillTransformMatrix(List<ClusterPoint> vertices) {

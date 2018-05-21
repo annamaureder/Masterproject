@@ -138,19 +138,19 @@ As a next step, all \textit{unique} feature histograms of $C_1$ are verified to 
 \varepsilon(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i))^2
 \end{equation}
 %%
-is computed. In the reference paper of Mitra et al. \cite{Mitra07} the euclidean distance was the only criterian for correspondence computation. Subsequently, the statistical Chi-Square ($\chi^2$) divergence
+is computed. In the reference paper of Mitra et al. \cite{Mitra07} the euclidean distance was the only criterian for correspondence computation which generates most of the point correspondences (see section \ref{ResultsLRP}). Subsequently, the statistical Chi-Square ($\chi^2$) divergence
 %%
 \begin{equation}
 \chi^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}\frac{(H_j(i) - H_k(i))^2}{(H_j(i) + H_k(i))}
 \end{equation}
 %%
-is examined. Finally, the Kullback-Leibler (KL) divergence
+is examined which achieves better results than the L2 form. Finally, the Kullback-Leibler (KL) divergence
 %%
 \begin{equation}
-\kappa^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i)) \cdot ln \frac{H_j(i)}{H_k(i)}
+\kappa(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i)) \cdot ln \frac{H_j(i)}{H_k(i)}
 \end{equation}
 %%
-is calculated, which is the most computational expensive one. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm containing 0, for calculation the value 1 is assumed.
+is calculated, which is the most computational expensive one due to the usage of $ln$. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm all zero-values are replaced with the value 1.
 
 \subsection{Adaptions for 2D}
 In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 
@@ -284,7 +284,7 @@ The region growing algorithm is quite similar to the earlier described algorithm
 \section{Results}
 \label{ResultsLRP}
 
-Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved. 
+Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
 
 %TODO: add pictures of LRP results
 
