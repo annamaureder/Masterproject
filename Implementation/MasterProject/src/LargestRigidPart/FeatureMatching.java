@@ -16,7 +16,7 @@ import procrustes.ProcrustesFit;
  * 
  * @version 2013/08/22
  */
-public class ClosestPoint3 {
+public class FeatureMatching {
 
 	private Cluster c_i;
 	private Cluster c_j;
@@ -99,7 +99,7 @@ public class ClosestPoint3 {
 		}
 	}
 
-	public ClosestPoint3(Cluster c_i, Cluster c_j) {
+	public FeatureMatching(Cluster c_i, Cluster c_j) {
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
 
@@ -119,9 +119,43 @@ public class ClosestPoint3 {
 		List<Histogram> referenceHistograms = c_i.getHistograms();
 		Histogram meanReferenceHistogram = Histogram.meanHistogram(referenceHistograms);
 		
+		IJ.log("Number of reference Histograms: " + referenceHistograms.size());
+		IJ.log("Mean histogram: ");
+		
+		IJ.log("Standard deviation: " + meanReferenceHistogram.getStandardDeviation());
+		
 		List<Histogram> targetHistograms = c_j.getHistograms();
 		Histogram meanTargetHistogram = Histogram.meanHistogram(targetHistograms);
+		IJ.log("Standard deviation: " + meanTargetHistogram.getStandardDeviation());
 		
+		
+//		referencePoints = new ArrayList<>();
+//		targetPoints = new ArrayList<>();
+//		
+//		for (ClusterPoint point : c_i.getPoints()){
+//			Histogram current = point.getFPFH();
+//			
+//			for(int i = 0; i < current.getHistogram().length; i++){
+//				if(Math.abs(current.getHistogram()[i] - meanTargetHistogram.getHistogram()[i]) >  1){
+//					referencePoints.add(point);
+//					break;
+//				}
+//			}
+//		}
+//		
+//		for (ClusterPoint point : c_j.getPoints()){
+//			Histogram current = point.getFPFH();
+//			
+//			for(int i = 0; i < current.getHistogram().length; i++){
+//				if(Math.abs(current.getHistogram()[i] - meanReferenceHistogram.getHistogram()[i]) >  1){
+//					targetPoints.add(point);
+//					break;
+//				}
+//			}
+//		}
+		
+		IJ.log(referencePoints.size() + " points selected for feature matching (reference).");
+		IJ.log(targetPoints.size() + " points selected for feature matching (target).");
 		
 		
 		//TODO
@@ -131,7 +165,7 @@ public class ClosestPoint3 {
 		targetAssociation = getAssociation(targetPoints, referencePoints);
 		associations = getAssociatedPoints(sourceAssociation, targetAssociation);
 
-		results = new ColorProcessor(Segmentation.width * 2, Segmentation.height);
+		results = new ColorProcessor(Main.width * 2, Main.height);
 		results.invert();
 
 		if (Input.showAssociations) {
@@ -139,8 +173,8 @@ public class ClosestPoint3 {
 					Matrix.translate(associations.finalTargetPoints, 500, 0));
 		}
 
-		Visualize.drawPoints(results, referencePoints, Color.red);
-		Visualize.drawPoints(results, Matrix.translate(targetPoints, 500, 0), Color.red);
+		Visualize.drawPoints(results, c_i.getPoints(), Color.red);
+		Visualize.drawPoints(results, Matrix.translate(c_j.getPoints(), 500, 0), Color.blue);
 
 		String fileName = "LRP_";
 		if (reciprocalMatching) {

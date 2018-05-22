@@ -123,6 +123,24 @@ The main class \texttt{Segmentation} solely requires a stack of two point clouds
 
 %TODO: add code snippets for Procrustes...
 
+\subsection{ICP}
+One main part of the algorithm is the modified implementation of the ICP using Procrustes fitting to compute a transformation that detects sparse point correspondences. Thereby, only reciprocal correspondences within a specific distance $\tau$ contribute to the calculation. The final point correspondences of $C_i$ and $C_j$ are stored in a \texttt{Map<Integer, Integer>} containing the indices of the corresponding points. This is because the storage of points in the form $\boldsymbol{p}_i(x,y)$ would underly a specific transformation, which is applied during the ICP and initial alignment. For further computations using the RANSAC, no transformations are desired. As the main difficulty is the right initial alignment of the actual largest rigid part (torso) the value of the distance threshold $\tau$ is chosen generously. As a result, a higher number of false point correspondences is detected which has to be compensated by RANSAC (see subsection \ref{RANSAC}).
+
+\begin{lstlisting}
+...
+for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
+Integer referenceIndex = entry.getKey();
+Integer targetIndex = entry.getValue();
+
+if (target.containsKey(targetIndex) && target.get(targetIndex) == referenceIndex) {
+referencePoints.add(originalReference.get(referenceIndex));
+targetPoints.add(originalTarget.get(targetIndex));
+finalAssociations.put(referenceIndex, targetIndex);
+}
+}
+...
+\end{lstlisting}
+
 \begin{figure}
 	\centering
 	\includegraphics[width=0.9\linewidth]{SegmentationUML}
@@ -379,3 +397,6 @@ The most crucial deficit  of the proposed algorithm is that is does not work wit
 
 \subsection{ICP}
 Sparse correspondences of two input clusters $C_i$ and $C_j$ were initially achieved by applying the Iterative closest point algorithm. Thereby, the two input clusters are aligned by means of the PCA. Following, corresponding points of $C_i$ and $C_j$ are only considered, if they are \textit{reciprocal} (see subsection \ref{functionalityLRP}). Furthermore, the euclidean distance between two cluster points $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ must be below a predefined threshold $\tau$. As a consequence, points being located far away from each other do not contribute to the alignment of $C_i$ and $C_j$ and are not stored as correspondence. Those are assumed to be small rigid parts with different transformations.
+
+\subsection{Main drawbacks}
+The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. Thereby, it is directly dependent on the symmetry of the pose. The less symmetry the higher the changes that the initial alignment on the largest rigid part might fail. The reason is that the ICP expects a good starting alignment. As it is assumed that the major largest rigid part contributes most to the principal axis and the initial alignment, it would work. But in case of an unbalance of the linked parts, the alignment of the LRP might shift in a certain direction and it might not be detected during the ICP. As a result the whole algorithm fails. Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters. 

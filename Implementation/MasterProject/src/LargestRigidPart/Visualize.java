@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.geom.Path2D;
 import java.util.List;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ShapeRoi;
 import ij.process.ColorProcessor;
@@ -16,7 +17,7 @@ public class Visualize {
 	public static void drawPoints(ColorProcessor cp, List<ClusterPoint> points, Color color) {
 		cp.setColor(color);
 		for (int i = 0; i < points.size(); i++) {
-			cp.drawDot((int) points.get(i).getX(), (int) points.get(i).getY());
+			cp.fillOval((int) points.get(i).getX(), (int) points.get(i).getY(),3,3);
 		}
 	}
 
@@ -25,24 +26,26 @@ public class Visualize {
 		cp.fillOval((int) point.getX(), (int) point.getY(), size, size);
 	}
 
-	public static void colorClusters(List<Cluster[]> segments, String title) {
-		ColorProcessor segmentation = new ColorProcessor(Segmentation.width, Segmentation.height);
-		ColorProcessor segmentation2 = new ColorProcessor(Segmentation.width, Segmentation.height);
+	public static void colorClusters(List<Cluster[]> rigidParts, String title) {
+		ColorProcessor segmentation = new ColorProcessor(Main.width, Main.height);
+		ColorProcessor segmentation2 = new ColorProcessor(Main.width, Main.height);
 		segmentation.invert();
 		segmentation2.invert();
 
-		for (int i = 0; i < segments.size(); i++) {
+		for (int i = 0; i < rigidParts.size(); i++) {
 
-			Cluster[] clusters = segments.get(i);
-
+			Cluster[] clusters = rigidParts.get(i);
 			Cluster cluster1 = clusters[0];
 			Cluster cluster2 = clusters[1];
+			
+			IJ.log("rigid part reference: " + cluster1.getPoints().size());
+			IJ.log("rigid part reference: " + cluster1.getPoints().size());
 
 			drawPoints(segmentation, cluster1.getPoints(), colors[i % colors.length]);
 			drawPoints(segmentation2, cluster2.getPoints(), colors[i % colors.length]);
 		}
 		if (Input.drawAxis) {
-			drawSkeleton(segmentation, segmentation2, segments);
+			drawSkeleton(segmentation, segmentation2, rigidParts);
 		}
 		showImage(segmentation, title);
 		showImage(segmentation2, title);

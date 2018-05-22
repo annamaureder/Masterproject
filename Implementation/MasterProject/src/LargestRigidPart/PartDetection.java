@@ -5,220 +5,287 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+
+import NonRigid2D.Cluster1;
 import ij.IJ;
 import ij.process.ColorProcessor;
+import procrustes.ProcrustesFit;
 
 /**
- * This plugin takes as input two point clouds c1 and c2 and returns the largest
- * rigid part by applying the ICP and a RANSAC approach with Procrustes
- * fitting.Ï
+ * This plugin implements the ICP for two 2D point clouds
  * 
  * @version 2013/08/22
  */
 public class PartDetection {
 
-	// variable declaration
-
 	private Cluster c_i;
 	private Cluster c_j;
+	
+	private Cluster[] linkedRigidParts;
+	Cluster biggestClusterRef = new Cluster();
+	Cluster biggestClusterTarget = new Cluster();
 
-	private final int MIN_SIZE = 10;
-	Cluster[] currentClusters = null;
+	private double error = Double.MAX_VALUE;
+	private double tmp_error = 0.0;
+	private double distanceThreshold = Input.distanceThresholdICP;
 
-	List<ClusterPoint> unclusteredReference = new ArrayList<>();
-	List<ClusterPoint> unclusteredTarget = new ArrayList<>();
+	private boolean logging = Input.logging;
 
-	// cluster pairs of each a reference and target cluster
-	private Stack<Cluster[]> clusters = new Stack<>();
-	List<Cluster> referenceClusters = new ArrayList<>();
-	List<Cluster> targetClusters = new ArrayList<>();
+	private Map<Integer, Integer> sourceAssociation;
+	private Map<Integer, Integer> targetAssociation;
+	private Map<Integer, Integer> finalAssociation;
 
-	private List<Cluster[]> largestRigidParts = new ArrayList<>();
+	private List<ClusterPoint> referencePoints;
+	private List<ClusterPoint> targetPoints;
+
+	private List<ClusterPoint> finalReferenceAssoc;
+	private List<ClusterPoint> finalTargetAssoc;
+
+	private List<ClusterPoint> finalTransformedPoints;
+
+	private Association associations;
+	private boolean reciprocalMatching = Input.reciprocalMatching;
+
+	protected class Association {
+		protected List<ClusterPoint> referencePoints;
+		protected List<ClusterPoint> targetPoints;
+		protected List<ClusterPoint> originalReference;
+		protected List<ClusterPoint> originalTarget;
+		private Map<Integer, Integer> reference;
+		private Map<Integer, Integer> target;
+		private Map<Integer, Integer> finalAssociations;
+		private double totalError = 0.0;
+
+		public Association(Map<Integer, Integer> reference, Map<Integer, Integer> target,
+				List<ClusterPoint> originalReference, List<ClusterPoint> originalTarget) {
+			this.reference = reference;
+			this.target = target;
+			this.originalReference = originalReference;
+			this.originalTarget = originalTarget;
+			comparePoints();
+		}
+
+		public Map<Integer, Integer> getAssociations() {
+			return finalAssociations;
+		}
+
+		public double getError() {
+			return totalError;
+		}
+
+		public void comparePoints() {
+			referencePoints = new ArrayList<>();
+			targetPoints = new ArrayList<>();
+			finalAssociations = new HashMap<>();
+
+			for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
+				Integer referenceIndex = entry.getKey();
+				Integer targetIndex = entry.getValue();
+
+				ClusterPoint referencePoint = originalReference.get(referenceIndex);
+				ClusterPoint targetPoint = originalTarget.get(targetIndex);
+
+				if (c_i.getJoint() != null) {
+					double currentError = referencePoint.distance(targetPoint);
+					totalError += currentError * (1/Math.pow(c_i.getJoint().distance(referencePoint),2));
+				}
+
+				if (target.containsKey(targetIndex)) {
+					if ((reciprocalMatching && target.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
+						if (logging)
+							IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
+						referencePoints.add(originalReference.get(referenceIndex));
+						targetPoints.add(originalTarget.get(targetIndex));
+						finalAssociations.put(referenceIndex, targetIndex);
+					}
+				}
+			}
+		}
+	}
 
 	public PartDetection(Cluster c_i, Cluster c_j) {
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
 
-		unclusteredReference = this.c_i.getPoints();
-		unclusteredTarget = this.c_j.getPoints();
-
 		run();
 	}
 
 	private void run() {
-		int iteration = 1;
 
-		List<ClusterPoint> currentLrpReference = null;
-		List<ClusterPoint> currentLrpTarget = null;
-		Cluster[] currentLrps = null;
+		IJ.log("Joint rotation entered!");
 
-		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
-			IJ.log("Iteration #" + iteration++);
-			
-			if(iteration == 3){
-				return;
-			}
+		if (c_i.getJoint() != null) {
+//			initialOrientation(c_i.getJoint());
 
-			removeAllLRPs();
-			IJ.log("All LRPs removed from unclustered points");
-			IJ.log("Unclustered Reference: " + unclusteredReference.size());
-			IJ.log("Unclustered Target: " + unclusteredTarget.size());
+			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(), -c_i.getJoint().getY());
+			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(), -c_j.getJoint().getY());
+		}
 
-			// grow regions from current lrp
-			referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
-			targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
-			
-			for(Cluster c : referenceClusters){
-				ColorProcessor test = new ColorProcessor(Segmentation.width, Segmentation.height);
-				test.invert();
-				Visualize.drawPoints(test, c.getPoints(), Color.red);
-				Visualize.showImage(test, "cluster detected");
-			}
+		else {
+			return;
+		}
 
-			IJ.log("Number of Reference Clusters: " + referenceClusters.size());
-			IJ.log("Number of Target Clusters: " + referenceClusters.size());
+		// point association
+		sourceAssociation = new HashMap<>();
+		targetAssociation = new HashMap<>();
+		finalTransformedPoints = new ArrayList<>();
+		ColorProcessor results;
 
-			if (referenceClusters == null || targetClusters == null) {
-				IJ.log("ERROR!");
-			}
+		int iterations = 0;
+		int bestIteration = 1;
 
-			if (currentClusters != null) {
-				detectJoints(currentLrps, referenceClusters, targetClusters);
-			}
-			
-			if(referenceClusters.size() != 0 || currentClusters == null){
-				IJ.log("All clusters matched: " + clusters.size());
-				pushMatchingClusters();
-			}
+		while (iterations++ <= 360) {
+			referencePoints = Matrix.rotate(referencePoints, (1 / 180.0) * Math.PI);
 
-			ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
+			sourceAssociation = getAssociation(referencePoints, targetPoints);
+			targetAssociation = getAssociation(targetPoints, referencePoints);
+			associations = getAssociatedPoints(sourceAssociation, targetAssociation);
+
+			double tmp_error = associations.getError();
+
+			results = new ColorProcessor(Main.width, Main.height);
 			results.invert();
 
-			if (currentLrpReference != null) {
-				Visualize.drawPoints(results, currentLrpReference, Color.yellow);
-				Visualize.drawPoints(results, currentLrpTarget, Color.green);
-			}
-			for (Cluster[] cluster : clusters) {
-				if (cluster[0].getJoint() != null) {
-					Visualize.drawDot(results, cluster[0].getJoint(), Color.red, 4);
-					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue, 4);
-				}
-				Visualize.drawPoints(results, cluster[0].getPoints(), Color.red);
-				Visualize.drawPoints(results, cluster[1].getPoints(), Color.blue);
-			}
-			
-			Visualize.showImage(results, "Matching clusters");
-
-			if (clusters.isEmpty()) {
-				IJ.log("Empty stack!");
-				return;
-			}
-
-			currentClusters = clusters.pop();
-			ClosestPoint3 cp = new ClosestPoint3(currentClusters[0], currentClusters[1]);
-			IJ.log("Finished ICP!");
-
-			Map<Integer, Integer> denseCorrespondances = cp.getCorrespondences();
-			
-			if(denseCorrespondances.size() < 3){
-				IJ.log("Too few correspondences detected!");
-				return;
-			}
-
-			currentLrps = new LargestRigidPart(currentClusters[0], currentClusters[1], denseCorrespondances)
-					.getLargestRigidParts();
-			
-			if (currentLrps[0].getPoints().size() < 15){
-				IJ.log("No LRP found! --> Show largest cluster");
-				return;
-			}
-			
-			largestRigidParts.add(currentLrps);
-			
-			currentLrpReference = currentLrps[0].getPoints();
-			currentLrpTarget = currentLrps[1].getPoints();
-		}
-	}
-
-	public List<Cluster[]> getRigidParts() {
-		return largestRigidParts;
-	}
-
-	private void removeAllLRPs() {
-		for (Cluster[] lrp : largestRigidParts) {
-			unclusteredReference.removeAll(lrp[0].getPoints());
-			unclusteredTarget.removeAll(lrp[1].getPoints());
-		}
-	}
-
-	private void pushMatchingClusters() {
-		for (Cluster reference : referenceClusters) {
-			if (referenceClusters.size() == 1 || targetClusters.size() == 1) {
-				clusters.push(new Cluster[] { reference, targetClusters.get(0) });
-			} else {
-				Cluster target = matchingTarget(reference);
-				clusters.push(new Cluster[] { reference, target });
+			if (tmp_error < error) {
+				bestIteration = iterations;
+				error = tmp_error;
+				finalReferenceAssoc = associations.referencePoints;
+				finalTargetAssoc = associations.targetPoints;
+				finalTransformedPoints = referencePoints;
+				finalAssociation = associations.getAssociations();
 			}
 		}
+
+		IJ.log("best iteration: " + bestIteration);
+		
+		findBiggestCluster(finalAssociation);
+
+		results = new ColorProcessor(Main.width, Main.height);
+		results.invert();
+
+		finalReferenceAssoc = Matrix.translate(finalReferenceAssoc, 400, 200);
+		finalTargetAssoc = Matrix.translate(finalTargetAssoc, 400.0, 200);
+		finalTransformedPoints = Matrix.translate(finalTransformedPoints, 400, 200);
+		targetPoints = Matrix.translate(targetPoints, 400, 200);
+
+		if (Input.showAssociations) {
+			Visualize.drawAssociations(results, finalReferenceAssoc, finalTargetAssoc);
+		}
+
+		Visualize.drawPoints(results, finalTransformedPoints, Color.blue);
+		Visualize.drawPoints(results, targetPoints, Color.red);
+
+		String fileName = "LRP_" + distanceThreshold + "th_" + "iterations" + iterations;
+		if (reciprocalMatching) {
+			fileName += "_reciprocal";
+		}
+		Visualize.showImage(results, fileName);
 	}
 
-	private Cluster matchingTarget(Cluster reference) {
-		Cluster matchingTarget = null;
+	/**
+	 * method to get associations between two point sets X and X'
+	 * 
+	 * @param originalPositions
+	 * @param targetPositions
+	 * @return List with points with the same sorting as resultPoitns
+	 */
+	private Map<Integer, Integer> getAssociation(List<ClusterPoint> originalPositions,
+			List<ClusterPoint> targetPositions) {
+		Map<Integer, Integer> associations = new HashMap<>();
+
+		for (int i = 0; i < originalPositions.size(); i++) {
+			int closestPoint = closestPoint(originalPositions.get(i), targetPositions);
+
+			if (closestPoint != -1) {
+				associations.put(i, closestPoint);
+			}
+		}
+		return associations;
+	}
+
+	/**
+	 * method to get the closest point for x' from a points set X'
+	 * 
+	 * @param point
+	 * @param referencePoints
+	 * @return
+	 */
+
+	private int closestPoint(ClusterPoint point, List<ClusterPoint> referencePoints) {
+		int closestPoint = -1;
 		double distance = Double.MAX_VALUE;
+		double distanceNew = 0;
 
-		for (Cluster target : targetClusters) {
-			double distanceNew = reference.getJoint().distance(target.getJoint());
+		for (int i = 0; i < referencePoints.size(); i++) {
+			distanceNew = point.distance(referencePoints.get(i));
 
 			if (distanceNew < distance) {
 				distance = distanceNew;
-				matchingTarget = target;
+				closestPoint = i;
 			}
 		}
-		return matchingTarget;
-	}
 
-	private void detectJoints(Cluster[] currentLRPs, List<Cluster> referenceClusters, List<Cluster> targetClusters) {
-		
-		List<Cluster> copyClusters = new ArrayList<>();
-		copyClusters.addAll(referenceClusters);
-		
-		for(Cluster cluster : copyClusters){
-			cluster.setJoint(getJoint(cluster, currentLRPs[0]));
-			if(cluster.getJoint() == null){
-				referenceClusters.remove(cluster);
-			}
-		}
-		
-		copyClusters = new ArrayList<>();
-		copyClusters.addAll(targetClusters);
-		
-		for(Cluster cluster : copyClusters){
-			cluster.setJoint(getJoint(cluster, currentLRPs[1]));
-			if(cluster.getJoint() == null){
-				targetClusters.remove(cluster);
-			}
-		}
+		tmp_error += distanceNew;
+		return closestPoint;
 	}
 	
-	private ClusterPoint getJoint(Cluster c1, Cluster c2){
-		double x = 0;
-		double y = 0;
-		double numberPoints = 0;
-		
-		for(ClusterPoint point1 : c1.getPoints()){
-			for(ClusterPoint point2 : c2.getPoints()){
-				if(point1.distance(point2) < Input.distanceThresholdRG){
-					x += point1.getX() + point2.getX();
-					y += point1.getY() + point2.getY();
-					numberPoints+=2;
-				}
+	private final void findBiggestCluster(Map<Integer, Integer> associations) {
+		List<ClusterPoint> ref = new ArrayList<>();
+		List<ClusterPoint> target = new ArrayList<>();
+
+		for (Map.Entry<Integer, Integer> entry : associations.entrySet()) {
+			ref.add(c_i.getPoints().get(entry.getKey()));
+			target.add(c_j.getPoints().get(entry.getValue()));
+		}
+		for (Cluster cluster : RegionGrowing.detectClusters(ref)) {
+			if (cluster.getPoints().size() > biggestClusterRef.getPoints().size()) {
+				biggestClusterRef = cluster;
 			}
 		}
-		if(numberPoints == 0){
-			IJ.log("No joint could be calculated!");
-			return null;
+		for (Cluster cluster : RegionGrowing.detectClusters(target)) {
+			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
+				biggestClusterTarget = cluster;
+			}
 		}
-		return new ClusterPoint(x/numberPoints, y/numberPoints);
+		linkedRigidParts = new Cluster[] { biggestClusterRef, biggestClusterTarget };
+	}
+
+	public double getError() {
+		return error;
+	}
+
+//	private void initialOrientation(ClusterPoint rotationPoint) {
+//		Cluster rotation1 = new Cluster(c_i);
+//		Cluster rotation2 = new Cluster(c_i);
+//
+//		rotation1.alignAxis(rotationPoint);
+//		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
+//
+//		rotation2.alignAxis(rotationPoint);
+//		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
+//
+//		getAssociation(rotation1.getPoints(), c_j.getPoints());
+//		double error1 = tmp_error;
+//
+//		getAssociation(rotation2.getPoints(), c_j.getPoints());
+//		double error2 = tmp_error;
+//
+//		if (error1 < error2) {
+//			c_i = rotation1;
+//		} else {
+//			c_i = rotation2;
+//		}
+//	}
+
+	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
+		return new Association(reference, target, referencePoints, targetPoints);
+	}
+	
+	public Cluster[] getLinkedParts(){
+		return linkedRigidParts;
+	}
+
+	public Map<Integer, Integer> getCorrespondences() {
+		return finalAssociation;
 	}
 }

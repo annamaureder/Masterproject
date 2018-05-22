@@ -1,149 +1,222 @@
 package LargestRigidPart;
 
-import ij.IJ;
-import ij.ImagePlus;
-import ij.ImageStack;
-import ij.gui.GenericDialog;
-import ij.gui.Overlay;
-import ij.gui.ShapeRoi;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import imagingbook.pub.corners.Corner;
-import imagingbook.pub.corners.HarrisCornerDetector;
-import procrustes.ProcrustesFit;
-
 import java.awt.Color;
-import java.awt.Point;
-import java.awt.geom.Path2D;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-
-import org.apache.commons.math3.geometry.spherical.twod.Vertex;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
-
-import apple.laf.JRSUIUtils.Tree;
+import java.util.Map;
+import java.util.Stack;
+import ij.IJ;
+import ij.process.ColorProcessor;
 
 /**
- * This plugin segments a non-rigid object given in two different poses into its
- * unknown rigid parts. For that a "divide and conquer" approach is implemented
- * to recursively subdivide both point clouds, until the
- * matching error between all corresponding sub clusters of cloudA and cloudB is below a fixed threshold.
+ * This plugin takes as input two point clouds c1 and c2 and returns the largest
+ * rigid part by applying the ICP and a RANSAC approach with Procrustes
+ * fitting.Ï
  * 
  * @version 2013/08/22
  */
-public class Segmentation implements PlugInFilter {
+public class Segmentation {
 
-	// static variables
-	public static int width;
-	public static int height;
-	public static ColorProcessor finalAssoc;
+	// variable declaration
 
-	// member variables
+	private Cluster c_i;
+	private Cluster c_j;
 
-	private ImagePlus im;
-	private List<Cluster[]> rigidParts;
-	
-	private Cluster c1;
-	private Cluster c2;
+	private final int MIN_SIZE = 10;
+	Cluster[] currentClusters = null;
 
-	public int setup(String arg, ImagePlus im) {
-		this.im = im;
-		width = im.getWidth();
-		height = im.getHeight();
-		return DOES_ALL + STACK_REQUIRED;
+	List<ClusterPoint> unclusteredReference = new ArrayList<>();
+	List<ClusterPoint> unclusteredTarget = new ArrayList<>();
+
+	// cluster pairs of each a reference and target cluster
+	private Stack<Cluster[]> clusters = new Stack<>();
+	List<Cluster> referenceClusters = new ArrayList<>();
+	List<Cluster> targetClusters = new ArrayList<>();
+
+	private List<Cluster[]> largestRigidParts = new ArrayList<>();
+
+	public Segmentation(Cluster c_i, Cluster c_j) {
+		this.c_i = new Cluster(c_i);
+		this.c_j = new Cluster(c_j);
+
+		unclusteredReference = this.c_i.getPoints();
+		unclusteredTarget = this.c_j.getPoints();
+
+		run();
 	}
 
-	public void run(ImageProcessor ip) {
-		
-		if (!Input.getUserInput()) {
-			return;
-		}
-		
-		ImageStack stack = im.getStack();
-		ImageProcessor p1 = stack.getProcessor(1);
-		ImageProcessor p2 = stack.getProcessor(2);
+	private void run() {
+		int iteration = 0;
 
-		c1 = new Cluster(p1);
-		c2 = new Cluster(p2);
-		
-		IJ.log("Cluster1: " + c1.getPoints().size() + " points");
-		IJ.log("Cluster2: " + c2.getPoints().size() + " points");
-		
-		c1.calculateFeatures();
-		c2.calculateFeatures();
-		
-		showNormals();
-		
-		PartDetection detect = new PartDetection(c1, c2);
-		rigidParts = detect.getRigidParts();
-		
+		Cluster[] currentLrps = null;
 
-		//showResults();
-	}
+		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
+			IJ.log("Iteration #" + iteration++);
 
-	private void showNormals() {
-		ColorProcessor cp = new ColorProcessor(width, height);
-		cp.invert();
-		
-		for(ClusterPoint point : c1.getPoints()){
-			if(point.getNormal()==null){
-				IJ.log("Normal is null");
+			if (iteration == 2) {
+				IJ.log("Max iterations reached!");
 				return;
 			}
-			
-			Visualize.drawDot(cp, point, Color.black, 4);
-			ClusterPoint target = new ClusterPoint(point.getX() + point.getNormal()[0] * 10, point.getY() + point.getNormal()[1] * 10);
-			Visualize.drawLine(cp, point, target, Color.green);
-			Visualize.drawDot(cp, target, Color.red,2);
-		}
-		
-		Visualize.showImage(cp, "Normals C1");
-		
-		ColorProcessor cp2 = new ColorProcessor(width, height);
-		cp2.invert();
-		
-		for(ClusterPoint point : c2.getPoints()){
-			if(point.getNormal()==null){
-				IJ.log("Normal is null");
+
+			removeAllLRPs();
+			IJ.log("All LRPs removed from unclustered points");
+			IJ.log("Unclustered Reference: " + unclusteredReference.size());
+			IJ.log("Unclustered Target: " + unclusteredTarget.size());
+
+			// grow regions from current lrp
+			referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
+			targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
+
+			for (Cluster c : referenceClusters) {
+				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
+				test.invert();
+				Visualize.drawPoints(test, c.getPoints(), Color.red);
+				Visualize.showImage(test, "cluster detected");
+			}
+
+			if (referenceClusters == null || targetClusters == null) {
+				IJ.log("ERROR!");
+			}
+
+			if (currentClusters != null) {
+				detectJoints(currentLrps, referenceClusters, targetClusters);
+			}
+
+			if (referenceClusters.size() != 0 || currentClusters == null) {
+				IJ.log("All clusters matched: " + clusters.size());
+				pushMatchingClusters();
+			}
+
+			ColorProcessor results = new ColorProcessor(Main.width, Main.height);
+			results.invert();
+
+			for (Cluster[] cluster : clusters) {
+				if (cluster[0].getJoint() != null) {
+					Visualize.drawDot(results, cluster[0].getJoint(), Color.red, 10);
+					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue, 10);
+				}
+				Visualize.drawPoints(results, cluster[0].getPoints(), Color.red);
+				Visualize.drawPoints(results, cluster[1].getPoints(), Color.blue);
+			}
+
+			Visualize.showImage(results, "Unclustered clusters + joints");
+
+			if (clusters.isEmpty()) {
+				IJ.log("Empty stack!");
 				return;
 			}
-			
-			Visualize.drawDot(cp2, point, Color.black, 4);
-			ClusterPoint target = new ClusterPoint(point.getX() + point.getNormal()[0] * 10, point.getY() + point.getNormal()[1] * 10);
-			Visualize.drawLine(cp2, point, target, Color.green);
-			Visualize.drawDot(cp2, target, Color.red,2);
+
+			currentClusters = clusters.pop();
+
+			if (currentClusters[0].getJoint() == null) {
+				FeatureMatching cp = new FeatureMatching(currentClusters[0], currentClusters[1]);
+				Map<Integer, Integer> denseCorrespondances = cp.getCorrespondences();
+				IJ.log("Finished Feature matching!");
+
+				if (denseCorrespondances.size() < 3) {
+					IJ.log("Too few correspondences detected!");
+					return;
+				}
+
+				currentLrps = new RANSAC(currentClusters[0], currentClusters[1], denseCorrespondances)
+						.getLargestRigidParts();
+
+			}
+
+			else {
+				PartDetection pd = new PartDetection(currentClusters[0], currentClusters[1]);
+				currentLrps = pd.getLinkedParts();
+				IJ.log("Finished part detection!");
+			}
+
+			if (currentLrps[0].getPoints().size() < 5) {
+				IJ.log("No LRP found! --> continue");
+			}
+			else{
+				largestRigidParts.add(currentLrps);
+			}
 		}
-		
-		Visualize.showImage(cp2, "Normals C2");
 	}
-	
-	/**
-	 * method to visualize all results
-	 */
-	public void showResults(){
-		
-		if(Input.showRigidParts){
-			Visualize.colorClusters(rigidParts, "RigidParts");
-		}
-		
-		if(Input.showInputCloud){
-			ColorProcessor inputPoints_1 = new ColorProcessor(width, height);
-			inputPoints_1.invert();
-			
-			ColorProcessor inputPoints_2 = new ColorProcessor(width, height);
-			inputPoints_2.invert();
 
-			Visualize.drawPoints(inputPoints_1, c1.getPoints(), Color.black);
-			Visualize.drawPoints(inputPoints_2, c2.getPoints(), Color.black);
+	public List<Cluster[]> getRigidParts() {
+		return largestRigidParts;
+	}
 
-			Visualize.showImage(inputPoints_1, "Input points 1");
-			Visualize.showImage(inputPoints_2, "Input points 2");
+	private void removeAllLRPs() {
+		for (Cluster[] lrp : largestRigidParts) {
+			unclusteredReference.removeAll(lrp[0].getPoints());
+			unclusteredTarget.removeAll(lrp[1].getPoints());
 		}
+	}
+
+	private void pushMatchingClusters() {
+		for (Cluster reference : referenceClusters) {
+			if (referenceClusters.size() == 1 || targetClusters.size() == 1) {
+				clusters.push(new Cluster[] { reference, targetClusters.get(0) });
+			} else {
+				Cluster target = matchingTarget(reference);
+				clusters.push(new Cluster[] { reference, target });
+			}
+		}
+	}
+
+	private Cluster matchingTarget(Cluster reference) {
+		Cluster matchingTarget = null;
+		double distance = Double.MAX_VALUE;
+
+		for (Cluster target : targetClusters) {
+			double distanceNew = reference.getJoint().distance(target.getJoint());
+
+			if (distanceNew < distance) {
+				distance = distanceNew;
+				matchingTarget = target;
+			}
+		}
+		return matchingTarget;
+	}
+
+	private void detectJoints(Cluster[] currentLRPs, List<Cluster> referenceClusters, List<Cluster> targetClusters) {
+
+		List<Cluster> copyClusters = new ArrayList<>();
+		copyClusters.addAll(referenceClusters);
+
+		for (Cluster cluster : copyClusters) {
+			cluster.setJoint(getJoint(cluster, currentLRPs[0]));
+			if (cluster.getJoint() == null) {
+				referenceClusters.remove(cluster);
+			}
+		}
+
+		copyClusters = new ArrayList<>();
+		copyClusters.addAll(targetClusters);
+
+		for (Cluster cluster : copyClusters) {
+			cluster.setJoint(getJoint(cluster, currentLRPs[1]));
+			if (cluster.getJoint() == null) {
+				targetClusters.remove(cluster);
+			}
+		}
+	}
+
+	private ClusterPoint getJoint(Cluster c1, Cluster c2) {
+		double x = 0;
+		double y = 0;
+		int numberPoints = 0;
+
+		for (ClusterPoint point1 : c1.getPoints()) {
+			for (ClusterPoint point2 : c2.getPoints()) {
+				if (point1.distance(point2) < Input.distanceThresholdRG) {
+					x += point1.getX() + point2.getX();
+					y += point1.getY() + point2.getY();
+					numberPoints += 2;
+				}
+			}
+		}
+		if (numberPoints == 0) {
+			IJ.log("No joint could be calculated!");
+			return null;
+		}
+		return new ClusterPoint(x / numberPoints, y / numberPoints);
 	}
 }

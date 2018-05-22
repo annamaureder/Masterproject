@@ -28,7 +28,7 @@ import prototyping.ICP;
  * 
  * @version 2013/08/22
  */
-public class LargestRigidPart {
+public class RANSAC {
 
 	// variable declaration
 	private boolean logging = Input.logging;
@@ -44,16 +44,20 @@ public class LargestRigidPart {
 
 	private final int numIterations = 1000;
 	private final int numRandom = 3;
+	List<ClusterPoint> resultPoints;
 
 	private double distanceThreshold = Input.distanceThresholdRANSAC;
 
 	private Cluster[] lrp;
 	Cluster biggestClusterRef = new Cluster();
 	Cluster biggestClusterTarget = new Cluster();
+	
+	List<ClusterPoint> finalRef = new ArrayList<>();
+	List<ClusterPoint> finalTar = new ArrayList<>();
 
 	private Map<Integer, Integer> correspondances;
 
-	public LargestRigidPart(Cluster c_i, Cluster c_j, Map<Integer, Integer> correspondances) {
+	public RANSAC(Cluster c_i, Cluster c_j, Map<Integer, Integer> correspondances) {
 
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
@@ -114,7 +118,6 @@ public class LargestRigidPart {
 					IJ.log("\n");
 			}
 
-			List<ClusterPoint> resultPoints;
 			double[] centroid = calculateCentroid(randomPoints1);
 
 			if (logging)
@@ -141,15 +144,25 @@ public class LargestRigidPart {
 
 		if (logging)
 			IJ.log("Final LRP found!");
-		ColorProcessor results = new ColorProcessor(Segmentation.width, Segmentation.height);
-		results.invert();
+		ColorProcessor resultReference = new ColorProcessor(Main.width, Main.height);
+		resultReference.invert();
 		
-		ColorProcessor input = new ColorProcessor(Segmentation.width, Segmentation.height);
-		input.invert();
+		ColorProcessor resultTarget = new ColorProcessor(Main.width, Main.height);
+		resultTarget.invert();
 		
-		Visualize.drawPoints(results, biggestClusterRef.getPoints(), Color.blue);
-		Visualize.drawPoints(results, biggestClusterTarget.getPoints(), Color.red);
-		Visualize.showImage(results, "Final LRP");
+		ColorProcessor bestTransformation = new ColorProcessor(Main.width, Main.height);
+		bestTransformation.invert();
+		
+		Visualize.drawPoints(bestTransformation, finalRef, Color.blue);
+		Visualize.drawPoints(bestTransformation, finalTar, Color.red);
+		
+		Visualize.showImage(bestTransformation, "Best transformation reference");
+		
+		Visualize.drawPoints(resultReference, biggestClusterRef.getPoints(), Color.blue);
+		Visualize.drawPoints(resultTarget, biggestClusterTarget.getPoints(), Color.red);
+		
+		Visualize.showImage(resultReference, "Final LRP reference");
+		Visualize.showImage(resultTarget, "Final LRP target");
 		
 		List<ClusterPoint> list1 = new ArrayList<>();
 		List<ClusterPoint> list2 = new ArrayList<>();
@@ -158,11 +171,7 @@ public class LargestRigidPart {
 			list1.add(c_i.getPoints().get(entry.getKey()));
 			list2.add(c_j.getPoints().get(entry.getValue()));
 		}
-		
-//		Visualize.drawAssociations(input, list1, list2);
-//		Visualize.drawPoints(input, c_i.getPoints(), Color.blue);
-//		Visualize.drawPoints(input, c_j.getPoints(), Color.red);
-//		Visualize.showImage(input, "RANSAC input");
+	
 	}
 
 	private double[][] fillTransformMatrix(List<ClusterPoint> vertices) {
@@ -195,14 +204,17 @@ public class LargestRigidPart {
 			ref.add(points1.get(entry.getKey()));
 			target.add(points2.get(entry.getValue()));
 		}
+		
 		for (Cluster cluster : RegionGrowing.detectClusters(ref)) {
 			if (cluster.getPoints().size() > biggestClusterRef.getPoints().size()) {
 				biggestClusterRef = cluster;
+				finalRef = resultPoints;
 			}
 		}
 		for (Cluster cluster : RegionGrowing.detectClusters(target)) {
 			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
 				biggestClusterTarget = cluster;
+				finalTar = points2;
 			}
 		}
 		lrp = new Cluster[] { biggestClusterRef, biggestClusterTarget };
@@ -217,6 +229,7 @@ public class LargestRigidPart {
 				associations.put(i, closestPoint);
 			}
 		}
+		
 		return associations;
 	}
 

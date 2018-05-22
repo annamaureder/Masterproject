@@ -17,7 +17,6 @@ public class Histogram{
 		this.bins = bins;
 		histogram = new int[bins];
 	}
-	
 //	public void showHistogram(){
 //		
 //		// Create histogram from data
@@ -72,12 +71,13 @@ public class Histogram{
         float[] y = new float[bins];
         for(int i = 0; i < bins; i++){
         	x[i] = i;
-        	y[i] = histogram[i];
+        	y[i] = i;
+        	IJ.log("Value: " + histogram[i]);
         }
 
         PlotWindow.noGridLines = false; // draw grid lines
         Plot plot = new Plot("Feature histograms","bins","",x,y);
-        plot.setLimits(0, bins, 0, 10);
+        plot.setLimits(0, bins-1, 0, 10);
         plot.setLineWidth(2);
 
         // add label
@@ -167,4 +167,39 @@ public class Histogram{
 		}
 		return result;
 	}
+	
+	private double calculateStandardDeviation() {
+		double mean = calculateMean();
+		
+		double sum = 0.0;
+		
+		for(int i = 0; i < bins; i++){
+			sum += Math.pow(histogram[i] - mean, 2);
+		}
+		
+		return sum/numberData();
+	}
+	
+	private double calculateMean(){
+		double sum = 0.0;
+		
+		for(int i = 0; i < bins; i++){
+			sum += histogram[i] * i;
+		}		
+		return sum/numberData();
+	}
+	
+	private int numberData(){
+		int number = 0;
+		
+		for(int i = 0; i < bins; i++){
+			number += histogram[i];
+		}
+		return number;
+	}
+
+	public double getStandardDeviation() {
+		return Math.sqrt(calculateStandardDeviation());
+	}
+
 }

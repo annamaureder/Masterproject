@@ -1,4 +1,4 @@
-package LargestRigidPart;
+package prototyping;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -6,6 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import LargestRigidPart.Cluster;
+import LargestRigidPart.ClusterPoint;
+import LargestRigidPart.Input;
+import LargestRigidPart.Matrix;
+import LargestRigidPart.Main;
+import LargestRigidPart.Visualize;
 import NonRigid2D.Cluster1;
 import ij.IJ;
 import ij.process.ColorProcessor;
@@ -133,7 +139,7 @@ public class ClosestPoint {
 
 		while (tmp_error <= error && iterations < 10) {
 
-			results = new ColorProcessor(Segmentation.width, Segmentation.height);
+			results = new ColorProcessor(Main.width, Main.height);
 			results.invert();
 
 			sourceAssociation = getAssociation(referencePoints, targetPoints);
@@ -190,7 +196,7 @@ public class ClosestPoint {
 			iterations++;
 		}
 
-		results = new ColorProcessor(Segmentation.width, Segmentation.height);
+		results = new ColorProcessor(Main.width, Main.height);
 		results.invert();
 
 		Visualize.drawPoints(results, finalTransformedPoints, Color.blue);

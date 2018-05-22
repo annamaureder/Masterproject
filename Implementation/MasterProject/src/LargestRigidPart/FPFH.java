@@ -41,6 +41,7 @@ public class FPFH {
 
 		FPFH = SPFH.addHistograms(weightedSPFH.multiplyHistograms(1.0 / point.getNeighborhood().size()));
 		point.setFPFH(FPFH);
+//		point.setFPFH(SPFH);
 	}
 
 	private Histogram SPFH(ClusterPoint point) {
@@ -56,7 +57,7 @@ public class FPFH {
 		double[] n_i;
 		double[] n_j;
 		
-//		IJ.log("Feature Histogram for point: " + point.getX() + "/" + point.getY());
+		IJ.log("Feature Histogram for point: " + point.getX() + "/" + point.getY());
 
 		for (ClusterPoint neighbor : point.getNeighborhood()) {
 			// TODO: Check which ones angle is smaller! --> p_i, n_i DOT PRODUCT
@@ -78,7 +79,7 @@ public class FPFH {
 			features.add(feature2);
 			features.add(feature3);
 			
-//			IJ.log("Index: " + idx(features));
+			IJ.log("Index: " + idx(features));
 
 			histogram.getHistogram()[idx(features)]++;
 		}
