@@ -17,54 +17,9 @@ public class Histogram{
 		this.bins = bins;
 		histogram = new int[bins];
 	}
-//	public void showHistogram(){
-//		
-//		// Create histogram from data
-//		@SuppressWarnings("unchecked")
-//		DataTable data = new DataTable(Double.class);
-//		for (int i = 0; i < histogram.length; i++) {
-//			for(int j = 0; j < histogram[i]; j++){
-//				data.add(i);
-//			}
-//		}
-//				Histogram1D histogram = new Histogram1D(data, Orientation.VERTICAL,
-//						new Number[] {0, 1, 2, 3, 4, 5, 6, 7, 8});
-//				// Create a second dimension (x axis) for plotting
-//				DataSource histogram2d = new EnumeratedData(histogram, (-4.0 + -3.2)/2.0, 0.8);
-//
-//				// Create new bar plot
-//				BarPlot plot = new BarPlot(histogram2d);
-//
-//				// Format plot
-//				plot.setInsets(new Insets2D.Double(20.0, 65.0, 50.0, 40.0));
-//				plot.getTitle().setText(
-//						String.format("Distribution of %d random samples", data.getRowCount()));
-//				plot.setBarWidth(0.78);
-//
-//				// Format x axis
-//				plot.getAxisRenderer(BarPlot.AXIS_X).setTickAlignment(0.0);
-//				plot.getAxisRenderer(BarPlot.AXIS_X).setTickSpacing(0.8);
-//				plot.getAxisRenderer(BarPlot.AXIS_X).setMinorTicksVisible(false);
-//				// Format y axis
-//				plot.getAxis(BarPlot.AXIS_Y).setRange(0.0,
-//						MathUtils.ceil(histogram.getStatistics().get(Statistics.MAX)*1.1, 25.0));
-//				plot.getAxisRenderer(BarPlot.AXIS_Y).setTickAlignment(0.0);
-//				plot.getAxisRenderer(BarPlot.AXIS_Y).setMinorTicksVisible(false);
-//				plot.getAxisRenderer(BarPlot.AXIS_Y).setIntersection(-4.4);
-//
-//				// Format bars
-//				plot.getPointRenderer(histogram2d).setColor(
-//					GraphicsUtils.deriveWithAlpha(Color.red, 128));
-//				plot.getPointRenderer(histogram2d).setValueVisible(true);
-//
-//				// Add plot to Swing component
-//				InteractivePanel panel = new InteractivePanel(plot);
-//				panel.setPannable(false);
-//				panel.setZoomable(false);
-//				add(panel);
-//				
-//		//this.showInFrame();
-//	}
+	public void showHistogram(){
+		BarChart.run(new String[0]);
+	}
 	
 	public void showTestData(){
         float[] x = new float[bins];

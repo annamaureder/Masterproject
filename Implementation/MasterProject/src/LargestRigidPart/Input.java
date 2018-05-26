@@ -13,7 +13,7 @@ public class Input {
 	public static boolean reciprocalMatching;
 	public static double errorThreshold;
 	public static double distanceThresholdRG;
-	public static double distanceThresholdICP;
+	public static double distanceThresholdJoints;
 	public static double distanceThresholdRANSAC;
 	public static boolean logging;
 	public static String distance;
@@ -22,13 +22,13 @@ public class Input {
 		GenericDialog gd = new GenericDialog("Rigid part segmentation");
 		gd.addCheckbox("Remove outliers", true);
 		gd.addCheckbox("Show input point cloud", false);
-		gd.addCheckbox("Draw rigid part axis", true);
+		gd.addCheckbox("Draw rigid part axis", false);
 		gd.addCheckbox("Show rigid parts", true);
 		gd.addCheckbox("Show point correspondance", true);
 		gd.addCheckbox("Reciprocal point matching", true);
 		gd.addNumericField("Error threshold per point", 6.0, 2);
 		gd.addNumericField("Distance threshold for region growing", 15.0, 2);
-		gd.addNumericField("Distance threshold for ICP", 10.0, 2);
+		gd.addNumericField("Distance threshold for Joint rotations", 5.0, 2);
 		gd.addNumericField("Distance threshold for RANSAC", 3.0, 2);
 		gd.addCheckbox("Activate logging", false);
 		String[] distances = {"Euclidean", "ChiSquared", "Kullback-Leibler"};
@@ -45,7 +45,7 @@ public class Input {
 		reciprocalMatching = gd.getNextBoolean();
 		errorThreshold = gd.getNextNumber();
 		distanceThresholdRG = gd.getNextNumber();
-		distanceThresholdICP = gd.getNextNumber();
+		distanceThresholdJoints = gd.getNextNumber();
 		distanceThresholdRANSAC = gd.getNextNumber();
 		logging = gd.getNextBoolean();
 		distance = gd.getNextRadioButton();

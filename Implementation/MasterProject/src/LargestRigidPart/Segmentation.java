@@ -54,7 +54,7 @@ public class Segmentation {
 		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
 			IJ.log("Iteration #" + iteration++);
 
-			if (iteration == 2) {
+			if (iteration == 3) {
 				IJ.log("Max iterations reached!");
 				return;
 			}
@@ -121,7 +121,6 @@ public class Segmentation {
 
 				currentLrps = new RANSAC(currentClusters[0], currentClusters[1], denseCorrespondances)
 						.getLargestRigidParts();
-
 			}
 
 			else {
@@ -132,8 +131,7 @@ public class Segmentation {
 
 			if (currentLrps[0].getPoints().size() < 5) {
 				IJ.log("No LRP found! --> continue");
-			}
-			else{
+			} else {
 				largestRigidParts.add(currentLrps);
 			}
 		}
@@ -152,10 +150,14 @@ public class Segmentation {
 
 	private void pushMatchingClusters() {
 		for (Cluster reference : referenceClusters) {
-			if (referenceClusters.size() == 1 || targetClusters.size() == 1) {
+			if (referenceClusters.size() == 1 && targetClusters.size() == 1) {
 				clusters.push(new Cluster[] { reference, targetClusters.get(0) });
 			} else {
 				Cluster target = matchingTarget(reference);
+				if (target == null){
+					IJ.log("No matching cluster detected!");
+					return;
+				}
 				clusters.push(new Cluster[] { reference, target });
 			}
 		}

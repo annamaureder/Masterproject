@@ -136,8 +136,6 @@ public class Cluster implements Comparable<Cluster> {
 		int x2_ = (int) (x1 - principalLength * Math.cos(orientation));
 		int y2_ = (int) (y1 - principalLength * Math.sin(orientation));
 
-		int y = (int) (Math.sin(orientation) * (x_test - x1) + y1);
-
 		cp.drawLine(x1, y1, x2, y2);
 		cp.drawLine(x1, y1, x2_, y2_);
 	}
@@ -247,7 +245,7 @@ public class Cluster implements Comparable<Cluster> {
 			feature.detectFeatures();
 		}
 		
-		points.get(0).getFPFH().showTestData();
+		points.get(0).getFPFH().showHistogram();
 	}
 
 	public void calculateNormal(ClusterPoint point) {

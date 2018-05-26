@@ -20,14 +20,13 @@ public class PartDetection {
 
 	private Cluster c_i;
 	private Cluster c_j;
-	
+
 	private Cluster[] linkedRigidParts;
 	Cluster biggestClusterRef = new Cluster();
 	Cluster biggestClusterTarget = new Cluster();
 
 	private double error = Double.MAX_VALUE;
-	private double tmp_error = 0.0;
-	private double distanceThreshold = Input.distanceThresholdICP;
+	private double distanceThreshold = Input.distanceThresholdJoints;
 
 	private boolean logging = Input.logging;
 
@@ -42,6 +41,7 @@ public class PartDetection {
 	private List<ClusterPoint> finalTargetAssoc;
 
 	private List<ClusterPoint> finalTransformedPoints;
+	private double maxDistanceToJoint;
 
 	private Association associations;
 	private boolean reciprocalMatching = Input.reciprocalMatching;
@@ -87,16 +87,22 @@ public class PartDetection {
 
 				if (c_i.getJoint() != null) {
 					double currentError = referencePoint.distance(targetPoint);
-					totalError += currentError * (1/Math.pow(c_i.getJoint().distance(referencePoint),2));
+					double distance = referencePoint.distance(new ClusterPoint(0,0))/maxDistanceToJoint;
+//					if(distance > 0.5){
+//						currentError = 0.01;
+//					}
+					totalError += currentError * (1 - Math.pow(distance, 2));
 				}
 
 				if (target.containsKey(targetIndex)) {
 					if ((reciprocalMatching && target.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
 						if (logging)
-							IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
 						referencePoints.add(originalReference.get(referenceIndex));
 						targetPoints.add(originalTarget.get(targetIndex));
-						finalAssociations.put(referenceIndex, targetIndex);
+						
+						if(referencePoint.distance(targetPoint) <= distanceThreshold){
+							finalAssociations.put(referenceIndex, targetIndex);
+						}
 					}
 				}
 			}
@@ -106,6 +112,8 @@ public class PartDetection {
 	public PartDetection(Cluster c_i, Cluster c_j) {
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
+		maxDistanceToJoint = distanceToJoint();
+		IJ.log("max distance to Joint: " + maxDistanceToJoint);
 
 		run();
 	}
@@ -115,8 +123,7 @@ public class PartDetection {
 		IJ.log("Joint rotation entered!");
 
 		if (c_i.getJoint() != null) {
-//			initialOrientation(c_i.getJoint());
-
+			// initialOrientation(c_i.getJoint());
 			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(), -c_i.getJoint().getY());
 			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(), -c_j.getJoint().getY());
 		}
@@ -133,16 +140,41 @@ public class PartDetection {
 
 		int iterations = 0;
 		int bestIteration = 1;
+		
+		sourceAssociation = new HashMap<>();
+		targetAssociation = new HashMap<>();
+		finalTransformedPoints = new ArrayList<>();
 
 		while (iterations++ <= 360) {
+			// point association
+
 			referencePoints = Matrix.rotate(referencePoints, (1 / 180.0) * Math.PI);
 
 			sourceAssociation = getAssociation(referencePoints, targetPoints);
 			targetAssociation = getAssociation(targetPoints, referencePoints);
 			associations = getAssociatedPoints(sourceAssociation, targetAssociation);
-
+			
+			List<ClusterPoint> neighbors = new ArrayList<>();
+			
+			for (Map.Entry<Integer, Integer> entry : sourceAssociation.entrySet()) {
+				Integer targetIndex = entry.getValue();
+				neighbors.add(targetPoints.get(targetIndex));
+			}
+			
 			double tmp_error = associations.getError();
-
+			
+			if(iterations == 344){
+				IJ.log("Error Nr." + iterations + ": " + tmp_error);
+				
+				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
+				test.invert();
+				
+				Visualize.drawPoints(test, referencePoints, Color.blue);
+				Visualize.drawPoints(test, targetPoints, Color.red);
+				Visualize.drawAssociations(test, referencePoints, neighbors);
+				Visualize.showImage(test, "#" + iterations);
+			}
+			
 			results = new ColorProcessor(Main.width, Main.height);
 			results.invert();
 
@@ -157,7 +189,7 @@ public class PartDetection {
 		}
 
 		IJ.log("best iteration: " + bestIteration);
-		
+
 		findBiggestCluster(finalAssociation);
 
 		results = new ColorProcessor(Main.width, Main.height);
@@ -175,7 +207,7 @@ public class PartDetection {
 		Visualize.drawPoints(results, finalTransformedPoints, Color.blue);
 		Visualize.drawPoints(results, targetPoints, Color.red);
 
-		String fileName = "LRP_" + distanceThreshold + "th_" + "iterations" + iterations;
+		String fileName = "LRP_" + distanceThreshold + "th_" + "iterations" + bestIteration;
 		if (reciprocalMatching) {
 			fileName += "_reciprocal";
 		}
@@ -224,11 +256,9 @@ public class PartDetection {
 				closestPoint = i;
 			}
 		}
-
-		tmp_error += distanceNew;
 		return closestPoint;
 	}
-	
+
 	private final void findBiggestCluster(Map<Integer, Integer> associations) {
 		List<ClusterPoint> ref = new ArrayList<>();
 		List<ClusterPoint> target = new ArrayList<>();
@@ -247,6 +277,10 @@ public class PartDetection {
 				biggestClusterTarget = cluster;
 			}
 		}
+		
+		biggestClusterRef.setJoint(c_i.getJoint());
+		biggestClusterTarget.setJoint(c_j.getJoint());
+		
 		linkedRigidParts = new Cluster[] { biggestClusterRef, biggestClusterTarget };
 	}
 
@@ -254,38 +288,50 @@ public class PartDetection {
 		return error;
 	}
 
-//	private void initialOrientation(ClusterPoint rotationPoint) {
-//		Cluster rotation1 = new Cluster(c_i);
-//		Cluster rotation2 = new Cluster(c_i);
-//
-//		rotation1.alignAxis(rotationPoint);
-//		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
-//
-//		rotation2.alignAxis(rotationPoint);
-//		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
-//
-//		getAssociation(rotation1.getPoints(), c_j.getPoints());
-//		double error1 = tmp_error;
-//
-//		getAssociation(rotation2.getPoints(), c_j.getPoints());
-//		double error2 = tmp_error;
-//
-//		if (error1 < error2) {
-//			c_i = rotation1;
-//		} else {
-//			c_i = rotation2;
-//		}
-//	}
+	// private void initialOrientation(ClusterPoint rotationPoint) {
+	// Cluster rotation1 = new Cluster(c_i);
+	// Cluster rotation2 = new Cluster(c_i);
+	//
+	// rotation1.alignAxis(rotationPoint);
+	// rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
+	//
+	// rotation2.alignAxis(rotationPoint);
+	// rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
+	//
+	// getAssociation(rotation1.getPoints(), c_j.getPoints());
+	// double error1 = tmp_error;
+	//
+	// getAssociation(rotation2.getPoints(), c_j.getPoints());
+	// double error2 = tmp_error;
+	//
+	// if (error1 < error2) {
+	// c_i = rotation1;
+	// } else {
+	// c_i = rotation2;
+	// }
+	// }
 
 	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
 		return new Association(reference, target, referencePoints, targetPoints);
 	}
-	
-	public Cluster[] getLinkedParts(){
+
+	public Cluster[] getLinkedParts() {
 		return linkedRigidParts;
 	}
 
 	public Map<Integer, Integer> getCorrespondences() {
 		return finalAssociation;
+	}
+	
+	private double distanceToJoint() {
+		double maxDistance = Double.MIN_VALUE;
+
+		for (ClusterPoint point : c_i.getPoints()) {
+			double distance = point.distance(c_i.getJoint());
+			if (distance > maxDistance){
+				maxDistance = distance;
+			}
+		}
+		return maxDistance;
 	}
 }

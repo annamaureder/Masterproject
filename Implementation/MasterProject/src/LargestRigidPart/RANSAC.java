@@ -42,7 +42,7 @@ public class RANSAC {
 	List<ClusterPoint> randomPoints1;
 	List<ClusterPoint> randomPoints2;
 
-	private final int numIterations = 1000;
+	private final int numIterations = 10000;
 	private final int numRandom = 3;
 	List<ClusterPoint> resultPoints;
 
@@ -229,7 +229,6 @@ public class RANSAC {
 				associations.put(i, closestPoint);
 			}
 		}
-		
 		return associations;
 	}
 

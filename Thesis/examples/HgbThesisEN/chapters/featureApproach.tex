@@ -243,15 +243,19 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in 2D, as the point correspondences given as input to RANSAC are major faulty. Therefore, in order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint.
+In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application, The reason is that the point features are not meaningful due to the reduced number and thus the feature histograms do not lead to sufficient correspondences. Therefore, in order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint.
 As a result, for the part detection two input clusters $C_i$ and $C_j$ are transformed that their joints overlap. Then, $C_i$ is iteratively rotated around its joint. 
-By computing a least squares error for each iteration between the points of $C_i$ and $C_j$ a rotation can be found that overlaps the linked rigid part. Thereby , the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the matching error as point located near a joint. By doing so, joint consistency across two poses is enforced. As a result, a matching error $e$ 
+By computing a least squares error for each iteration between the points of $C_i$ and $C_j$ a rotation can be found that overlaps the linked rigid part. Thereby , the preliminary joints resulting from \ref{cluster} are used as weights. As a result, points being located far away from joints, do not contribute as much to the matching error as point located near a joint. The matching error $e$ 
 %
 \begin{equation}
 	e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \| \boldsymbol{p}_i - \boldsymbol{j}_i\|
 \end{equation}
 %
-is achieved which combines the distance to the closest point and to the cluster's joint. Thereby, not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. 
+is achieved which combines the distance to the closest point and to the cluster's joint. For the calculation Not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
+
+%TODO: image of joint rotation + only certain degree for rotation?
+
+In the current implementation, the rotation of 360° is verified, given joint constraints, the number of iterations could be reduced. The assumption is thereby, that the rigid parts must be oriented similar to a certain extend.
 
 \section{Implementation}
 \label{ImplementationLRP}
@@ -321,7 +325,13 @@ Not useful in this context, more points required
 %TODO: runtime + pictures!
 
 \subsection{Main difficulties}
-The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. In case of a failure, the linked parts can not be detected right as they are computed from region growing. By conduction more RANSAC iterations, the probability of a faulty initial alginment can be reduced, however this directly affects the runtime and should therefore not be exaggerated. Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters. As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the gaps which is especially drastically during the RANSAC approach. To counteract this behavior, more and closer hull points could added to each rigid part, that more links for region growing are available.
+The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. In case of a failure, the linked parts can not be detected right as they are computed from region growing. By increasing the number of RANSAC iterations, the probability of a faulty initial alignment can be reduced, however this directly affects the runtime and should therefore not be exaggerated. Most certainly, it has to be guaranteed that the number of corresponding points are the same number from $C_1$ and $C_2$.
+
+%TODO: picture faulty alignment
+
+As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the gaps which is especially drastically during the RANSAC approach. To counteract this behavior, more and closer hull points could added to each rigid part, that more links for region growing are available. A further main problem is that the algorithm proceeds iteratively from already detected rigid parts. This makes the whole procedure quite unstable and error prone, as one faulty detection leads to an overall unsuccessful segmentation of an articulated object. In the implementation of Mitra enough feature descriptors were available for linked rigid parts, that they could be detected similary as the initial alignment. But for that more data points have to be available which is not the case for this prototype.
+
+Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters.
 
 %TODO: show what does not work perfectly
 

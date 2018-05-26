@@ -17,7 +17,7 @@ public class Visualize {
 	public static void drawPoints(ColorProcessor cp, List<ClusterPoint> points, Color color) {
 		cp.setColor(color);
 		for (int i = 0; i < points.size(); i++) {
-			cp.fillOval((int) points.get(i).getX(), (int) points.get(i).getY(),3,3);
+			cp.fillOval((int) points.get(i).getX(), (int) points.get(i).getY(), 3, 3);
 		}
 	}
 
@@ -37,12 +37,17 @@ public class Visualize {
 			Cluster[] clusters = rigidParts.get(i);
 			Cluster cluster1 = clusters[0];
 			Cluster cluster2 = clusters[1];
-			
+
 			IJ.log("rigid part reference: " + cluster1.getPoints().size());
 			IJ.log("rigid part reference: " + cluster1.getPoints().size());
 
 			drawPoints(segmentation, cluster1.getPoints(), colors[i % colors.length]);
 			drawPoints(segmentation2, cluster2.getPoints(), colors[i % colors.length]);
+
+			if (cluster1.getJoint() != null && cluster2.getJoint() != null) {
+				drawDot(segmentation, cluster1.getJoint(), colors[i % colors.length], 10);
+				drawDot(segmentation2, cluster2.getJoint(), colors[i % colors.length], 10);
+			}
 		}
 		if (Input.drawAxis) {
 			drawSkeleton(segmentation, segmentation2, rigidParts);
