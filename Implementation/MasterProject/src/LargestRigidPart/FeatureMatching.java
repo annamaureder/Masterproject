@@ -1,6 +1,12 @@
 package LargestRigidPart;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,34 +71,55 @@ public class FeatureMatching {
 			finalTargetPoints = new ArrayList<>();
 			finalAssociations = new HashMap<>();
 
+			File file = new File("../src/LargestRigidPart/histogram.txt");
+			FileWriter fileWriter = null;
+			try {
+				fileWriter = new FileWriter(file);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 			for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
 				Integer referenceIndex = entry.getKey();
 				Integer targetIndex = entry.getValue();
 
-				ClusterPoint referencePoint = originalReference.get(referenceIndex);
-				ClusterPoint targetPoint = originalTarget.get(targetIndex);
+				ClusterPoint currentRefPoint = originalReference.get(referenceIndex);
+				ClusterPoint currentTargetPoint = originalTarget.get(targetIndex);
 
-				if (c_i.getJoint() != null) {
-					double currentError;
-					
-					if(Input.distance.equals("Euclidean")){
-						 currentError = referencePoint.getFPFH().squaredDistance(targetPoint.getFPFH());
-					} else if(Input.distance.equals("ChiSquared")){
-						currentError = referencePoint.getFPFH().chiSquare(targetPoint.getFPFH());
-					} else {
-						currentError = referencePoint.getFPFH().kullback(targetPoint.getFPFH());
-					}
-					
-					totalError += currentError * Math.pow(c_i.getJoint().distance(referencePoint), 2);
-				}
+				// joint weights in case of reapplying recursively
+				
+//				if (c_i.getJoint() != null) {
+//					double currentError;
+//
+//					if (Input.distance.equals("Euclidean")) {
+//						currentError = currentRefPoint.getFPFH().squaredDistance(currentTargetPoint.getFPFH());
+//					} else if (Input.distance.equals("ChiSquared")) {
+//						currentError = currentRefPoint.getFPFH().chiSquare(currentTargetPoint.getFPFH());
+//					} else {
+//						currentError = currentRefPoint.getFPFH().kullback(currentTargetPoint.getFPFH());
+//					}
+//					totalError += currentError * Math.pow(c_i.getJoint().distance(currentTargetPoint), 2);
+//				}
 
 				if (target.containsKey(targetIndex)) {
 					if ((reciprocalMatching && target.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
 						if (logging)
 							IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
-						finalReferencePoints.add(originalReference.get(referenceIndex));
-						finalTargetPoints.add(originalTarget.get(targetIndex));
+						finalReferencePoints.add(currentRefPoint);
+						finalTargetPoints.add(currentTargetPoint);
 						finalAssociations.put(referenceIndex, targetIndex);
+
+						try {
+							fileWriter.write(currentRefPoint.getFPFH().toString() + ", " + currentTargetPoint.getFPFH().toString() + "\n");
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						try {
+							fileWriter.flush();
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+
 					}
 				}
 			}
@@ -114,53 +141,51 @@ public class FeatureMatching {
 		targetAssociation = new HashMap<>();
 
 		ColorProcessor results;
-		
-		//TODO: Reject points with similar histograms to meanHistogram
+
+		// TODO: Reject points with similar histograms to meanHistogram
 		List<Histogram> referenceHistograms = c_i.getHistograms();
 		Histogram meanReferenceHistogram = Histogram.meanHistogram(referenceHistograms);
-		
+
 		IJ.log("Number of reference Histograms: " + referenceHistograms.size());
 		IJ.log("Mean histogram: ");
-		
+
 		IJ.log("Standard deviation: " + meanReferenceHistogram.getStandardDeviation());
-		
+
 		List<Histogram> targetHistograms = c_j.getHistograms();
 		Histogram meanTargetHistogram = Histogram.meanHistogram(targetHistograms);
 		IJ.log("Standard deviation: " + meanTargetHistogram.getStandardDeviation());
-		
-		
-//		referencePoints = new ArrayList<>();
-//		targetPoints = new ArrayList<>();
-//		
-//		for (ClusterPoint point : c_i.getPoints()){
-//			Histogram current = point.getFPFH();
-//			
-//			for(int i = 0; i < current.getHistogram().length; i++){
-//				if(Math.abs(current.getHistogram()[i] - meanTargetHistogram.getHistogram()[i]) >  1){
-//					referencePoints.add(point);
-//					break;
-//				}
-//			}
-//		}
-//		
-//		for (ClusterPoint point : c_j.getPoints()){
-//			Histogram current = point.getFPFH();
-//			
-//			for(int i = 0; i < current.getHistogram().length; i++){
-//				if(Math.abs(current.getHistogram()[i] - meanReferenceHistogram.getHistogram()[i]) >  1){
-//					targetPoints.add(point);
-//					break;
-//				}
-//			}
-//		}
-		
+
+		// referencePoints = new ArrayList<>();
+		// targetPoints = new ArrayList<>();
+		//
+		// for (ClusterPoint point : c_i.getPoints()){
+		// Histogram current = point.getFPFH();
+		//
+		// for(int i = 0; i < current.getHistogram().length; i++){
+		// if(Math.abs(current.getHistogram()[i] -
+		// meanTargetHistogram.getHistogram()[i]) > 1){
+		// referencePoints.add(point);
+		// break;
+		// }
+		// }
+		// }
+		//
+		// for (ClusterPoint point : c_j.getPoints()){
+		// Histogram current = point.getFPFH();
+		//
+		// for(int i = 0; i < current.getHistogram().length; i++){
+		// if(Math.abs(current.getHistogram()[i] -
+		// meanReferenceHistogram.getHistogram()[i]) > 1){
+		// targetPoints.add(point);
+		// break;
+		// }
+		// }
+		// }
+
 		IJ.log(referencePoints.size() + " points selected for feature matching (reference).");
 		IJ.log(targetPoints.size() + " points selected for feature matching (target).");
-		
-		
-		//TODO
-		
 
+		// TODO
 		sourceAssociation = getAssociation(referencePoints, targetPoints);
 		targetAssociation = getAssociation(targetPoints, referencePoints);
 		associations = getAssociatedPoints(sourceAssociation, targetAssociation);
@@ -219,10 +244,10 @@ public class FeatureMatching {
 		double distanceNew = 0;
 
 		for (int i = 0; i < referencePoints.size(); i++) {
-			
-			if(Input.distance.equals("Euclidean")){
+
+			if (Input.distance.equals("Euclidean")) {
 				distanceNew = point.getFPFH().squaredDistance(referencePoints.get(i).getFPFH());
-			} else if(Input.distance.equals("ChiSquared")){
+			} else if (Input.distance.equals("ChiSquared")) {
 				distanceNew = point.getFPFH().chiSquare(referencePoints.get(i).getFPFH());
 			} else {
 				distanceNew = point.getFPFH().kullback(referencePoints.get(i).getFPFH());

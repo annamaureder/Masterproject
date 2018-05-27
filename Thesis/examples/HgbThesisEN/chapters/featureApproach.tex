@@ -187,8 +187,7 @@ As an initial step, the LRP algorithm  attempts to detect the most reliable corr
 
 \subsection{Implementation steps}
 
-In order to re-implement the algorithm in 2D, only small modifications concerning point coordinates had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). The initial idea was to detect correspondences by applying the ICP only proceeding the iterative transformation calculation with the most reliable correspondences. However, this approach did not manage to detect the desired correspondences of the largest rigid part (see section \ref{ResultsLRP}).
-
+In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}).
 \begin{enumerate}
 	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate the normals of all points.
 	\item Point feature histograms (FPFH) are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
@@ -200,7 +199,7 @@ In order to re-implement the algorithm in 2D, only small modifications concernin
 \subsection{Detection of sparse correspondences}
 \label{correspondences}
 
-As a first step of the algorithm, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences the three histogram criteria (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+As a first step of the algorithm, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
 %%
 \begin{figure}[H]
 	\centering \small
@@ -232,6 +231,8 @@ Subsequently, clusters are grown from all corresponding points with an euclidean
 	\caption{Computation of the largest rigid part from $C_1$ (a) and $C_2$ (b) by applying RANSAC on the detected point correspondences.} 
 	\label{fig:RANSAC}
 \end{figure}
+
+The final transformation $T$ of the RANSAC approach, which leads to the ``largest rigid part'', is applied on the reference cluster. This procedure is required in order to similarly align $C_1$ and $C_2$ for further computations (see subsection \ref{CorrespondingClusters}).
 
 \subsection{Cluster detection by region growing}
 \label{cluster}

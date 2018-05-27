@@ -245,7 +245,7 @@ public class Cluster implements Comparable<Cluster> {
 			feature.detectFeatures();
 		}
 		
-		points.get(0).getFPFH().showHistogram();
+		//points.get(0).getFPFH().showHistogram();
 	}
 
 	public void calculateNormal(ClusterPoint point) {

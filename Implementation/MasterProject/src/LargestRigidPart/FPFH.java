@@ -41,7 +41,6 @@ public class FPFH {
 
 		FPFH = SPFH.addHistograms(weightedSPFH.multiplyHistograms(1.0 / point.getNeighborhood().size()));
 		point.setFPFH(FPFH);
-//		point.setFPFH(SPFH);
 	}
 
 	private Histogram SPFH(ClusterPoint point) {

@@ -3,7 +3,7 @@ package LargestRigidPart;
 import java.awt.geom.Point2D;
 import java.util.List;
 
-public class ClusterPoint extends Point2D implements Comparable<ClusterPoint>{
+public class ClusterPoint extends Point2D{
 	
 	private double[] coordinates = new double[2];
 	private double[] normal = new double[2];
@@ -89,11 +89,5 @@ public class ClusterPoint extends Point2D implements Comparable<ClusterPoint>{
 
 	public void setClosestPoint(ClusterPoint closestPoint) {
 		this.closestPoint = closestPoint;
-	}
-
-	@Override
-	public int compareTo(ClusterPoint o) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 }

@@ -119,8 +119,10 @@ public class Segmentation {
 					return;
 				}
 
-				currentLrps = new RANSAC(currentClusters[0], currentClusters[1], denseCorrespondances)
+				RANSAC ransac = new RANSAC(currentClusters[0], currentClusters[1], denseCorrespondances);
+				currentLrps = ransac
 						.getLargestRigidParts();
+				unclusteredReference = ransac.getTransformedReferencePoints();
 			}
 
 			else {

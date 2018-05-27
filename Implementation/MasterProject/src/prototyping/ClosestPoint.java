@@ -29,7 +29,7 @@ public class ClosestPoint {
 
 	private double error = Double.MAX_VALUE;
 	private double tmp_error = 0;
-	private double distanceThreshold = Input.distanceThresholdICP;
+	private double distanceThreshold = Input.distanceThresholdJoints;
 	private double distanceTotal = 0;
 
 	private boolean logging = Input.logging;

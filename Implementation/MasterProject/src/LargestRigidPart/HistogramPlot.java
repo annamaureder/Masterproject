@@ -1,106 +1,110 @@
-/*
- * GRAL: GRAphing Library for Java(R)
- *
- * (C) Copyright 2009-2013 Erich Seifert <dev[at]erichseifert.de>,
- * Michael Seifert <michael[at]erichseifert.de>
- *
- * This file is part of GRAL.
- *
- * GRAL is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * GRAL is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with GRAL.  If not, see <http://www.gnu.org/licenses/>.
- */
 package LargestRigidPart;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
-import de.erichseifert.gral.data.DataSource;
-import de.erichseifert.gral.data.DataTable;
-import de.erichseifert.gral.data.EnumeratedData;
-import de.erichseifert.gral.data.statistics.Histogram1D;
-import de.erichseifert.gral.data.statistics.Statistics;
-import de.erichseifert.gral.examples.ExamplePanel;
-import de.erichseifert.gral.plots.BarPlot;
-import de.erichseifert.gral.ui.InteractivePanel;
-import de.erichseifert.gral.util.GraphicsUtils;
-import de.erichseifert.gral.util.Insets2D;
-import de.erichseifert.gral.util.MathUtils;
-import de.erichseifert.gral.util.Orientation;
+import javafx.application.Application;
+import javafx.scene.Node;
+import javafx.scene.Scene;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
+import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
+public class HistogramPlot extends Application {
 
-public class HistogramPlot extends ExamplePanel {
-	/** Version id for serialization. */
-	private static final long serialVersionUID = 4458280577519421950L;
+	int DATA_SIZE = 1000;
+	Stage primaryStage;
+	
+	@Override
+	public void start(Stage primaryStage) {
+		this.primaryStage = primaryStage;
+		prepareData();
+	}
 
-	private static final int SAMPLE_COUNT = 1000;
+	private void drawHistogram(List<String> data, String title) {
+		Label labelInfo = new Label();
 
-	@SuppressWarnings("unchecked")
-	public HistogramPlot() {
-		// Create example data
-		Random random = new Random();
-		DataTable data = new DataTable(Double.class);
-		for (int i = 0; i < SAMPLE_COUNT; i++) {
-			data.add(random.nextGaussian());
+		final CategoryAxis xAxis = new CategoryAxis();
+		final NumberAxis yAxis = new NumberAxis();
+		final BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
+		barChart.setCategoryGap(0);
+		barChart.setBarGap(0);
+
+		// xAxis.setLabel("Range");
+		// yAxis.setLabel("Population");
+
+		XYChart.Series series1 = new XYChart.Series();
+		
+		int i = 0;
+		
+		for(String dataset : data){
+			if(!dataset.equals("")){
+				series1.getData().add(new XYChart.Data(String.valueOf(i++), Integer.parseInt(dataset)));
+			}
 		}
 
-		// Create histogram from data
-		Histogram1D histogram = new Histogram1D(data, Orientation.VERTICAL,
-				new Number[] {-4.0, -3.2, -2.4, -1.6, -0.8, 0.0, 0.8, 1.6, 2.4, 3.6, 4.0});
-		// Create a second dimension (x axis) for plotting
-		DataSource histogram2d = new EnumeratedData(histogram, (-4.0 + -3.2)/2.0, 0.8);
+		barChart.getData().addAll(series1);
+		barChart.setLegendVisible(false);
 
-		// Create new bar plot
-		BarPlot plot = new BarPlot(histogram2d);
+		for (Node n : barChart.lookupAll(".default-color0.chart-bar")) {
+			n.setStyle("-fx-bar-fill: grey;");
+		}
 
-		// Format plot
-		plot.setInsets(new Insets2D.Double(20.0, 65.0, 50.0, 40.0));
-		plot.getTitle().setText(
-				String.format("Distribution of %d random samples", data.getRowCount()));
-		plot.setBarWidth(0.78);
+		VBox vBox = new VBox();
+		vBox.getChildren().addAll(labelInfo, barChart);
 
-		// Format x axis
-		plot.getAxisRenderer(BarPlot.AXIS_X).setTickAlignment(0.0);
-		plot.getAxisRenderer(BarPlot.AXIS_X).setTickSpacing(0.8);
-		plot.getAxisRenderer(BarPlot.AXIS_X).setMinorTicksVisible(false);
-		// Format y axis
-		plot.getAxis(BarPlot.AXIS_Y).setRange(0.0,
-				MathUtils.ceil(histogram.getStatistics().get(Statistics.MAX)*1.1, 25.0));
-		plot.getAxisRenderer(BarPlot.AXIS_Y).setTickAlignment(0.0);
-		plot.getAxisRenderer(BarPlot.AXIS_Y).setMinorTicksVisible(false);
-		plot.getAxisRenderer(BarPlot.AXIS_Y).setIntersection(-4.4);
+		StackPane root = new StackPane();
+		root.getChildren().add(vBox);
 
-		// Format bars
-		plot.getPointRenderer(histogram2d).setColor(
-			GraphicsUtils.deriveWithAlpha(COLOR1, 128));
-		plot.getPointRenderer(histogram2d).setValueVisible(true);
+		Scene scene = new Scene(root, 500, 450);
 
-		// Add plot to Swing component
-		InteractivePanel panel = new InteractivePanel(plot);
-		panel.setPannable(false);
-		panel.setZoomable(false);
-		add(panel);
-	}
-
-	@Override
-	public String getTitle() {
-		return "Histogram plot";
-	}
-
-	@Override
-	public String getDescription() {
-		return String.format("Histogram of %d samples", SAMPLE_COUNT);
+		primaryStage.setTitle("Feature histogram for " + title);
+		primaryStage.setScene(scene);
+		primaryStage.show();
 	}
 
 	public static void main(String[] args) {
-		new HistogramPlot().showInFrame();
+		launch(args);
+	}
+
+	// generate dummy random data
+	private void prepareData() {
+		URL path = HistogramPlot.class.getResource("histogram.txt");
+		String line;
+		
+		List<String> histograms;
+		List<String> histogram1;
+		List<String> histogram2;
+
+		try {
+			BufferedReader bufferreader = new BufferedReader(new FileReader(path.getFile()));
+			int number = 1;
+//			while ((line = bufferreader.readLine()) != null) {
+				line = bufferreader.readLine();
+				histograms  = Arrays.asList(line.split(","));
+				histogram1 = Arrays.asList(histograms.get(0).split(" "));
+				histogram2 = Arrays.asList(histograms.get(1).split(" "));
+				
+				drawHistogram(histogram1, "reference " + number);
+				drawHistogram(histogram2, "target " + number++);
+//			}
+		} catch (FileNotFoundException ex) {
+			ex.printStackTrace();
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 	}
 }

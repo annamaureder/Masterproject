@@ -201,7 +201,7 @@ public class RANSAC {
 		List<ClusterPoint> target = new ArrayList<>();
 
 		for (Map.Entry<Integer, Integer> entry : associations.entrySet()) {
-			ref.add(points1.get(entry.getKey()));
+			ref.add(resultPoints.get(entry.getKey()));
 			target.add(points2.get(entry.getValue()));
 		}
 		
@@ -267,5 +267,9 @@ public class RANSAC {
 
 	public Cluster[] getLargestRigidParts() {
 		return lrp;
+	}
+	
+	public List<ClusterPoint> getTransformedReferencePoints(){
+		return finalRef;
 	}
 }
