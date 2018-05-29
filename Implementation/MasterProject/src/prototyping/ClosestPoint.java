@@ -162,7 +162,7 @@ public class ClosestPoint {
 			Visualize.drawPoints(results, targetPoints, Color.blue);
 			Visualize.drawPoints(results, associations.referencePoints, Color.red);
 			Visualize.drawPoints(results, associations.targetPoints, Color.green);
-			Visualize.showImage(results, "Iteration: " + iterations);
+//			Visualize.showImage(results, "Iteration: " + iterations);
 
 			// calculate transformation between reference and target points
 			pro.fit(convertClusterPoints(associations.targetPoints), convertClusterPoints(associations.referencePoints));
@@ -210,7 +210,7 @@ public class ClosestPoint {
 		if (reciprocalMatching) {
 			fileName += "_reciprocal";
 		}
-		Visualize.showImage(results, fileName);
+//		Visualize.showImage(results, fileName);
 	}
 
 	/**

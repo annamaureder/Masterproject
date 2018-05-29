@@ -215,9 +215,9 @@ As a first step of the algorithm, the feature histogram for each point of $C_1$ 
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
 The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 1000.
-
+%%
 %TODO: number of iterations? --> number of false correspondences, formular
-
+%%
 Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output (see figure \ref{RANSAC}).
 
 \begin{figure}[H]
@@ -244,48 +244,210 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application, The reason is that the point features are not meaningful due to the reduced number and thus the feature histograms do not lead to sufficient correspondences. Therefore, in order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint.
-As a result, for the part detection two input clusters $C_i$ and $C_j$ are transformed that their joints overlap. Then, $C_i$ is iteratively rotated around its joint. 
-By computing a least squares error for each iteration between the points of $C_i$ and $C_j$ a rotation can be found that overlaps the linked rigid part. Thereby , the preliminary joints resulting from \ref{cluster} are used as weights. As a result, points being located far away from joints, do not contribute as much to the matching error as point located near a joint. The matching error $e$ 
+In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and similar shapes and thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint ranging in a certain threshold $\tau$ from the initial rotation. By computing a least squares error for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $j_n$ does not contribute as much to the matching error as points located near the joint. The weight $w$ of a cluster point and the total matching error $e$
 %
 \begin{equation}
-	e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \| \boldsymbol{p}_i - \boldsymbol{j}_i\|
+\begin{split}
+w_i = \| \boldsymbol{p}_i - \boldsymbol{j}_n\|
+\\
+e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \frac{1}{w_i}
+\end{split}
+\label{eq:jointWeightError}
 \end{equation}
 %
-is achieved which combines the distance to the closest point and to the cluster's joint. For the calculation Not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
+are achieved by combining the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
 
-%TODO: image of joint rotation + only certain degree for rotation?
-
-In the current implementation, the rotation of 360° is verified, given joint constraints, the number of iterations could be reduced. The assumption is thereby, that the rigid parts must be oriented similar to a certain extend.
+%TODO: image of joint rotation
 
 \section{Implementation}
 \label{ImplementationLRP}
-The individual steps of the largest rigid part algorithm have also been split in the implementation for better overview. 
+For the implementation in Java the individual steps of the largest rigid part algorithm have been split into individual classes for a better overview. Again ImageJ was used as processing library, which only gets a stack with two point clouds as input.
 %
-%TODO: Add code snippets to implementation LRP
+%TODO: Add class graph of implementation
 %
-\subsection{Image Features}
-%
-%TODO: implementation of features (incl normals)
-%
-As a first step, the normals of all points $n$ of $C_1$ and $C_2$ are computed. For this matter a class was developed that takes a point $p_i$ with its $k$ neighbors as input. Then, the least fitting error line is detected (as described in section \ref{correspondences}) and the eigenvector being associated with $\lambda_2$ is selected as normal vector $\vec{n}$ for $p_i$. 
-The computation of the least fitting line can be seen on figure XX.
-%%
-%TODO: least fitting line PICTURE 
-%%
-An essential part of the normal estimation is the right orientation of all normals, which can be seen on figure XX.
-%%
-%TODO: normal orientation PICTURE
-%%
-Subsequently, the FPFH features are computed. For that, again a point $p_i$ is selected with its $k$ neighbors an taken as input. A \texttt{ClusterPoint} was implemented to store the normal $n_i$ for each point and the feature histogram in form of an \texttt{int[]} array. The \texttt{FPFH} class implements various operations for vectors, like a dot or cross product. For the comparison of two histograms from $C_1$ and $C_2$ a gaussian distribution was computed on all histograms to only remain unique histograms for further comparisons. Unique and reciprocal point correspondences between $C_1$ and $C_2$ \texttt{Map<Integer,Integer>} are returned  in form of their indices.
+The whole algorithm initiates from the \texttt{Segmentation} class, where all steps proposed in \ref{LRP} are implemented. Basically, the segmentation proceeds until no unclustered points can be detected or no clusters need to be processed. In the beginnin of the loop already detected rigid parts are removed from the unclustered points (\texttt{removeAllLRPs()}). As a next step clusters are detected either for the initial point cloud or in case of linked parts for an LRP. Joints are only estimated for the clusters in case of a detected rigid part which is the case for all iterations except the first one. Then, all clusters are added to the \texttt{Stack} by detecting matching ones (\texttt{pushMatchingClusters()}). In case of an empty stack, all clusters have been processed and the algorithm terminates. On the other hand, two matching clusters are popped from the Stack and are segmented with the next steps.
 
+\begin{lstlisting}
+while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
+
+	removeAllLRPs();
+
+	referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
+	targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
+
+	if (currentLrps != null) {
+		detectJoints(currentLrps, referenceClusters, targetClusters);
+	}
+
+	if (referenceClusters.size() != 0 && targetClusters.size() != 0) {
+		pushMatchingClusters();
+	}
+
+	if (clusters.isEmpty()) {
+		return;
+	}
+
+	currentClusters = clusters.pop();
+
+	if (currentClusters[0].getJoint() == null) {
+		FeatureMatching fm = new FeatureMatching(currentClusters[0], currentClusters[1]);
+		Map<Integer, Integer> denseCorrespondances = fm.getCorrespondences();
+
+		if (denseCorrespondances.size() < 3) {
+		return;
+		}
+
+		RANSAC ransac = new RANSAC(currentClusters[0], currentClusters[1], denseCorrespondances);
+		currentLrps = ransac.getLargestRigidParts();
+		unclusteredReference = ransac.getTransformedReferencePoints();
+	}
+
+	else {
+		PartDetection pd = new PartDetection(currentClusters[0], currentClusters[1]);
+		currentLrps = pd.getLinkedParts();
+	}
+
+	if (currentLrps[0].getPoints().size() < 5) {
+	} else {
+	largestRigidParts.add(currentLrps);
+	}
+}
+\end{lstlisting}
+
+\subsection{Feature Detection}
+As a first step, the normals of all points $n$ of $C_1$ and $C_2$ are computed. For this matter the class \texttt{NormalEstimation} was developed that takes a point $p_i$ with its $k$ neighbors as input. Then, the least fitting error line on those input points is detected (as described in section \ref{correspondences}) and the smallest lambda value $\lambda_2$ selected as eigenvalue. By setting the x-value of the normal to 1.0, the y-value can be calculated with the eigenvalue $\lambda_2$. The resulting vector represents the normal vector $\vec{n}$ for $p_i$. In case of being exactly vertically or horizontally, the resulting value for y is either infinite or not a value (Nan), in these cases the normal is set to (0,1) or (1,0). As a last step, the normal is normalized.
+%%
+\begin{lstlisting}
+double eigenvalue = Math.min(lambda1, lambda2);
+
+	covarianceMatrix = new double[][] { 
+		{ a - eigenvalue, b},
+		{ b, c - eigenvalue}
+	};
+
+double[] normal = new double[2];
+
+normal[0] = 1.0;
+normal[1] = (eigenvalue * normal[0] - covarianceMatrix[0][0] * normal[0])/covarianceMatrix[0][1];
+
+if(Double.isInfinite(normal[1])){
+	normal[0] = 0;
+	normal[1] = 1;
+} else if (Double.isNaN(normal[1])){
+normal[1] = 0;
+}
+
+double length = Math.sqrt(Math.pow(normal[0], 2) + Math.pow(normal[1], 2));
+		
+normal[0] /= length;
+normal[1] /= length;
+point.setNormal(normal);
+\end{lstlisting}
+%%
+A \texttt{ClusterPoint} was implemented to store the normal $n_i$ for each point and the resulting feature histogram (FPFH) in form of a \texttt{Histogram} object containing a \texttt{int[]} array. For the calculation of a feature histogram of a point $p_i$, its $k$ neighbors are taken into account. The \texttt{FPFH} class implements various operations for vectors, like a dot or cross product to implement the formula from subsection \ref{FPFH}.
+%%
+\begin{lstlisting}
+public void featureHistogram(p_i) {
+	SPFH = SPFH(p_i);
+
+	for (ClusterPoint p_k : p_i.getNeighborhood()) {
+		double weight = p_i.distance(p_k);
+		weightedSPFH = weightedSPFH.addHistograms(SPFH(p_k).multiplyHistograms(1.0 / weight));
+	}
+	
+	FPFH = SPFH.addHistograms(weightedSPFH.multiplyHistograms(1.0 / p_i.getNeighborhood().size()));
+	
+	p_i.setFPFH(FPFH);
+}
+\end{lstlisting}
+%%
+For the comparison of two feature histograms from $C_1$ and $C_2$ only unique ones are considered. Point correspondences are calculated by detecting a corresponding point from $C_2$ for an input point $p_i$ of $C_1$ applying a distance on the feature histograms (see section \ref{correspondences}). The distance can be chosen by the user.
+%%
+\begin{lstlisting}
+private int closestPoint(ClusterPoint p_i, List<ClusterPoint> c_2) {
+	int closestPoint = -1;
+	double distance = Double.MAX_VALUE;
+	double distanceNew = 0;
+	
+	for (int i = 0; i < c_2.size(); i++) {
+	
+		if (Input.distance.equals("Euclidean")) {
+			distanceNew = p_i.getFPFH().squaredDistance(c_2.get(i).getFPFH());
+		} else if (Input.distance.equals("ChiSquared")) {
+			distanceNew = p_i.getFPFH().chiSquare(c_2.get(i).getFPFH());
+		} else {
+			distanceNew = p_i.getFPFH().kullback(c_2.get(i).getFPFH());
+		}
+	
+		if (distanceNew < distance) {
+		distance = distanceNew;
+		closestPoint = i;
+		}
+	}
+	return closestPoint;
+}
+\end{lstlisting}
+%%
+Reciprocal point correspondences between $C_1$ and $C_2$ are returned in form of point indices \texttt{Map<Integer,Integer>}  of the clusters cluster points.
+%%
+\begin{lstlisting}
+for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
+	Integer referenceIndex = entry.getKey();
+	Integer targetIndex = entry.getValue();
+
+	ClusterPoint currentRefPoint = originalReference.get(referenceIndex);
+	ClusterPoint currentTargetPoint = originalTarget.get(targetIndex);
+...
+	if ((reciprocalMatching && target.get(targetIndex) == referenceIndex){
+
+		finalReferencePoints.add(currentRefPoint);
+		finalTargetPoints.add(currentTargetPoint);
+		finalAssociations.put(referenceIndex, targetIndex);
+	}
+}
+\end{lstlisting}
+%%
+%TODO: add algorithm of FPFH + normals
+%%
+\begin{algorithm}[tbp]
+	\caption{Computation of the normal and subsequently feature histograms of a cluster point $p_i$ with its $k$ neighbors inside a radius $r$. The fast point feature histograms FPFH are computed by weighting the SPFH of a $p_i$ and its $k$ neighbors.}
+	
+	\begin{algorithmic}[1]     % [1] = all lines are numbered
+		\label{featureHistograms}
+		
+		\Procedure{FPFH}{$p_i$} 
+		\State $\mathit{C_{max}} \gets ()$
+		\State $\mathit{C_{current}} \gets ()$
+		\State $n \gets \mathit{sizeOf}(M)$
+		\State $m \gets \mathit{sizeOf}(C_{current})$
+		
+		\While {$n$ > 0}
+		\State $\mathit{c_{current}} \gets \mathit{c_{current}} + \boldsymbol{u}_1$
+		\For{$i = 1,\ldots,m$}
+		\State $M \gets M - C_{current}$
+		\For{$j = 1,\ldots,n$}
+		\If {\Call{$d$}{$\boldsymbol{p}_i, \boldsymbol{u}_j}< \tau$}
+		\State $C_{current} \gets C_{current} + \boldsymbol{u}_j$
+		\EndIf
+		\EndFor
+		\EndFor
+		\State $M \gets M - C_{current}$
+		\If{$m > \mathit{sizeOf}(C_{max})$}
+		\State $C_{max} \gets C_{current}$
+		\EndIf
+		\State $C_{current} \gets ()$
+		\EndWhile
+		\State\Return $C_{max}$
+		\EndProcedure	
+	\end{algorithmic}
+\end{algorithm}
+%%
 %TODO: add code snippet of feature calculation
-%TODO: add resulting histograms of unique points + normal distribution PICTURE
 
 \subsection{RANSAC}
 \label{RANSAC}
 The RANSAC algorithm takes the computed dense correspondences between $C_i$ and $C_j$ in form of a \texttt{Map<Integer, Integer>} as input. As a first step, three random correspondences are selected from the map to calculate an affine transformation between the three resulting points from each $C_i$ and $C_j$. The initial orientation and alignment is thereby irrelevant as the transformation $T$ is completely recalculated.
-
+%%
 \begin{lstlisting}
 public LargestRigidPart(Cluster c_i, Cluster c_j, Map<Integer, Integer> correspondences)
 ...
@@ -304,12 +466,35 @@ private void getRandomPoints(int num) {
 }
 ...
 \end{lstlisting}
-
-Similar to the ICP, a closest point procedure with a threshold $\tau$ is conducted. The value is thereby considerably smaller than in the ICP as a right alignment during any iteration is assumed. Unlikely the ICP, no error during the Procrustes fit is accumulated, instead the detected point correspondences are taken as input in the region growing \ref{RegionGrowing} procedure. The biggest cluster is stored and after all iterations returned as largest rigid part.
+%%
+In each iteration on all point correspondences a region growing approach with a threshold $\tau$ is conducted. The value is thereby considerably small as a right alignment during any iteration is assumed. The biggest cluster is stored and after all iterations returned as largest rigid part. The whole RANSAC procedure is quite time consuming. It can be reduced by taking a smaller number of correspondences as input which directly affects the required number of iterations until a right match is detected (see \ref{ResultsLRP}).
 
 \subsection{Region growing}
 \label{RegionGrowing}
 The region growing algorithm is quite similar to the earlier described algorithm (see algorithm \ref{noiseRemoval}). There is also an adaptation, which does not only return the largest cluster, but all clusters above a certain size. The detected clusters are handled in a \texttt{Stack<Cluster>} in case of more than one detected clusters. Thereby, all clusters are pushed on the stack. With each recursion two corresponding cluster $C_i$ and $C_j$ are popped from the stack and taken as input for the whole algorithm. If again more clusters are detected they are pushed on the stack and treated before recently added clusters.
+
+\subsection{Joint rotation}
+The main part for the detection of linked parts to already detected rigid parts is the rotation of $C_i$ onto $C_j$. As a first step both clusters are moved to the origin and are similarly aligned.
+%%
+\begin{lstlisting}
+if (c_i.getJoint() != null) {
+	referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(), -c_i.getJoint().getY());
+	targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(), -c_j.getJoint().getY());
+	initialOrientation(c_i.getJoint());
+	}
+\end{lstlisting}
+%%
+As a next step, the reference points are aimed to be rotated onto the target points. This is achieved iteratively by applying a rotation in the direction of an achieved reduced error. By computing an error for each iteration, the assumed biggest overlap is achieved.
+%%
+\begin{lstlisting}
+for (Map.Entry<Integer, Integer> entry : correspondences.entrySet()) {
+...
+	totalError += currentError / referencePoint.distance(new ClusterPoint(0,0));	
+...	
+}
+\end{lstlisting}
+%%
+To only remain the rigid part and reject correspondences from the final corresponding points that do not belong to the searched part, a region growing algorithm is applied to only keep the largest cluster as successful detected rigid part (see subsection \ref{RegionGrowing}).
 
 \section{Results}
 \label{ResultsLRP}

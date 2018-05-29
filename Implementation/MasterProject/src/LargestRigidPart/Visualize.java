@@ -6,11 +6,14 @@ import java.util.List;
 
 import ij.IJ;
 import ij.ImagePlus;
+import ij.ImageStack;
 import ij.gui.ShapeRoi;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 public class Visualize {
+	
+	private static ImageStack resultImages = new ImageStack(Main.width, Main.height);
 
 	private static Color[] colors = new Color[] { Color.black, Color.red, Color.blue, Color.green, Color.magenta };
 
@@ -52,8 +55,8 @@ public class Visualize {
 		if (Input.drawAxis) {
 			drawSkeleton(segmentation, segmentation2, rigidParts);
 		}
-		showImage(segmentation, title);
-		showImage(segmentation2, title);
+		addToResults(segmentation, title);
+		addToResults(segmentation2, title);
 	}
 
 	public static void drawAssociations(ColorProcessor ip, List<ClusterPoint> points1, List<ClusterPoint> association) {
@@ -91,7 +94,15 @@ public class Visualize {
 		}
 	}
 
-	public static void showImage(ImageProcessor ip, String title) {
-		(new ImagePlus(title, ip)).show();
+	public static void addToResults(ImageProcessor ip, String title) {
+		if(ip.getHeight() == resultImages.getHeight() && ip.getWidth() == resultImages.getWidth()){
+			resultImages.addSlice(title, ip);
+		} else{
+			new ImagePlus(title, ip).show();
+		}
+	}
+	
+	public static void showResults(){
+		new ImagePlus("Result Stack", resultImages).show();
 	}
 }

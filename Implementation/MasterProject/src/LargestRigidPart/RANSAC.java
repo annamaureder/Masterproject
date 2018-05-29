@@ -156,13 +156,13 @@ public class RANSAC {
 		Visualize.drawPoints(bestTransformation, finalRef, Color.blue);
 		Visualize.drawPoints(bestTransformation, finalTar, Color.red);
 		
-		Visualize.showImage(bestTransformation, "Best transformation reference");
+		Visualize.addToResults(bestTransformation, "Best transformation reference");
 		
 		Visualize.drawPoints(resultReference, biggestClusterRef.getPoints(), Color.blue);
 		Visualize.drawPoints(resultTarget, biggestClusterTarget.getPoints(), Color.red);
 		
-		Visualize.showImage(resultReference, "Final LRP reference");
-		Visualize.showImage(resultTarget, "Final LRP target");
+		Visualize.addToResults(resultReference, "Final LRP reference");
+		Visualize.addToResults(resultTarget, "Final LRP target");
 		
 		List<ClusterPoint> list1 = new ArrayList<>();
 		List<ClusterPoint> list2 = new ArrayList<>();

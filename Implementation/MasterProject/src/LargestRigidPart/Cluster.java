@@ -233,7 +233,7 @@ public class Cluster implements Comparable<Cluster> {
 
 		// PCA normals
 		for (int i = 0; i < points.size(); i++) {
-			getNeighborhood(points.get(i), k);
+			getNeighborhood(points.get(i), 2);
 			calculateNormal(points.get(i));
 		}
 		//orientNormals();
@@ -242,7 +242,7 @@ public class Cluster implements Comparable<Cluster> {
 			IJ.log("Features for point " + i+1);
 			FPFH feature = new FPFH(points.get(i));
 			IJ.log("FPFH created!");
-			feature.detectFeatures();
+			feature.featureHistogram();
 		}
 		
 		//points.get(0).getFPFH().showHistogram();

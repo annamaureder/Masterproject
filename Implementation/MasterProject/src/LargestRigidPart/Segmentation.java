@@ -54,53 +54,45 @@ public class Segmentation {
 		while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
 			IJ.log("Iteration #" + iteration++);
 
-			if (iteration == 3) {
+			if (iteration == 15) {
 				IJ.log("Max iterations reached!");
 				return;
 			}
 
 			removeAllLRPs();
-			IJ.log("All LRPs removed from unclustered points");
-			IJ.log("Unclustered Reference: " + unclusteredReference.size());
-			IJ.log("Unclustered Target: " + unclusteredTarget.size());
 
 			// grow regions from current lrp
 			referenceClusters = RegionGrowing.detectClusters(unclusteredReference);
 			targetClusters = RegionGrowing.detectClusters(unclusteredTarget);
 
-			for (Cluster c : referenceClusters) {
-				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
-				test.invert();
-				Visualize.drawPoints(test, c.getPoints(), Color.red);
-				Visualize.showImage(test, "cluster detected");
-			}
+//			for (Cluster c : referenceClusters) {
+//				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
+//				test.invert();
+//				Visualize.drawPoints(test, c.getPoints(), Color.red);
+//				Visualize.addToResults(test, "cluster detected");
+//			}
 
-			if (referenceClusters == null || targetClusters == null) {
-				IJ.log("ERROR!");
-			}
-
-			if (currentClusters != null) {
+			if (currentLrps != null) {
 				detectJoints(currentLrps, referenceClusters, targetClusters);
 			}
 
-			if (referenceClusters.size() != 0 || currentClusters == null) {
-				IJ.log("All clusters matched: " + clusters.size());
+			//add matching clusters to stack
+			if (referenceClusters.size() != 0 && targetClusters.size() != 0) {
 				pushMatchingClusters();
 			}
 
-			ColorProcessor results = new ColorProcessor(Main.width, Main.height);
-			results.invert();
-
-			for (Cluster[] cluster : clusters) {
-				if (cluster[0].getJoint() != null) {
-					Visualize.drawDot(results, cluster[0].getJoint(), Color.red, 10);
-					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue, 10);
-				}
-				Visualize.drawPoints(results, cluster[0].getPoints(), Color.red);
-				Visualize.drawPoints(results, cluster[1].getPoints(), Color.blue);
-			}
-
-			Visualize.showImage(results, "Unclustered clusters + joints");
+//			ColorProcessor results = new ColorProcessor(Main.width, Main.height);
+//			results.invert();
+//			for (Cluster[] cluster : clusters) {
+//				if (cluster[0].getJoint() != null) {
+//					Visualize.drawDot(results, cluster[0].getJoint(), Color.red, 10);
+//					Visualize.drawDot(results, cluster[1].getJoint(), Color.blue, 10);
+//				}
+//				Visualize.drawPoints(results, cluster[0].getPoints(), Color.red);
+//				Visualize.drawPoints(results, cluster[1].getPoints(), Color.blue);
+//			}
+//
+//			Visualize.addToResults(results, "Unclustered clusters + joints");
 
 			if (clusters.isEmpty()) {
 				IJ.log("Empty stack!");
@@ -110,12 +102,10 @@ public class Segmentation {
 			currentClusters = clusters.pop();
 
 			if (currentClusters[0].getJoint() == null) {
-				FeatureMatching cp = new FeatureMatching(currentClusters[0], currentClusters[1]);
-				Map<Integer, Integer> denseCorrespondances = cp.getCorrespondences();
-				IJ.log("Finished Feature matching!");
+				FeatureMatching fm = new FeatureMatching(currentClusters[0], currentClusters[1]);
+				Map<Integer, Integer> denseCorrespondances = fm.getCorrespondences();
 
 				if (denseCorrespondances.size() < 3) {
-					IJ.log("Too few correspondences detected!");
 					return;
 				}
 
@@ -128,11 +118,9 @@ public class Segmentation {
 			else {
 				PartDetection pd = new PartDetection(currentClusters[0], currentClusters[1]);
 				currentLrps = pd.getLinkedParts();
-				IJ.log("Finished part detection!");
 			}
 
 			if (currentLrps[0].getPoints().size() < 5) {
-				IJ.log("No LRP found! --> continue");
 			} else {
 				largestRigidParts.add(currentLrps);
 			}

@@ -108,13 +108,19 @@ where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_
 \end{figure}
 %%
 \subsection{Creation of feature histograms}
-The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram with $q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
+The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram $H \{bin_1,\ldots,bin_b\}$ with $b = q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
 %%
 \begin{equation}
 idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
 \end{equation}
 %%
-is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$. In order to achieve that the mean of all feature histograms $\mu$ of a cluster $C_i$ is computed. Subsequently, the distance of a feature histogram $H_i$ is compared to $H_\mu$ and in case of being outside the value $\mu \pm \theta \cdot \sigma$ denoted as \textit{unique} and passed to the next step of detecting matching histograms between $C_1$ and $C_2$. The mean histogram as well as the histogram of a not salient point feature can be seen on figure \ref{fig:meanHistogram}.
+is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$ to safe computation time. In order to achieve that the mean of all feature histograms $\mu$ of a cluster $C_i$ is computed. Subsequently, the distance of a feature histogram $H_i$ is compared to $H_\mu$ and in case of being outside the value $\mu \pm \sigma$ denoted as \textit{unique} and passed to the next step of detecting matching histograms between $C_1$ and $C_2$. The standard deviation
+%%
+\begin{equation}
+\sigma = \frac{1}{N} \cdot \displaystyle\sum_{i=1}^{N}(H_i(b) - \overline{H_i})^2
+\end{equation}
+%%
+is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. The mean histogram as well as the histogram of a not salient point feature can be seen on figure \ref{fig:meanHistogram}.
 %%
 %TODO: Picture of mean histogram + similar histogram
 %%
@@ -131,26 +137,27 @@ is incremented by 1. The function $q(f)$ returns the interval the feature is all
 \end{figure}
 %%
 \subsection{Comparison of histograms}
+\label{histogramCriteria}
 
-As a next step, all \textit{unique} feature histograms of $C_1$ are verified to find the closest match from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_i$ and $H_j$. In order to reduce computation time only the three main criteria mentioned most often in reference papers \cite{surfletPairRelation} were selected. As first criterion the squared euclidean distance (L2)
-
-$E(H_i, H_j) = 
-
-is computed. Subsequently, the statistical $X^2$ test 
-
-
-
-
-is examined. In a final step, the Kullback-Leibler (KL) divergence
-
-
-
-is computed, which is the most computational expensive one. 
-
-
-
-
-As a histogram with $q^f$ bins might contain a lot of zero values, each feature can be allocated to its own histogram, resulting in $f$ histograms with $q$ bins. 
+As a next step, all \textit{unique} feature histograms of $C_1$ are verified to find the closest match from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_j$ and $H_k$ with each $b$ bins. In order to detect the best fitting histogram three main criteria mentioned most often in reference papers \cite{surfletPairRelation} \cite{localFeatureHistograms} were selected. As first criterion the squared euclidean distance (L2)
+%%
+\begin{equation}
+\varepsilon(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i))^2
+\end{equation}
+%%
+is computed. In the reference paper of Mitra et al. \cite{Mitra07} the euclidean distance was the only criterian for correspondence computation which generates most of the point correspondences (see section \ref{ResultsLRP}). Subsequently, the statistical Chi-Square ($\chi^2$) divergence
+%%
+\begin{equation}
+\chi^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}\frac{(H_j(i) - H_k(i))^2}{(H_j(i) + H_k(i))}
+\end{equation}
+%%
+is examined which achieves better results than the L2 form. Finally, the Kullback-Leibler (KL) divergence
+%%
+\begin{equation}
+\kappa(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i)) \cdot ln \frac{H_j(i)}{H_k(i)}
+\end{equation}
+%%
+is calculated, which is the most computational expensive one due to the usage of $ln$. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm all zero-values are replaced with the value 1.
 
 \subsection{Adaptions for 2D}
 In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 
@@ -160,16 +167,27 @@ In order to compute those 3D features for 2D points, those can be treaded like 3
 \section{Initial alignment: Largest rigid part}
 \label{LRP}
 
-As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub clusters, the feature-based approach is implemented to detect as an initial step the largest rigid part (LRP) of $C_1$ and $C_2$. Proceeding from there, all other linked parts are detected by region growing and reapplying the algorithm. This approach has been originally implemented for 3D point clouds by Mitra \cite{Mitra07}.
-
+As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub clusters, the feature-based approach is implemented to detect as an initial step the largest rigid part (LRP) of $C_1$ and $C_2$. Proceeding from there, all other linked parts are detected by region growing and reapplying the algorithm. This approach has been originally implemented for 3D point clouds by Mitra \cite{Mitra07}. For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}).
+%%
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.40\textwidth]{InputPose1}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{InputPose2}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Taking an articulated object (puppet) in two different poses $C_1$ (a) and $C_2$ (b) in form of a 2D point cloud representing its hull point cloud as input.} 
+	\label{fig:inputPoses}
+\end{figure}
+%%
 \subsection{Basic functionality}
 \label{functionalityLRP}
-As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
 
 \subsection{Implementation steps}
 
-In order to re-implement the algorithm in 2D, only small modifications concerning point coordinates had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). The initial idea was to detect correspondences by applying the ICP only proceeding the iterative transformation calculation with the most reliable correspondences. However, this approach did not manage to detect the desired correspondences of the largest rigid part (see section \ref{ResultsLRP}).
-
+In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}).
 \begin{enumerate}
 	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate the normals of all points.
 	\item Point feature histograms (FPFH) are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
@@ -181,34 +199,64 @@ In order to re-implement the algorithm in 2D, only small modifications concernin
 \subsection{Detection of sparse correspondences}
 \label{correspondences}
 
-As a first step, the 2D hulls of an articulated object in two different poses are taken as input (see Figure XX). Subsequently, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences the feature histograms are compared by means of normal distribution, mean and peak. The most similar histograms are selected as correspondence if they are \textit{reciprocal}.
-As some of those correspondences might be wrong (see figure XX), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
-
-%TODO: add articulated puppet in two poses for input PICTURE
-
+As a first step of the algorithm, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+%%
+\begin{figure}[H]
+	\centering \small
+	\begin{tabular}{c}
+		\fbox{\includegraphics[width=0.80\textwidth]{featureCorrespondences_chiSquare}} 
+	\end{tabular}
+	\caption{Visualization of the point correspondences depending on the most similar, reciprocal feature histograms using the chi-square distance between all points of $C_1$ (red) and $C_2$ (blue).}
+	\label{fig:sparseCorrespondences}
+\end{figure}
+%%
 %TODO: image of histograms + most unique feature points
-
+%%
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output. In case of symmetric poses, the RANSAC would not be required, as the largest rigid part (the torso) would be almost perfectly aligned and taken as input for the region growing. But still, to cover as many cases as possible, this computation step is necessary. 
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 1000.
+
+%TODO: number of iterations? --> number of false correspondences, formular
+
+Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output (see figure \ref{RANSAC}).
+
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.40\textwidth]{RANSAC_1000_chiSquare_ref}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{RANSAC_1000_chiSquare_target}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Computation of the largest rigid part from $C_1$ (a) and $C_2$ (b) by applying RANSAC on the detected point correspondences.} 
+	\label{fig:RANSAC}
+\end{figure}
+
+The final transformation $T$ of the RANSAC approach, which leads to the ``largest rigid part'', is applied on the reference cluster. This procedure is required in order to similarly align $C_1$ and $C_2$ for further computations (see subsection \ref{CorrespondingClusters}).
 
 \subsection{Cluster detection by region growing}
 \label{cluster}
 After successfully detecting a ``largest rigid part'' $P_i$ and $P_j$ for each input clusters $C_i$ and $C_j$ they are added to a list of rigid parts $\mathcal{P}$. Potential linked rigid parts are detected from region growing of all unclustered points $\mathcal{U} =  \{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$. Those comprise all cluster points of $C_1$ and $C_2$ excluding already detected largest rigid parts $\mathcal{P}$. The region growing initiates with the first point $\boldsymbol{u}_1$ of the unclustered points $\mathcal{U}$ to form a cluster $C_i$. Another point of the unclustered points $\boldsymbol{u}_j$ is added to $C_i$, if the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{u}_j)$ to any point in $C_i$ is below the threshold $\tau$. If no further unclustered points can be added, the region growing initiates again with the first unclustered point $\boldsymbol{u}_1$ that has not been added by region growing until all points traversed the procedure. The result is a set of clusters $\mathcal{C}$ for each $C_i$ and $C_j$. Subsequently, a preliminary joint $\boldsymbol{j}_i$ for each output clusters is stored, by detecting the two nearest points of $C_i$ and $P_i$. The joints are required for following cluster correspondence and joint weights for the ICP (see subsection \ref{CorrespondingClusters} and \ref{JointWeights}).
 
-\subsection{Establishment of corresponding clusters}
+\subsubsection{Establishment of corresponding clusters}
 \label{CorrespondingClusters}
 In case of detecting more than one cluster for each $C_i$ and $C_j$, which might be for example the case for the extremities linked to the torso, it must be verified which clusters correspond to each other. This step is essential, as the algorithm is called recursively (starting from \ref{correspondences}) with two new input clusters. Thereby, the provisional joints $\boldsymbol{j}_i$ are used to associate two clusters of $C_i$ and $C_j$ by detecting the closest joint with the euclidean distance $d(\boldsymbol{j}_i,\boldsymbol{j}_j)$.
 
-\subsection{Joint weights}
+\subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In order to iteratively detect largest rigid parts that are actually linked to another detected ``largest rigid part'', the preliminary joints resulting from \ref{cluster} are used as weights. Thereby, points being located far away from joints, do not contribute as much to the matching error as point located near a joint. By doing so, joint consistency across two poses is enforced. As an alternative to the ICP clusters with calculated joints only need to be rotated around them. As a result, a matching error $e$ 
+In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and similar shapes and thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint.
+As a first step of the part detection two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint ranging in a certain threshold $\tau$ from the initial rotation.
+By computing a least squares error for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints resulting from \ref{cluster} are used as weights. As a result, points being located far away from joints, do not contribute as much to the matching error as point located near a joint The matching error $e$ 
 %
 \begin{equation}
 	e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \| \boldsymbol{p}_i - \boldsymbol{j}_i\|
 \end{equation}
 %
-is achieved which combines the distance to the closest point and to the cluster's joint. Thereby, not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. 
+is achieved which combines the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
+
+%TODO: image of joint rotation + only certain degree for rotation?
+
+In the current implementation, the rotation of 360° is verified, given joint constraints, the number of iterations could be reduced. The assumption is thereby, that the rigid parts must be oriented similar to a certain extend.
 
 \section{Implementation}
 \label{ImplementationLRP}
@@ -216,24 +264,6 @@ The individual steps of the largest rigid part algorithm have also been split in
 %
 %TODO: Add code snippets to implementation LRP
 %
-\subsection{ICP}
-One main part of the algorithm is the modified implementation of the ICP using Procrustes fitting to compute a transformation that detects sparse point correspondences. Thereby, only reciprocal correspondences within a specific distance $\tau$ contribute to the calculation. The final point correspondences of $C_i$ and $C_j$ are stored in a \texttt{Map<Integer, Integer>} containing the indices of the corresponding points. This is because the storage of points in the form $\boldsymbol{p}_i(x,y)$ would underly a specific transformation, which is applied during the ICP and initial alignment. For further computations using the RANSAC, no transformations are desired. As the main difficulty is the right initial alignment of the actual largest rigid part (torso) the value of the distance threshold $\tau$ is chosen generously. As a result, a higher number of false point correspondences is detected which has to be compensated by RANSAC (see subsection \ref{RANSAC}).
-
-\begin{lstlisting}
-...
-for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
-Integer referenceIndex = entry.getKey();
-Integer targetIndex = entry.getValue();
-
-	if (target.containsKey(targetIndex) && target.get(targetIndex) == referenceIndex) {
-		referencePoints.add(originalReference.get(referenceIndex));
-		targetPoints.add(originalTarget.get(targetIndex));
-		finalAssociations.put(referenceIndex, targetIndex);
-	}
-}
-...
-\end{lstlisting}
-
 \subsection{Image Features}
 %
 %TODO: implementation of features (incl normals)
@@ -284,17 +314,27 @@ The region growing algorithm is quite similar to the earlier described algorithm
 \section{Results}
 \label{ResultsLRP}
 
-Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved. 
+Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
 
 %TODO: add pictures of LRP results
 
-\subsection{Main drawbacks}
-The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. Thereby, it is directly dependent on the symmetry of the pose. The less symmetry the higher the changes that the initial alignment on the largest rigid part might fail. The reason is that the ICP expects a good starting alignment. As it is assumed that the major largest rigid part contributes most to the principal axis and the initial alignment, it would work. But in case of an unbalance of the linked parts, the alignment of the LRP might shift in a certain direction and it might not be detected during the ICP. As a result the whole algorithm fails. Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters. 
+\subsection{Histogram similarity criteria}
+The chosen distance between histograms is essential. Euclidean --> most correspondences, more iteration in RANSAC but certainly right more right ones.
+Chi-Square --> less correspondences, more right ones, less iterations with RANSAC
+Kullback-Leibler --> few correspondences, LRP might not be detected as too few right ones
+Not useful in this context, more points required
+%TODO: runtime + pictures!
 
-\subsection{Difficulties}
+\subsection{Main difficulties}
+The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. In case of a failure, the linked parts can not be detected right as they are computed from region growing. By increasing the number of RANSAC iterations, the probability of a faulty initial alignment can be reduced, however this directly affects the runtime and should therefore not be exaggerated. Most certainly, it has to be guaranteed that the number of corresponding points are the same number from $C_1$ and $C_2$.
 
-As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the gaps. To counteract this behavior, joints are added to each rigid part, that more links for region growing are available. 
-The first main difficulty is the first alignment of the two input clusters $C_1$ and $C_2$. As the execution of the whole algorithm is only dependent on a successful alignment, for test cases the assumption was made, that the orientation of the two poses are initially right. The main drawback of the ICP was that the starting position of the two main clusters $C_1$ and $C_2$ had to be ideal that the largest rigid part could be detected. However, this could not be guaranteed as asymmetrical body poses would influence the orientation (see Figure XXX) of the whole cluster $C_1$. As a result, reciprocal point correspondences could not be detected that would lead to the largest rigid part.
+%TODO: picture faulty alignment
+
+As the input point cloud of an articulated object is in 2D, the imitation of the object's hull is required. As a consequence, the region growing is much more error-prone, as unlikely in 3D, the points of a rigid part have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the gaps which is especially drastically during the RANSAC approach. To counteract this behavior, more and closer hull points could added to each rigid part, that more links for region growing are available. A further main problem is that the algorithm proceeds iteratively from already detected rigid parts. This makes the whole procedure quite unstable and error prone, as one faulty detection leads to an overall unsuccessful segmentation of an articulated object. In the implementation of Mitra enough feature descriptors were available for linked rigid parts, that they could be detected similary as the initial alignment. But for that more data points have to be available which is not the case for this prototype.
+
+Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute difficulties as the region growing would not detect those as potential linked clusters.
+
+%TODO: show what does not work perfectly
 
 \section{3D implementation}
 

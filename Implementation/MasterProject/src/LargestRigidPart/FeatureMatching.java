@@ -205,7 +205,7 @@ public class FeatureMatching {
 		if (reciprocalMatching) {
 			fileName += "_reciprocal";
 		}
-		Visualize.showImage(results, fileName);
+		Visualize.addToResults(results, fileName);
 	}
 
 	/**
@@ -233,24 +233,24 @@ public class FeatureMatching {
 	 * method to get the closest point regarding the feature histogram for x'
 	 * from a points set X'
 	 * 
-	 * @param point
-	 * @param referencePoints
+	 * @param p_i
+	 * @param c_2
 	 * @return
 	 */
 
-	private int closestPoint(ClusterPoint point, List<ClusterPoint> referencePoints) {
+	private int closestPoint(ClusterPoint p_i, List<ClusterPoint> c_2) {
 		int closestPoint = -1;
 		double distance = Double.MAX_VALUE;
 		double distanceNew = 0;
 
-		for (int i = 0; i < referencePoints.size(); i++) {
+		for (int i = 0; i < c_2.size(); i++) {
 
 			if (Input.distance.equals("Euclidean")) {
-				distanceNew = point.getFPFH().squaredDistance(referencePoints.get(i).getFPFH());
+				distanceNew = p_i.getFPFH().squaredDistance(c_2.get(i).getFPFH());
 			} else if (Input.distance.equals("ChiSquared")) {
-				distanceNew = point.getFPFH().chiSquare(referencePoints.get(i).getFPFH());
+				distanceNew = p_i.getFPFH().chiSquare(c_2.get(i).getFPFH());
 			} else {
-				distanceNew = point.getFPFH().kullback(referencePoints.get(i).getFPFH());
+				distanceNew = p_i.getFPFH().kullback(c_2.get(i).getFPFH());
 			}
 
 			if (distanceNew < distance) {

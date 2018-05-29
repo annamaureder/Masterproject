@@ -16,7 +16,7 @@ import ij.IJ;
 
 public class FPFH {
 
-	private ClusterPoint point;
+	private ClusterPoint p_i;
 	private final int numberFeatures = 3;
 	private final int numberIntervals = 2;
 	private final int bins = (int) Math.pow(numberIntervals, numberFeatures);
@@ -26,21 +26,21 @@ public class FPFH {
 	Histogram FPFH;
 
 	public FPFH(ClusterPoint point) {
-		this.point = point;
+		this.p_i = point;
 		weightedSPFH = new Histogram(bins);
 		FPFH = new Histogram(bins);
 	}
 
-	public void detectFeatures() {
-		SPFH = SPFH(point);
+	public void featureHistogram() {
+		SPFH = SPFH(p_i);
 
-		for (ClusterPoint neighbor : point.getNeighborhood()) {
-			double weight = point.distance(neighbor);
-			weightedSPFH = weightedSPFH.addHistograms(SPFH(neighbor).multiplyHistograms(1.0 / weight));
+		for (ClusterPoint p_k : p_i.getNeighborhood()) {
+			double weight = p_i.distance(p_k);
+			weightedSPFH = weightedSPFH.addHistograms(SPFH(p_k).multiplyHistograms(1.0 / weight));
 		}
 
-		FPFH = SPFH.addHistograms(weightedSPFH.multiplyHistograms(1.0 / point.getNeighborhood().size()));
-		point.setFPFH(FPFH);
+		FPFH = SPFH.addHistograms(weightedSPFH.multiplyHistograms(1.0 / p_i.getNeighborhood().size()));
+		p_i.setFPFH(FPFH);
 	}
 
 	private Histogram SPFH(ClusterPoint point) {

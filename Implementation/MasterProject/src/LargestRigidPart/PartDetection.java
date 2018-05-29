@@ -51,15 +51,15 @@ public class PartDetection {
 		protected List<ClusterPoint> targetPoints;
 		protected List<ClusterPoint> originalReference;
 		protected List<ClusterPoint> originalTarget;
-		private Map<Integer, Integer> reference;
-		private Map<Integer, Integer> target;
+		private Map<Integer, Integer> correspondencesReference;
+		private Map<Integer, Integer> correspondencesTarget;
 		private Map<Integer, Integer> finalAssociations;
 		private double totalError = 0.0;
 
 		public Association(Map<Integer, Integer> reference, Map<Integer, Integer> target,
 				List<ClusterPoint> originalReference, List<ClusterPoint> originalTarget) {
-			this.reference = reference;
-			this.target = target;
+			this.correspondencesReference = reference;
+			this.correspondencesTarget = target;
 			this.originalReference = originalReference;
 			this.originalTarget = originalTarget;
 			comparePoints();
@@ -78,7 +78,7 @@ public class PartDetection {
 			targetPoints = new ArrayList<>();
 			finalAssociations = new HashMap<>();
 
-			for (Map.Entry<Integer, Integer> entry : reference.entrySet()) {
+			for (Map.Entry<Integer, Integer> entry : correspondencesReference.entrySet()) {
 				Integer referenceIndex = entry.getKey();
 				Integer targetIndex = entry.getValue();
 
@@ -87,15 +87,11 @@ public class PartDetection {
 
 				if (c_i.getJoint() != null) {
 					double currentError = referencePoint.distance(targetPoint);
-					double distance = referencePoint.distance(new ClusterPoint(0,0))/maxDistanceToJoint;
-//					if(distance > 0.5){
-//						currentError = 0.01;
-//					}
-					totalError += currentError * (1 - Math.pow(distance, 2));
+					totalError += currentError / referencePoint.distance(new ClusterPoint(0,0));
 				}
 
-				if (target.containsKey(targetIndex)) {
-					if ((reciprocalMatching && target.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
+				if (correspondencesTarget.containsKey(targetIndex)) {
+					if ((reciprocalMatching && correspondencesTarget.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
 						if (logging)
 						referencePoints.add(originalReference.get(referenceIndex));
 						targetPoints.add(originalTarget.get(targetIndex));
@@ -112,7 +108,6 @@ public class PartDetection {
 	public PartDetection(Cluster c_i, Cluster c_j) {
 		this.c_i = new Cluster(c_i);
 		this.c_j = new Cluster(c_j);
-		maxDistanceToJoint = distanceToJoint();
 		IJ.log("max distance to Joint: " + maxDistanceToJoint);
 
 		run();
@@ -123,7 +118,7 @@ public class PartDetection {
 		IJ.log("Joint rotation entered!");
 
 		if (c_i.getJoint() != null) {
-			// initialOrientation(c_i.getJoint());
+			initialOrientation(c_i.getJoint());
 			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(), -c_i.getJoint().getY());
 			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(), -c_j.getJoint().getY());
 		}
@@ -163,17 +158,17 @@ public class PartDetection {
 			
 			double tmp_error = associations.getError();
 			
-			if(iterations == 344){
-				IJ.log("Error Nr." + iterations + ": " + tmp_error);
-				
-				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
-				test.invert();
-				
-				Visualize.drawPoints(test, referencePoints, Color.blue);
-				Visualize.drawPoints(test, targetPoints, Color.red);
-				Visualize.drawAssociations(test, referencePoints, neighbors);
-				Visualize.showImage(test, "#" + iterations);
-			}
+//			if(iterations == 344){
+//				IJ.log("Error Nr." + iterations + ": " + tmp_error);
+//				
+//				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
+//				test.invert();
+//				
+//				Visualize.drawPoints(test, referencePoints, Color.blue);
+//				Visualize.drawPoints(test, targetPoints, Color.red);
+//				Visualize.drawAssociations(test, referencePoints, neighbors);
+//				Visualize.addToResults(test, "#" + iterations);
+//			}
 			
 			results = new ColorProcessor(Main.width, Main.height);
 			results.invert();
@@ -211,7 +206,7 @@ public class PartDetection {
 		if (reciprocalMatching) {
 			fileName += "_reciprocal";
 		}
-		Visualize.showImage(results, fileName);
+		Visualize.addToResults(results, fileName);
 	}
 
 	/**
@@ -288,28 +283,28 @@ public class PartDetection {
 		return error;
 	}
 
-	// private void initialOrientation(ClusterPoint rotationPoint) {
-	// Cluster rotation1 = new Cluster(c_i);
-	// Cluster rotation2 = new Cluster(c_i);
-	//
-	// rotation1.alignAxis(rotationPoint);
-	// rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
-	//
-	// rotation2.alignAxis(rotationPoint);
-	// rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
-	//
-	// getAssociation(rotation1.getPoints(), c_j.getPoints());
-	// double error1 = tmp_error;
-	//
-	// getAssociation(rotation2.getPoints(), c_j.getPoints());
-	// double error2 = tmp_error;
-	//
-	// if (error1 < error2) {
-	// c_i = rotation1;
-	// } else {
-	// c_i = rotation2;
-	// }
-	// }
+	private void initialOrientation(ClusterPoint rotationPoint) {
+		Cluster rotation1 = new Cluster(c_i);
+		Cluster rotation2 = new Cluster(c_i);
+
+		rotation1.alignAxis(rotationPoint);
+		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
+
+		rotation2.alignAxis(rotationPoint);
+		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
+
+//		getAssociation(rotation1.getPoints(), c_j.getPoints());
+//		double error1 = tmp_error;
+//
+//		getAssociation(rotation2.getPoints(), c_j.getPoints());
+//		double error2 = tmp_error;
+
+//		if (error1 < error2) {
+//			c_i = rotation1;
+//		} else {
+//			c_i = rotation2;
+//		}
+	}
 
 	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
 		return new Association(reference, target, referencePoints, targetPoints);
@@ -321,17 +316,5 @@ public class PartDetection {
 
 	public Map<Integer, Integer> getCorrespondences() {
 		return finalAssociation;
-	}
-	
-	private double distanceToJoint() {
-		double maxDistance = Double.MIN_VALUE;
-
-		for (ClusterPoint point : c_i.getPoints()) {
-			double distance = point.distance(c_i.getJoint());
-			if (distance > maxDistance){
-				maxDistance = distance;
-			}
-		}
-		return maxDistance;
 	}
 }

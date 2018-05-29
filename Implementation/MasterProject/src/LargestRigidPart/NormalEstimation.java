@@ -64,11 +64,10 @@ public class NormalEstimation {
 			
 		double[] normal = new double[2];
 		
-		normal[0] = -1.0;
+		normal[0] = 1.0;
 		normal[1] = (eigenvalue * normal[0] - covarianceMatrix[0][0] * normal[0])/covarianceMatrix[0][1];
 		
 		if(Double.isInfinite(normal[1])){
-			IJ.log("Infinite value!");
 			normal[0] = 0;
 			normal[1] = 1;
 		} else if (Double.isNaN(normal[1])){
