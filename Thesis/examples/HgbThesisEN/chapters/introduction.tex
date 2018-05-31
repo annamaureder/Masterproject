@@ -1,11 +1,11 @@
 \chapter{Introduction}
 \label{cha:Introduction}
 
-Pose and motion estimation of objects is an active field of research due to the growing digitalization of day-to-day processes. A case of application the thesis emerged from is the pose capture an object. Thereby, it is essential to know the corresponding rigid parts and joints in two consecutive frames, in order to interpolate the animation between the moved parts.
+Pose and motion estimation of articulated objects that consist of rigid parts linked by joints is an active field of research due to the growing digitalization of day-to-day processes. A case of application the thesis emerged from is the pose capture an object. Thereby, it is essential to know the corresponding rigid parts and joints in two consecutive frames, in order to interpolate the animation between the moved parts.
 %TODO: Write more about pose capture! --> see papers, puppet pose capture, why 2D?
 
 \section{Problem statement}
-A vast majority of existing pose estimation approaches take advantage of labeling for joints and the rigid parts to state basic information about the object to be captured. Often combined with a machine learning approach the results are promising with growing learning phase. However, unsupervised methods that detect the pose of an unknown object, constitute a great potential as the detection of a pose operates completely independent from user input. Among those methods, the non-rigid registration \cite{survey} (see section \ref{nonrigidregistration}) is a well-known approach . The input of this algorithm are two or more poses of one articulated object. By merging one \textit{template} pose onto another \textit{query} pose, part correspondences can be made and the articulated object is segmented into its rigid parts. 
+A vast majority of existing pose estimation approaches take advantage of labeling for joints and the rigid parts to state basic information about the object to be captured. Often combined with a machine learning approach the results are promising with growing learning phase. However, unsupervised methods that detect the pose of an unknown object, constitute a great potential as the detection of a pose operates completely independent from user input. Among those methods, the non-rigid registration (see section \ref{nonrigidregistration}) is a well-known approach. The input of this algorithm are two or more poses of one articulated object. By merging one \textit{template} pose onto another \textit{query} pose, part correspondences can be made and the articulated object is segmented into its rigid parts. 
 By applying this approach to an unknown input object in two poses, some core questions need to be considered:
 %%
 \\\begin{itemize}

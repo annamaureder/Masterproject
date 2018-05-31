@@ -27,7 +27,7 @@ public class Cluster implements Comparable<Cluster> {
 	private double orientation;
 	private int principalLength;
 	private int secondaryLength;
-	private final int k = 20;
+	private final int k = 50;
 	private final double r = 12;
 
 	public Cluster(ImageProcessor ip) {
@@ -56,7 +56,7 @@ public class Cluster implements Comparable<Cluster> {
 	 * copy constructor for temporal orientations
 	 */
 	public Cluster(Cluster c) {
-		this.points = c.points;
+		this.points.addAll(c.points);
 		this.joint = c.joint;
 		this.size = c.size;
 		this.centroid = c.centroid;
@@ -233,7 +233,7 @@ public class Cluster implements Comparable<Cluster> {
 
 		// PCA normals
 		for (int i = 0; i < points.size(); i++) {
-			getNeighborhood(points.get(i), 2);
+			getNeighborhood(points.get(i), k);
 			calculateNormal(points.get(i));
 		}
 		//orientNormals();

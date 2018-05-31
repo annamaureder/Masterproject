@@ -20,6 +20,9 @@ public class PartDetection {
 
 	private Cluster c_i;
 	private Cluster c_j;
+	
+	private double x_location;
+	private double y_location;
 
 	private Cluster[] linkedRigidParts;
 	Cluster biggestClusterRef = new Cluster();
@@ -87,16 +90,17 @@ public class PartDetection {
 
 				if (c_i.getJoint() != null) {
 					double currentError = referencePoint.distance(targetPoint);
-					totalError += currentError / referencePoint.distance(new ClusterPoint(0,0));
+					totalError += currentError / referencePoint.distance(new ClusterPoint(0, 0));
 				}
 
 				if (correspondencesTarget.containsKey(targetIndex)) {
-					if ((reciprocalMatching && correspondencesTarget.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
+					if ((reciprocalMatching && correspondencesTarget.get(targetIndex) == referenceIndex)
+							|| !reciprocalMatching) {
 						if (logging)
-						referencePoints.add(originalReference.get(referenceIndex));
+							referencePoints.add(originalReference.get(referenceIndex));
 						targetPoints.add(originalTarget.get(targetIndex));
-						
-						if(referencePoint.distance(targetPoint) <= distanceThreshold){
+
+						if (referencePoint.distance(targetPoint) <= distanceThreshold) {
 							finalAssociations.put(referenceIndex, targetIndex);
 						}
 					}
@@ -118,6 +122,8 @@ public class PartDetection {
 		IJ.log("Joint rotation entered!");
 
 		if (c_i.getJoint() != null) {
+			x_location = c_i.getJoint().getX();
+			y_location = c_i.getJoint().getY();
 			initialOrientation(c_i.getJoint());
 			referencePoints = Matrix.translate(c_i.getPoints(), -c_i.getJoint().getX(), -c_i.getJoint().getY());
 			targetPoints = Matrix.translate(c_j.getPoints(), -c_j.getJoint().getX(), -c_j.getJoint().getY());
@@ -135,46 +141,30 @@ public class PartDetection {
 
 		int iterations = 0;
 		int bestIteration = 1;
-		
+
 		sourceAssociation = new HashMap<>();
 		targetAssociation = new HashMap<>();
 		finalTransformedPoints = new ArrayList<>();
+		double tmp_error = 0.0;
 
-		while (iterations++ <= 360) {
-			// point association
-
-			referencePoints = Matrix.rotate(referencePoints, (1 / 180.0) * Math.PI);
+		int direction = getRotationDirection();
+		IJ.log("Direction: " + direction);
+		int i = 0;
+		while (tmp_error <= error) {
+			IJ.log("Iteration: " + i++);
+			referencePoints = Matrix.rotate(referencePoints, (direction / 180.0) * Math.PI);
 
 			sourceAssociation = getAssociation(referencePoints, targetPoints);
 			targetAssociation = getAssociation(targetPoints, referencePoints);
 			associations = getAssociatedPoints(sourceAssociation, targetAssociation);
-			
-			List<ClusterPoint> neighbors = new ArrayList<>();
-			
-			for (Map.Entry<Integer, Integer> entry : sourceAssociation.entrySet()) {
-				Integer targetIndex = entry.getValue();
-				neighbors.add(targetPoints.get(targetIndex));
-			}
-			
-			double tmp_error = associations.getError();
-			
-//			if(iterations == 344){
-//				IJ.log("Error Nr." + iterations + ": " + tmp_error);
-//				
-//				ColorProcessor test = new ColorProcessor(Main.width, Main.height);
-//				test.invert();
-//				
-//				Visualize.drawPoints(test, referencePoints, Color.blue);
-//				Visualize.drawPoints(test, targetPoints, Color.red);
-//				Visualize.drawAssociations(test, referencePoints, neighbors);
-//				Visualize.addToResults(test, "#" + iterations);
-//			}
-			
-			results = new ColorProcessor(Main.width, Main.height);
-			results.invert();
+
+			tmp_error = associations.getError();
+
+			IJ.log("Error Nr." + iterations + ": " + tmp_error);
+
+			drawIntermediateResult(iterations);
 
 			if (tmp_error < error) {
-				bestIteration = iterations;
 				error = tmp_error;
 				finalReferenceAssoc = associations.referencePoints;
 				finalTargetAssoc = associations.targetPoints;
@@ -182,18 +172,15 @@ public class PartDetection {
 				finalAssociation = associations.getAssociations();
 			}
 		}
-
-		IJ.log("best iteration: " + bestIteration);
-
 		findBiggestCluster(finalAssociation);
 
 		results = new ColorProcessor(Main.width, Main.height);
 		results.invert();
 
-		finalReferenceAssoc = Matrix.translate(finalReferenceAssoc, 400, 200);
-		finalTargetAssoc = Matrix.translate(finalTargetAssoc, 400.0, 200);
-		finalTransformedPoints = Matrix.translate(finalTransformedPoints, 400, 200);
-		targetPoints = Matrix.translate(targetPoints, 400, 200);
+		finalReferenceAssoc = Matrix.translate(finalReferenceAssoc, x_location, y_location);
+		finalTargetAssoc = Matrix.translate(finalTargetAssoc, x_location, y_location);
+		finalTransformedPoints = Matrix.translate(finalTransformedPoints, x_location, y_location);
+		targetPoints = Matrix.translate(targetPoints, x_location, y_location);
 
 		if (Input.showAssociations) {
 			Visualize.drawAssociations(results, finalReferenceAssoc, finalTargetAssoc);
@@ -207,6 +194,23 @@ public class PartDetection {
 			fileName += "_reciprocal";
 		}
 		Visualize.addToResults(results, fileName);
+	}
+
+	private void drawIntermediateResult(int iterations) {
+		ColorProcessor test = new ColorProcessor(Main.width, Main.height);
+		test.invert();
+
+		List<ClusterPoint> neighbors = new ArrayList<>();
+
+		for (Map.Entry<Integer, Integer> entry : sourceAssociation.entrySet()) {
+			Integer targetIndex = entry.getValue();
+			neighbors.add(Matrix.translate(targetPoints, x_location, y_location).get(targetIndex));
+		}
+
+		Visualize.drawPoints(test, Matrix.translate(referencePoints, x_location, y_location), Color.blue);
+		Visualize.drawPoints(test, Matrix.translate(targetPoints, x_location, y_location), Color.red);
+		Visualize.drawAssociations(test, Matrix.translate(referencePoints, x_location, y_location), neighbors);
+		Visualize.addToResults(test, "#" + iterations);
 	}
 
 	/**
@@ -272,10 +276,10 @@ public class PartDetection {
 				biggestClusterTarget = cluster;
 			}
 		}
-		
+
 		biggestClusterRef.setJoint(c_i.getJoint());
 		biggestClusterTarget.setJoint(c_j.getJoint());
-		
+
 		linkedRigidParts = new Cluster[] { biggestClusterRef, biggestClusterTarget };
 	}
 
@@ -284,30 +288,56 @@ public class PartDetection {
 	}
 
 	private void initialOrientation(ClusterPoint rotationPoint) {
-		Cluster rotation1 = new Cluster(c_i);
-		Cluster rotation2 = new Cluster(c_i);
-
-		rotation1.alignAxis(rotationPoint);
-		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
-
-		rotation2.alignAxis(rotationPoint);
-		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
-
-//		getAssociation(rotation1.getPoints(), c_j.getPoints());
-//		double error1 = tmp_error;
+//		Cluster rotation1 = new Cluster(c_i);
+//		Cluster rotation2 = new Cluster(c_i);
+//		
+//		rotation1.alignAxis(rotationPoint);
+//		rotation1.alignAxis(c_j.getOrientation(), rotationPoint);
 //
-//		getAssociation(rotation2.getPoints(), c_j.getPoints());
-//		double error2 = tmp_error;
+//		rotation2.alignAxis(rotationPoint);
+//		rotation2.alignAxis(c_j.getOrientation() + Math.PI, rotationPoint);
+//		
 
-//		if (error1 < error2) {
-//			c_i = rotation1;
-//		} else {
-//			c_i = rotation2;
-//		}
+		// getAssociation(rotation1.getPoints(), c_j.getPoints());
+		// double error1 = tmp_error;
+		//
+		// getAssociation(rotation2.getPoints(), c_j.getPoints());
+		// double error2 = tmp_error;
+
+		// if (error1 < error2) {
+		// c_i = rotation1;
+		// } else {
+		// c_i = rotation2;
+		// }
 	}
 
 	private Association getAssociatedPoints(Map<Integer, Integer> reference, Map<Integer, Integer> target) {
 		return new Association(reference, target, referencePoints, targetPoints);
+	}
+
+	private int getRotationDirection() {
+		List<ClusterPoint> direction1;
+		List<ClusterPoint> direction2;
+
+		double error1;
+		double error2;
+
+		direction1 = Matrix.rotate(referencePoints, (1 / 180.0) * Math.PI);
+		direction2 = Matrix.rotate(referencePoints, (-1 / 180.0) * Math.PI);
+
+		sourceAssociation = getAssociation(direction1, targetPoints);
+		targetAssociation = getAssociation(targetPoints, direction1);
+		associations = getAssociatedPoints(sourceAssociation, targetAssociation);
+
+		error1 = associations.getError();
+
+		sourceAssociation = getAssociation(direction2, targetPoints);
+		targetAssociation = getAssociation(targetPoints, direction2);
+		associations = getAssociatedPoints(sourceAssociation, targetAssociation);
+
+		error2 = associations.getError();
+
+		return error1 < error2 ? 1 : -1;
 	}
 
 	public Cluster[] getLinkedParts() {
