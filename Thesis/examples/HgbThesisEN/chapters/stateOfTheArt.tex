@@ -1,52 +1,70 @@
 \chapter{State of the Art}
 \label{cha:StateOfTheArt}
 
-Several work has been done regarding pose capture of articulated objects (mostly humans). Many steps are required, many difficulties have to be overcome in order to estimate the joints and skeleton. 
-
-Generally, there are two major steps to capture the pose of an object. First, the object has to be digitalized, which is achieved by a 3D scanning and reconstruction approach. The data might be in form of a point cloud or voxels depending on the reconstruction method (see section \ref{sec:reconstruction}). The second major step includes the analysis of the data to recognize body parts and subsequently joints and if required the skeleton. Depending on the chosen approach, which is a segmentation step into rigid parts (see section \ref{sec:segmentation}), there might be a subdivision into sub steps. Generally, the segmentation is a optimization problem, as many information can be extracted for the segmentation approach. 
+To answer the posed questions (see chapter \ref{cha:Introduction}), the attention during research was directed to pose estimation of articulated objects. A majority of the selected reference papers focus on the pose extraction of a human body. Depending on the approach different steps are required which can be generally subdivided into the digitalization of the object to be captured (see subsection \ref{sec:reconstruction}) and its segmentation into rigid parts (see subsection \ref{sec:segmentation}). Regardless of the chosen approach many difficulties have to be overcome in order to estimate the joints and skeleton. A key role of the pose estimation method constitutes the registration of surfaces (see section \ref{registration}). It is commonly referred to as an optimization problem as the goal is to detect the best possible outcome.
 %
-%TODO: new image with puppet! --> picture, point cloud, skeleton
-%
-\begin{figure}
+\begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\linewidth]{reconstructionWorkflow}
-	\caption{General approach to estimate the pose of a real object, including 3D scanning and reconstruction, 3D segmentation to get the joints and subsequently skeleton extraction}
+	\caption{General pose estimation approach. As a first step the captured object needs to be digitalized (a) and if required reconstructed(b) to a mesh. Then, it needs to be segemented into its rigid parts (c) which is the key part in order to estimate the joints and skeleton.}
 	\label{fig:posecapture}
 \end{figure}
 %
-\section{3D Scanning/Reconstruction}
+%TODO: new image with puppet! --> picture, point cloud, skeleton
+%
+\section{Registration}
+\label{registration}
+Generally, registration in computer vision and computer graphics refers to the alignment of overlapping components of two or more digital data sets \cite{survey}. Thereby, the most essential part is the detection of point correspondences between two surfaces to be registered often supported by RANSAC \cite{ransac}. One main application is the alignment of two or more incomplete range scans of an object from different view ports to obtain a complete model. Further applications are symmetry detection, articulation of non-rigid objects and subpart identification. For this reason a vast number of pose estimation and skeleton extraction approaches rely on a successful registration. A discriminated between rigid and non-rigid registration can be done. In the former case, it is assumed that two surfaces are related by a rigid transformation which can seen on figure \ref{fig:registration}~(a). A well-known approach for a rigid registration is the iterative closest point (ICP) \cite{ICP}. It requires a similar initial position of two shapes to avoid a local optimum. For this purpose it is often taken advantage of the principal component analysis (PCA) of shapes. With each iteration step the point correspondences between two input objects are updated by selecting the closest points. As a next step, the rigid transformation between two shapes is recalculated considering the detected correspondences. A matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered shapes. The algorithm terminates after a predefined number of iterations or if a specified value for $e$ is achieved. Considering two non-rigid surfaces composed of rigid parts (e.g. a human), the rigid registration will not lead to a convincing result as the individual rigid parts may undergo varying rigid transformations. In this case a non-rigid registration is required, which performs a segmentation into rigid parts which can be seen on figure \ref{fig:registration}~(b).
+%
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.43\textwidth]{stanfordBunny}} &		% JPEG file
+		\fbox{\includegraphics[width=0.45\textwidth]{nonrigidregistration}} 
+		\\	% PNG file
+		(a) & (b) 
+	\end{tabular}
+	\caption{Rigid registration of a rigid model of the stanford bunny~(a) \cite{stanfordBunny} and non-rigid registration of a human~(b) \cite{registrationHuman} composed of several rigid parts.}
+	\label{fig:registration}
+\end{figure}\textbf{}
+%
+Some factors complicate the accomplishment of a visual successful registration. Main difficulties are noisy data and outliers which often arise from low resolution scans. Furthermore, there might only be a limited number of overlapping data which is the case for multiple incomplete scans of an object from different view ports. Self occlusion and variations form initial poses are influence factors which should not be underestimated. In case of non-rigid registration the main difficulty is the establishment of correspondences as several transformations of the data need to be considered.
+%
+\section{Pose estimation of articulated objects}
+
+To successfully estimate the pose of an articulated object, generally two main parts have to be performed: the digitalization of the object and the segmentation of the data into rigid parts. As this thesis focuses on the segmentation of the input data into rigid parts, the digitalization of the object will not be covered in detail. 
+
+\subsection{Digitalization of the object}
 \label{sec:reconstruction}
+As a first step the object to be captured needs to be digitalized for the subsequent segmentation step. By a scanning step the real shape is collected as 2D or 3D data. The raw data in form of 2D images, video streams, or even point clouds in 2D or 3D can be directly used for pose estimation. Multiple commercial 3D scanner are available strongly varying in precision and resolution and purchase price. Especially, RGB-D sensors (Kinect) have taken on greater significance for 3D reconstruction !!!REF KINECT!!! as they are easily accessible and inexpensive. Usually, a subsequent reconstruction step is performed which converts the raw data into a mesh often combined with registration of different scans. Reconstruction from images and videos gets more and more popular as they are independent from expensive scanner. !!!REF
+Voxelization, Shape from Silhouette, Shape from Shading, 2d images!!! Some approaches also skip the digitalization step and take a 3D mesh as input from a modeling software. Shape from silhouette \cite{mocap}
 %
-% ToDo: explain in detail
+%TODO: add scanning/reconstruction methods
 %
-Scanning means collecting a real shape as 3D data. Reconstruction means the approach to convert the raw data to a mesh or process the input data.
-
-Voxelization, Shape from Shilouette, Shape from Shading, Depth camera, stereo camera
-%
-%TODO: add all references (shape fitting, ...)
-%
-\section{3D Segmentation}
+\subsection{Segmentation}
 \label{sec:segmentation}
-%
-% ToDo: explain methods in detail
-% 1) markers/sensors/exoskeleton
-% 2) markerless methods
-%
-How it is done: markers, sensors, shape fitting (already known) also real time approaches, due to constraints
-Cite all papers (Voxelization, ....). There are previous approaches with markers and sensors which will not be treated in this work in detail, as markerless options are taken as focus.
 
-Comparison of rigid and non-rigid\cite{survey}
+The crucial computer vision part of the pose estimation is the segmentation of the digitalized object into its rigid parts in order to estimate joints and the skeleton. The main idea is to allocate each data point of an input object to a rigid part. For that, additionally to the input data any kind of prior information is indispensable. Regarding the non-rigid registration the same object in another configuration is required which is usually referred to as a \textit{template}. To generally reduce the correspondence space specific constraints can be set. Those classify the different segmentation approaches into supervised (see section \ref{supervised}) and unsupervised methods (see section \ref{unsupervised}) whereby the former depends on user input before the segmentation algorithm. 
 
-\subsection{Supervised methods}
-Many already existing methods don't require markers and sensors but already assume or know the hierarchical structure or the body parts of the object to be captured (see \cite{multiLayerSkeleton}, \cite{baker2005shape}, \cite{de2008hierarchical} and \cite{michoud2007real}).
+\section{Supervised methods}
+\label{supervised}
 
-\subsection{Unsupervised methods}
+Supervised methods for pose estimation greatly simplify the segmentation procedure as certain assumptions of the object can be made. Examples include the placement of markers on the real object or the digitalized model to have prior information of its joints linking the rigid parts !ADDREFERENCES!. Furthermore, the usage of an \textit{object model} is considerable used to have prior knowledge of the number of rigid parts and possibly the length and shape of an object (see \cite{multiLayerSkeleton}, \cite{de2008hierarchical} and \cite{michoud2007real}). Another well known approach is to use the motion information of known point correspondences from sequences (see \cite{segmentationMotion}, \cite{animatedObjects}). The approach from \cite{sfsMocap} sequentially estimates each joint by the person being captured moving one body part at a time. By extracting and registering the resulting CSPs (colored surface points) a joint can be estimated which can be seen on figure \ref{fig:supervisedMotion}.
+
+%TODO: add picture of csp
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.7\linewidth]{reconstructionWorkflow}
+	\caption{General pose estimation approach. As a first step the captured object needs to be digitalized (a) and if required reconstructed(b) to a mesh. Then, it needs to be segemented into its rigid parts (c) which is the key part in order to estimate the joints and skeleton.}
+	\label{fig:supervisedMotion}
+\end{figure}
+
+
+\section{Unsupervised methods}
+\label{unsupervised}
+
 Although the approaches mentioned in section \ref{sec:currentApproaches} work quite well depending on the application, improvements can be made that are more independent from user inputs. For example the computation of features, ... which leads us to the non-rigid registration \ref{nonrigidregistration}.
-
-\section{Non-rigid registration}
-\label{nonrigidregistration}
-
-Generally, registration means the alignment of rigid point clouds (see figure \ref{fig:registration}). A well-known approach to achieve this, is the iterative closest point (ICP) \cite{ICP}, which requires the input point clouds to be aligned quite similar to avoid a local optimum. After registration, a matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered point clouds. In case of two non-rigid objects (e.g. a human in different poses which is composed of rigid parts) the ICP won't lead to a satisfying registration as associated parts are transformed differently. In order to register a non-rigid object, a segmentation into its rigid parts is required.
 
 \subsection{Challenges}
 \label{Challenges}
