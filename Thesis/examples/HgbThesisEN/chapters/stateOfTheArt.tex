@@ -14,7 +14,11 @@ To answer the posed questions (see chapter \ref{cha:Introduction}), the attentio
 %
 \section{Registration}
 \label{registration}
-Generally, registration in computer vision and computer graphics refers to the alignment of overlapping components of two or more digital data sets \cite{survey}. Thereby, the most essential part is the detection of point correspondences between two surfaces to be registered often supported by RANSAC \cite{ransac}. One main application is the alignment of two or more incomplete range scans of an object from different view ports to obtain a complete model. Further applications are symmetry detection, articulation of non-rigid objects and subpart identification. For this reason a vast number of pose estimation and skeleton extraction approaches rely on a successful registration. A discriminated between rigid and non-rigid registration can be done. In the former case, it is assumed that two surfaces are related by a rigid transformation which can seen on figure \ref{fig:registration}~(a). A well-known approach for a rigid registration is the iterative closest point (ICP) \cite{ICP}. It requires a similar initial position of two shapes to avoid a local optimum. For this purpose it is often taken advantage of the principal component analysis (PCA) of shapes. With each iteration step the point correspondences between two input objects are updated by selecting the closest points. As a next step, the rigid transformation between two shapes is recalculated considering the detected correspondences. A matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered shapes. The algorithm terminates after a predefined number of iterations or if a specified value for $e$ is achieved. Considering two non-rigid surfaces composed of rigid parts (e.g. a human), the rigid registration will not lead to a convincing result as the individual rigid parts may undergo varying rigid transformations. In this case a non-rigid registration is required, which performs a segmentation into rigid parts which can be seen on figure \ref{fig:registration}~(b).
+Generally, registration in computer vision and computer graphics refers to the alignment of overlapping components of two or more digital data sets \cite{survey}. Thereby, the most essential part is the detection of point correspondences between two surfaces to be registered often supported by RANSAC \cite{ransac}. One main application is the alignment of two or more incomplete range scans of an object from different view ports to obtain a complete model. Further applications are symmetry detection, articulation of non-rigid objects and subpart identification. For this reason a vast number of pose estimation and skeleton extraction approaches rely on a successful registration. 
+
+\subsection{Functionality}
+
+A discriminated between rigid and non-rigid registration can be done. In the former case, it is assumed that two surfaces are related by a rigid transformation which can seen on figure \ref{fig:registration}~(a). A well-known approach for a rigid registration is the iterative closest point (ICP) \cite{ICP}. It requires a similar initial position of two shapes to avoid a local optimum. For this purpose it is often taken advantage of the principal component analysis (PCA) of shapes. With each iteration step the point correspondences between two input objects are updated by selecting the closest points. As a next step, the rigid transformation between two shapes is recalculated considering the detected correspondences. A matching error $e$ is achieved, which states the total euclidean distance between the associated points of the registered shapes. The algorithm terminates after a predefined number of iterations or if a specified value for $e$ is achieved. Considering two non-rigid surfaces composed of rigid parts (e.g. a human), the rigid registration will not lead to a convincing result as the individual rigid parts may undergo varying rigid transformations. In this case a non-rigid registration is required, which performs a segmentation into rigid parts which can be seen on figure \ref{fig:registration}~(b).
 %
 \begin{figure}[H]
 	\centering\small
@@ -28,7 +32,15 @@ Generally, registration in computer vision and computer graphics refers to the a
 	\label{fig:registration}
 \end{figure}\textbf{}
 %
-Some factors complicate the accomplishment of a visual successful registration. Main difficulties are noisy data and outliers which often arise from low resolution scans. Furthermore, there might only be a limited number of overlapping data which is the case for multiple incomplete scans of an object from different view ports. Self occlusion and variations form initial poses are influence factors which should not be underestimated. In case of non-rigid registration the main difficulty is the establishment of correspondences as several transformations of the data need to be considered.
+
+\subsection{Difficulties}
+
+Some factors complicate the accomplishment of a visual successful registration. Main difficulties are noisy data and outliers which often arise from low resolution scans. Furthermore, there might only be a limited number of overlapping data which is the case for multiple incomplete scans of an object from different view ports. Self occlusion and variations form initial poses are influence factors which should not be underestimated. In case of non-rigid registration the main difficulty is the establishment of correspondences as several transformations of the data need to be considered. To generally reduce the correspondence space specific constraints can be set. Those include for example the computation of point features, which are quantities that add additional information to a point besides its coordinates. Correspondences between two shapes can then be computed by feature matching. Also saliences plays a major role for correspondence detection, which are represented by points being considerable different from neighbors. By placing markers on the object or assuming topology, the allocation of points to rigid parts can be simplified. Also the prior information of articulation places a valuable contribution as no deformations have to be considered. 
+One main drawback of the non-rigid registration is that it is computationally expensive and time-consuming, as the corresponding body parts of two shapes need to be detected iteratively. Additionally, the inevitable difficulty of finding the global optimum related to ambiguous body parts is present.
+
+\subsection{Optimization}
+
+Several optimization approaches are proposed to overcome some of the stated difficulties. One established method regarding the detection of correspondences is the Expectation-Maximization (EM) which alternates between two steps: detecting correspondences and optimizing the transformation. To avoid local minima a global optimization can be pursuit, for example by forming a decision tree. Furthermore, stochastic optimization take into account statistics and probabilities. Popular related methods apply voting and belief propagation, such as Markov random fields (MRF). 
 %
 \section{Pose estimation of articulated objects}
 
@@ -44,14 +56,17 @@ Voxelization, Shape from Silhouette, Shape from Shading, 2d images!!! Some appro
 \subsection{Segmentation}
 \label{sec:segmentation}
 
-The crucial computer vision part of the pose estimation is the segmentation of the digitalized object into its rigid parts in order to estimate joints and the skeleton. The main idea is to allocate each data point of an input object to a rigid part. For that, additionally to the input data any kind of prior information is indispensable. Regarding the non-rigid registration the same object in another configuration is required which is usually referred to as a \textit{template}. To generally reduce the correspondence space specific constraints can be set. Those classify the different segmentation approaches into supervised (see section \ref{supervised}) and unsupervised methods (see section \ref{unsupervised}) whereby the former depends on user input before the segmentation algorithm. 
+The crucial computer vision part of the pose estimation is the segmentation of the digitalized object into its rigid parts in order to estimate joints and the skeleton. The main idea is to allocate each data point of an input object to a rigid part. For that, additionally to the input data any kind of prior information is indispensable. Regarding the non-rigid registration the same object in another configuration is required which is usually referred to as a \textit{template}. Generally the segmentation approaches are then classified into supervised (see section \ref{supervised}) and unsupervised methods (see section \ref{unsupervised}) whereby the former depends on user input before the segmentation algorithm. 
 
 \section{Supervised methods}
 \label{supervised}
 
-Supervised methods for pose estimation greatly simplify the segmentation procedure as certain assumptions of the object can be made. Examples include the placement of markers on the real object or the digitalized model to have prior information of its joints linking the rigid parts !ADDREFERENCES!. Furthermore, the usage of an \textit{object model} is considerable used to have prior knowledge of the number of rigid parts and possibly the length and shape of an object (see \cite{multiLayerSkeleton}, \cite{de2008hierarchical} and \cite{michoud2007real}). Another well known approach is to use the motion information of known point correspondences from sequences (see \cite{segmentationMotion}, \cite{animatedObjects}). The approach from \cite{sfsMocap} sequentially estimates each joint by the person being captured moving one body part at a time. By extracting and registering the resulting CSPs (colored surface points) a joint can be estimated which can be seen on figure \ref{fig:supervisedMotion}.
+Supervised methods for pose estimation greatly simplify the segmentation procedure as certain assumptions of the object can be made. Examples include the placement of markers on the real object or the digitalized model to label its joints linking the rigid parts (see \cite{hierarchicalMethod} and \cite{estimatingConfigurations}). Furthermore, the usage of an \textit{object model} is frequently employed to have prior knowledge of the number of rigid parts and possibly the length and shape of an object (see \cite{multiLayerSkeleton}, \cite{hierarchicalMethod} and \cite{mocapShapeFitting}). Another well known approach uses the motion information of known point correspondences from image sequences (see \cite{segmentationMotion}, \cite{animatedObjects}). The approach from \cite{sfsMocap} sequentially estimates each joint by the person being captured moving one body part at a time. By extracting and registering the resulting CSPs (colored surface points) a joint can be estimated which can be seen on figure \ref{fig:supervisedMotion}. 
+%%
 
+%TODO: add important references
 %TODO: add picture of csp
+
 
 \begin{figure}[H]
 	\centering
@@ -59,21 +74,13 @@ Supervised methods for pose estimation greatly simplify the segmentation procedu
 	\caption{General pose estimation approach. As a first step the captured object needs to be digitalized (a) and if required reconstructed(b) to a mesh. Then, it needs to be segemented into its rigid parts (c) which is the key part in order to estimate the joints and skeleton.}
 	\label{fig:supervisedMotion}
 \end{figure}
-
+%%
+Further approaches take advantage of training data and machine learning to estimate the pose of a human. The approach from \cite{consensusvoting} uses a convolutional neural network to train a key point detector on 2D images. 
 
 \section{Unsupervised methods}
 \label{unsupervised}
 
-Although the approaches mentioned in section \ref{sec:currentApproaches} work quite well depending on the application, improvements can be made that are more independent from user inputs. For example the computation of features, ... which leads us to the non-rigid registration \ref{nonrigidregistration}.
-
-\subsection{Challenges}
-\label{Challenges}
-There are many challenges regarding the non-rigid registration of point clouds in 2D, as well as in 3D. First off, the input data can be noisy by means of points not belonging to the object. Furthermore, the approach is computationally expensive and time-consuming, as the corresponding body parts of two meshes need to be detected iteratively. Additionally, the inevitable difficulty of finding the global optimum, related to ambiguous body parts, has to be overcome.
-
-\subsection{Related work}
-\label{sec:RelatedWork}
-
-By focusing on approaches computing the segmentation of articulated objects from 3D data, many different ones could be detected. They face similar challenges (see subsection \ref{Challenges}) but solve them in different ways
+Although the supervised pose estimation approaches \ref{supervised} result in promising results, they depend on manual user input specified for the segmentation. Thus, they are more time consuming, inconvenient and often just focus on specific articulated objects (e.g. humans). Therefore, unsupervised methods are proposed that work independent from user inputs and are therefore applicable for unknown articulated objects without having prior knowledge about its rigid parts.
 %%
 \subsection{Correlated Correspondence}
 
