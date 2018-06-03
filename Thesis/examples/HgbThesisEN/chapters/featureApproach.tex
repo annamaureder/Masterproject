@@ -62,23 +62,9 @@ As a next step, it is required that all normals are equally oriented. Basically,
 \delta = \vec{n_p} \cdot \vec{n_k}, \quad \text{for $|\vec{n_p}|, |\vec{n_k}| = 1$}
 \end{equation}
 %%
-is computed. In case of $\delta < 0$, $\vec{n_k}$ requires to be flipped 180° ($\vec{n_k} = -\vec{n_k})$. If all $k$ normals have been verified to be oriented in consideration of $\vec{n_p}$ any $\vec{n_k}$ is selected as current $\vec{n_p}$. The whole algorithm proceeds until all $n$ normals have been verified to correspond with their parent normal $n_p$. Results of the normal flipping procedure can be seen on figure \ref{fig:normalFlipping}.
-
-%TODO: Picture of normal estimation + flipping
-\begin{figure}[H]
-	\centering\small
-	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
-		\\
-		(a) & (b) 
-	\end{tabular}
-	\caption{Normal estimation of a Cluster $C_1$ (a) and a subsequent global traversing of all normals to orient them similar (b).} 
-	\label{fig:normalFlipping}
-\end{figure}
+is computed. In case of $\delta < 0$, $\vec{n_k}$ requires to be flipped 180° ($\vec{n_k} = -\vec{n_k})$. If all $k$ normals have been verified to be oriented in consideration of $\vec{n_p}$ any $\vec{n_k}$ is selected as current $\vec{n_p}$. The whole algorithm proceeds until all $n$ normals have been verified to correspond with their parent normal $n_p$.
 
 \subsection{SPFH and FPFH}
-
 The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is then computed by using three geometric features. Between $\boldsymbol{p}$ and each of its $k$ neighbors $\boldsymbol{p_k}$ given a threshold $\tau$, those features are computed -- $\boldsymbol{p_i}$ is thereby the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p_j}$ corresponds to the remaining point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. The following angles
 %%
 \begin{equation}
@@ -160,14 +146,22 @@ is examined which achieves better results than the L2 form. Finally, the Kullbac
 is calculated, which is the most computational expensive one due to the usage of $ln$. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm all zero-values are replaced with the value 1.
 
 \subsection{Adaptions for 2D}
-In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. However, one feature would be redundant, as $v$ is the same vector for each point. No considerable deductions could be detected. 
+In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. 
+The calculation of the mean histogram was implemented but as not a considerable great number of correspondences could be detected, all histograms were considered during the feature histogram matching. This improved run time. Also the number of neighbors to be detected by each point was drastically removed. 
 
 %TODO: what has been changed in 2D?
 
-\section{Initial alignment: Largest rigid part}
+\section{Largest rigid part - Algorithm}
 \label{LRP}
 
-As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub clusters, the feature-based approach is implemented to detect as an initial step the largest rigid part (LRP) of $C_1$ and $C_2$. Proceeding from there, all other linked parts are detected by region growing and reapplying the algorithm. This approach has been originally implemented for 3D point clouds by Mitra \cite{Mitra07}. For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}).
+As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub clusters, the feature-based approach is implemented to detect as an initial step the largest rigid part (LRP) of $C_1$ and $C_2$. Proceeding from there, all other linked parts are detected by region growing and reapplying the algorithm. This approach has been originally implemented for 3D point clouds by De Guo \cite{guo2016correspondence}. 
+
+\subsection{Basic functionality}
+\label{functionalityLRP}
+As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+
+\subsection{Input data}
+For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. 
 %%
 \begin{figure}[H]
 	\centering\small
@@ -181,25 +175,39 @@ As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub cluste
 	\label{fig:inputPoses}
 \end{figure}
 %%
-\subsection{Basic functionality}
-\label{functionalityLRP}
-As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
-
 \subsection{Implementation steps}
-
-In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}).
+In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). Furthermore, the detection of linked rigid parts to detected LRPs
 \begin{enumerate}
 	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate the normals of all points.
 	\item Point feature histograms (FPFH) are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
 	\item The RANSAC approach is applied on those correspondences to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
 	\item The LRP is assigned to the resulting biggest point cluster.
-	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. The algorithm is then reapplied on those clusters until all rigid parts have been discovered.
+	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. 
+	\item Joints are estimated between the current LRP an all detected clusters from all unclustered points. Those are considered for allocating corresponding rigid parts of $C_1$ and $C_2$.
+	\item Linked rigid parts are detected by rotating a cluster around its joint, given certain constraints and a calculating a weighted error.
 \end{enumerate}
 
 \subsection{Detection of sparse correspondences}
 \label{correspondences}
 
-As a first step of the algorithm, the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. For the detection of sparse correspondences three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+As a first step of the algorithm, the normal as well as the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. Results of the normal flipping procedure can be seen on figure \ref{fig:normalFlipping}.
+
+%TODO: Picture of normal estimation + flipping
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
+		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Normal estimation of a Cluster $C_1$ (a) and a subsequent global traversing of all normals to orient them similar (b).} 
+	\label{fig:normalFlipping}
+\end{figure}
+
+It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
+
+For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
 %%
 \begin{figure}[H]
 	\centering \small
@@ -244,7 +252,7 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In the reference paper the whole algorithm was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and similar shapes and thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint ranging in a certain threshold $\tau$ from the initial rotation. By computing a least squares error for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $j_n$ does not contribute as much to the matching error as points located near the joint. The weight $w$ of a cluster point and the total matching error $e$
+In the reference paper the feature matching in combination with RANSAC for detecting correspondences was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and the shapes are too similar. Thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint  into the direction with an decreasing least squares error $e$ (see equation \ref{eq:jointWeightError}). By iteratively updating $e$ for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $j_n$ does not contribute as much to the matching error as points located near the joint. The weight $w$ of a cluster point and the total matching error $e$
 %
 \begin{equation}
 \begin{split}
@@ -255,10 +263,21 @@ e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot 
 \label{eq:jointWeightError}
 \end{equation}
 %
-are achieved by combining the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with the smallest error $e$. As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
-
-%TODO: image of joint rotation
-
+are achieved by combining the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with a minimum error $e$. As a last step, all points with a closest point are taken as input for region growing. It is assumed, that two linked rigid parts are quite similar aligned, therefore the distance threshold $\tau$ for selecting closest points is considerable small. The largest cluster is finally returned as detected linked part.
+%%
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{ccc}
+		\fbox{\includegraphics[width=0.40\textwidth]{jointRotation_before}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{jointRotation_after}}  &	
+		\fbox{\includegraphics[width=0.40\textwidth]{detectedRigidPart}} 
+		\\
+		(a) & (b) & (c)
+	\end{tabular}
+	\caption{Taking an articulated object (puppet) in two different poses $C_1$ (a) and $C_2$ (b) in form of a 2D point cloud representing its hull point cloud as input.} 
+	\label{fig:jointRotation}
+\end{figure}
+%%
 \section{Implementation}
 \label{ImplementationLRP}
 For the implementation in Java the individual steps of the largest rigid part algorithm have been split into individual classes for a better overview. Again ImageJ was used as processing library, which only gets a stack with two point clouds as input.
@@ -315,7 +334,7 @@ while (unclusteredReference.size() > MIN_SIZE || !clusters.isEmpty()) {
 \end{lstlisting}
 
 \subsection{Feature Detection}
-As a first step, the normals of all points $n$ of $C_1$ and $C_2$ are computed. For this matter the class \texttt{NormalEstimation} was developed that takes a point $p_i$ with its $k$ neighbors as input. Then, the least fitting error line on those input points is detected (as described in section \ref{correspondences}) and the smallest lambda value $\lambda_2$ selected as eigenvalue. By setting the x-value of the normal to 1.0, the y-value can be calculated with the eigenvalue $\lambda_2$. The resulting vector represents the normal vector $\vec{n}$ for $p_i$. In case of being exactly vertically or horizontally, the resulting value for y is either infinite or not a value (Nan), in these cases the normal is set to (0,1) or (1,0). As a last step, the normal is normalized.
+As a first step, the normals of all points $n$ of $C_1$ and $C_2$ are computed. For this matter the class \texttt{NormalEstimation} was developed that takes a point $p_i$ with its $k$ neighbors as input. In my case only 2 neighbors are selected. Then, the least fitting error line on those input points is detected (as described in section \ref{correspondences}) and the smallest lambda value $\lambda_2$ selected as eigenvalue. By setting the x-value of the normal to 1.0, the y-value can be calculated with the eigenvalue $\lambda_2$. The resulting vector represents the normal vector $\vec{n}$ for $p_i$. In case of being exactly vertically or horizontally, the resulting value for y is either infinite or not a value (Nan), in these cases the normal is set to (0,1) or (1,0). As a last step, the normal is normalized.
 %%
 \begin{lstlisting}
 double eigenvalue = Math.min(lambda1, lambda2);

@@ -1,21 +1,42 @@
 \chapter{Conclusion}
 \label{cha:Closing}
 
-In the first project phase, intense research has been conducted in order to detect one main issue to focus on in the master project. For that, it was quite essential to form an overall perspective of the state-of-the-art regarding motion and pose estimation. During this process, the field of unsupervised pose estimation frequently arose. By following this direction, the non-rigid registration became a major indicator for possible optimizations. Taking existing methods as reference (see Chapter \ref{cha:RelatedWork}), an own approach for 2D point clouds was developed, which should reduce the computation steps of detecting the rigid parts of an articulated non-rigid object. Basically, a divide-and-conquer approach was developed, which recursively divides two point-clouds of the same object in different poses into matching clusters. The subdividing was realized with a tree and depth-first traversal to segment the point clouds from the left to the right. As a next step, all neighboring clusters were verified to be merged, in case of having subdivided a rigid part. After the merging the rigid parts of the objects are detected. 
+In the first project phase, intense research has been conducted in order to detect one main issue to focus on in the master project. For that, it was quite essential to form an overall perspective of the state-of-the-art regarding pose estimation of articulated objects. During this process, the field of unsupervised pose estimation frequently arose. By following this direction, the non-rigid registration became a major indicator for possible optimizations. Taking existing, unsupervised methods as reference (see section \ref{relatedWork}, an own approach for 2D point clouds was developed, which should reduce the computation steps of segmenting the articulated object in different configurations into its rigid parts. The first approach was a linear, straightforward  divide-and-conquer procedure to recursively divide two point clouds of the same object in different configurations into matching clusters. The subdividing was realized with a tree and depth-first traversal to segment the point clouds from the left to the right. As a next step, all neighboring clusters were verified to be merged, in case of having subdivided a rigid part. After the merging the rigid parts of the objects are detected. The second approach to be implemented tried to compensate the drawbacks of the linear approach, specifically the segmentation of articulated objects with a skeleton structure like a human. It thereby took advantage of feature matching and RANSAC for the initial alignment of the two point clouds and motion constraints of the estimated joints to detect linked parts to already detected ones \cite{guo2016correspondence}.
 
+\section{Achieved results}
 %TODO: what has been achieved? --> Results 
 
+Combination of related work --> alignment of largest rigid part, searching for corresponding parts, setting own constraints due to known motion with joint as rotation point
 
+Implemented a linear approach to drastically decrease computation steps. As no information about points used it failed for articulated objects --> required to implement more advanced method, add more information for computation, only unordered list of points being similar aligned not enough
+
+Successfully applied algorithm from 3D into 2D
+alternative less computation expensive in case no 3D data is available,
+
+The greatest achievement implementation whole procedure from scratch better understanding  for registration, usage of features and their comparison, familiarization with scientific papers and working scientificly , easier to understand
+
+Less computations as Features only considered for initial alignment --> Rotation around joints for detection of linked parts, decreasing computation steps and time
 
 %TODO: major difficulties, problems
 
+\section{Main difficulties and drawbacks}
 
+information get lost, no 3D poses can be detected. rotation only in one z layer. 
 
+Data creation, point cloud had to be dense enough to be strong overcome being error prone
+
+Main drawback RANSAC approach for initial alignment --> too many iterations required for a right alignment. 
+Variations in shapes to find more distinct features
 
 %TODO: what can be further done
 	
 \section{Future work}
 
+Next step
+- Results with hull from silhouette would be interesting.
+
+
+Next step --> go to 3D improve algorithm of de guol
 - Machine learning of feature histograms
 - 3D implementation --> computation expensive
 - application puppet pose capture

@@ -78,9 +78,10 @@ public class FPFH {
 			features.add(feature2);
 			features.add(feature3);
 			
-			IJ.log("Index: " + idx(features));
-
-			histogram.getHistogram()[idx(features)]++;
+			int index = idx(features);
+			IJ.log("Index: " + index);
+			
+			histogram.getHistogram()[index]++;
 		}
 
 		return histogram;
@@ -143,6 +144,7 @@ public class FPFH {
 	}
 
 	private int getInterval(double feature, double min, double max) {
+		feature -= 0.001;
 		double range = (max - min) / numberIntervals;
 		return (int) ((feature - min) / range);
 	}

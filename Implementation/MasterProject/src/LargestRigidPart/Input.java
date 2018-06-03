@@ -27,7 +27,7 @@ public class Input {
 		gd.addCheckbox("Show point correspondance", true);
 		gd.addCheckbox("Reciprocal point matching", true);
 		gd.addNumericField("Error threshold per point", 6.0, 2);
-		gd.addNumericField("Distance threshold for region growing", 15.0, 2);
+		gd.addNumericField("Distance threshold for region growing", 12.0, 2);
 		gd.addNumericField("Distance threshold for Joint rotations", 5.0, 2);
 		gd.addNumericField("Distance threshold for RANSAC", 3.0, 2);
 		gd.addCheckbox("Activate logging", false);

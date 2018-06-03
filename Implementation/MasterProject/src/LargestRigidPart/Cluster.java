@@ -27,8 +27,8 @@ public class Cluster implements Comparable<Cluster> {
 	private double orientation;
 	private int principalLength;
 	private int secondaryLength;
-	private final int k = 50;
-	private final double r = 12;
+	private final int normalNeighbors = 2;
+	private final int featureNeighbors = 5;
 
 	public Cluster(ImageProcessor ip) {
 		this.points = getPoints(ip);
@@ -209,55 +209,32 @@ public class Cluster implements Comparable<Cluster> {
 		return minPointIndex;
 	}
 
-	private void getNeighborhood(ClusterPoint point, int number) {
-		List<ClusterPoint> neighbors = new ArrayList<>();
-		ClusterPoint closestPoint = null;
-		double closestPointDistance = Double.MAX_VALUE;
-
-		// TODO: find k neighbors of point --> without radius?
-		for (int i = 0; i < points.size(); i++) {
-			double distance = points.get(i).distance(point);
-			if (distance < r) {
-				neighbors.add(points.get(i));
-				if (distance < closestPointDistance && !points.get(i).equals(point)) {
-					closestPoint = points.get(i);
-					closestPointDistance = distance;
-				}
-			}
-			point.setClosestPoint(closestPoint);
-		}
-		point.setNeighbors(neighbors);
+	private List<ClusterPoint> getNeighborhood(ClusterPoint point, int number) {
+		return RegionGrowing.nearestNeighbors(points, point, number).get(0).getPoints();
 	}
 
 	public void calculateFeatures() {
 
 		// PCA normals
-		for (int i = 0; i < points.size(); i++) {
-			getNeighborhood(points.get(i), k);
-			calculateNormal(points.get(i));
+		for (ClusterPoint point : points) {
+			calculateNormal(point, getNeighborhood(point, normalNeighbors));
+			point.setNeighborhood(getNeighborhood(point, featureNeighbors));
 		}
 		//orientNormals();
 
 		for (int i = 0; i < points.size(); i++) {
-			IJ.log("Features for point " + i+1);
+			IJ.log("Features for point " + i + 1);
 			FPFH feature = new FPFH(points.get(i));
 			IJ.log("FPFH created!");
 			feature.featureHistogram();
 		}
-		
-		//points.get(0).getFPFH().showHistogram();
+
+		// points.get(0).getFPFH().showHistogram();
 	}
 
-	public void calculateNormal(ClusterPoint point) {
-		if (point.getNeighborhood().size() != 1) {
-			NormalEstimation n = new NormalEstimation(point);
-			n.estimateNormal();
-		}
-
-		else {
-			IJ.log("No neighbors found!");
-			return;
-		}
+	public void calculateNormal(ClusterPoint point, List<ClusterPoint> neighbors) {
+		NormalEstimation n = new NormalEstimation(point, neighbors);
+		n.estimateNormal();
 	}
 
 	public void orientNormals() {
@@ -320,11 +297,11 @@ public class Cluster implements Comparable<Cluster> {
 		int size = c.points.size();
 		return size - this.points.size();
 	}
-	
-	public List<Histogram> getHistograms(){
+
+	public List<Histogram> getHistograms() {
 		List<Histogram> histograms = new ArrayList<>();
-		
-		for(ClusterPoint point: points){
+
+		for (ClusterPoint point : points) {
 			histograms.add(point.getFPFH());
 		}
 		return histograms;

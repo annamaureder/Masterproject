@@ -1,3 +1,40 @@
+
+% unsupervised pose estimation
+
+% 3
+@article{guo2016correspondence,
+	title={Correspondence estimation for non-rigid point clouds with automatic part discovery},
+	author={Guo, Hao and Zhu, Dehai and Mordohai, Philippos},
+	journal={The Visual Computer},
+	volume={32},
+	number={12},
+	pages={1511--1524},
+	year={2016},
+	publisher={Springer}
+}
+
+% 106
+@inproceedings{Anguelov04,
+	title={Recovering articulated object models from 3D range data},
+	author={Anguelov, Dragomir and Koller, Daphne and Pang, Hoi-Cheung and Srinivasan, Praveen and Thrun, Sebastian},
+	booktitle={Proceedings of the 20th conference on Uncertainty in artificial intelligence},
+	pages={18--26},
+	year={2004},
+	organization={AUAI Press}
+}
+
+% 229
+@incollection{CorrelatedCorrespondance,
+	title = {The Correlated Correspondence Algorithm for Unsupervised Registration of Nonrigid Surfaces},
+	author = {Anguelov, Dragomir and Srinivasan, Praveen and Pang, Hoi-cheung and  Koller, Daphne and Thrun, Sebastian and Davis, James},
+	booktitle = {Advances in Neural Information Processing Systems 17},
+	editor = {Saul, L. K.  and Weiss, Y. and Bottou, L. },
+	pages = {33--40},
+	year = {2005},
+	publisher = {MIT Press},
+}
+
+% 106
 @article{chang08articulated,
 	author = {Chang, Will and Zwicker, Matthias},
 	title = {Automatic Registration for Articulated Shapes},
@@ -9,31 +46,42 @@
 	address = {Copenhagen, Denmark}
 }
 
-@inproceedings{Anguelov04,
-	author = {Anguelov, Dragomir and Koller, Daphne and Pang, Hoi-Cheung and Srinivasan, Praveen and Thrun, Sebastian},
-	title = {Recovering Articulated Object Models from 3D Range Data},
-	booktitle = {Proceedings of the 20th Conference on Uncertainty in Artificial Intelligence},
-	series = {UAI '04},
-	year = {2004},
-	isbn = {0-9749039-0-6},
-	location = {Banff, Canada},
-	pages = {18--26},
-	numpages = {9},
-	acmid = {1036846},
-	publisher = {AUAI Press},
-	address = {Arlington, Virginia, United States},
-} 
-
-@incollection{CorrelatedCorrespondance,
-	title = {The Correlated Correspondence Algorithm for Unsupervised Registration of Nonrigid Surfaces},
-	author = {Anguelov, Dragomir and Srinivasan, Praveen and Pang, Hoi-cheung and  Koller, Daphne and Thrun, Sebastian and Davis, James},
-	booktitle = {Advances in Neural Information Processing Systems 17},
-	editor = {Saul, L. K.  and Weiss, Y. and Bottou, L. },
-	pages = {33--40},
-	year = {2005},
-	publisher = {MIT Press},
+% 59
+@article{chang09range,
+	author = {Chang, Will and Zwicker, Matthias},
+	title = {Range Scan Registration Using Reduced Deformable Models},
+	journal = {Computer Graphics Forum (Proceedings of Eurographics 2009)},
+	volume={28},
+	number={2},
+	pages={447--456},
+	year={2009},
+	organization={Wiley Online Library}
 }
 
+% 14
+@inproceedings{probabilisticRegistration,
+	title={Segmentation and probabilistic registration of articulated body models},
+	author={Sundaresan, Aravind and Chellappa, Rama},
+	booktitle={Pattern Recognition, 2006. ICPR 2006. 18th International Conference on},
+	volume={2},
+	pages={92--96},
+	year={2006},
+	organization={IEEE}
+}
+
+% 115
+@inproceedings{de2008hierarchical,
+	title={A hierarchical segmentation of articulated bodies},
+	author={De Goes, Fernando and Goldenstein, Siome and Velho, Luiz},
+	booktitle={Computer graphics forum},
+	volume={27},
+	number={5},
+	pages={1349--1356},
+	year={2008},
+	organization={Wiley Online Library}
+}
+
+% 158
 @article{Mitra07,
 	author = {Mitra, Niloy J. and Guibas, Leonidas J. and Pauly, Mark},
 	title = {Symmetrization},
@@ -50,27 +98,7 @@
 	keywords = {correspondence, matching, shape analysis, shape optimization, symmetry},
 } 
 
-@article{chang09range,
-	author = {Chang, Will and Zwicker, Matthias},
-	title = {Range Scan Registration Using Reduced Deformable Models},
-	journal = {Computer Graphics Forum (Proceedings of Eurographics 2009)},
-	volume={28},
-	number={2},
-	pages={447--456},
-	year={2009},
-	organization={Wiley Online Library}
-}
-
-@article{guo2016correspondence,
-	title={Correspondence estimation for non-rigid point clouds with automatic part discovery},
-	author={Guo, Hao and Zhu, Dehai and Mordohai, Philippos},
-	journal={The Visual Computer},
-	volume={32},
-	number={12},
-	pages={1511--1524},
-	year={2016},
-	publisher={Springer}
-}
+% images
 
 @Image{stanfordBunny,
 	author = {Peng, Li and Jian, Wang},
@@ -105,16 +133,6 @@
 	organization={Springer}
 }
 
-@inproceedings{ICP,
-	title={Method for registration of 3-D shapes},
-	author={Besl, Paul J and McKay, Neil D},
-	booktitle={Sensor Fusion IV: Control Paradigms and Data Structures},
-	volume={1611},
-	pages={586--607},
-	year={1992},
-	organization={International Society for Optics and Photonics}
-}
-
 @online{MotionCapture,
 	author = {UltimateFIFA},
 	title = {FIFA 13 Motion Capture Session},
@@ -123,10 +141,16 @@
 	urldate = {2018-02-01}
 }
 
-@inproceedings{multiLayerSkeleton,
-	title={Multi-Layer Skeleton Fitting for Online Human Motion Capture.},
-	author={Magnor, Marcus A},
-	year={2002}
+% features/search constraints
+
+@inproceedings{ICP,
+	title={Method for registration of 3-D shapes},
+	author={Besl, Paul J and McKay, Neil D},
+	booktitle={Sensor Fusion IV: Control Paradigms and Data Structures},
+	volume={1611},
+	pages={586--607},
+	year={1992},
+	organization={International Society for Optics and Photonics}
 }
 
 @inproceedings{FPFH,
@@ -180,6 +204,17 @@
 	author={Fischler, Martin A and Bolles, Robert C},
 	booktitle={Readings in computer vision},
 	pages={726--740},
+	year={1987},
+	publisher={Elsevier}
+}
+
+@article{pca,
+	title={Principal component analysis},
+	author={Wold, Svante and Esbensen, Kim and Geladi, Paul},
+	journal={Chemometrics and intelligent laboratory systems},
+	volume={2},
+	number={1-3},
+	pages={37--52},
 	year={1987},
 	publisher={Elsevier}
 }
@@ -246,14 +281,6 @@
 	pages={1--7},
 	year={2007},
 	organization={IEEE}
-}
-
-% 11
-
-@inproceedings{mocapMultiLayer,
-	title={Multi-Layer Skeleton Fitting for Online Human Motion Capture.},
-	author={Magnor, Marcus A},
-	year={2002}
 }
 
 % 1

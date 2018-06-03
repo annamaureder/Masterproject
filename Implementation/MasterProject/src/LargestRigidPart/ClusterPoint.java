@@ -65,7 +65,7 @@ public class ClusterPoint extends Point2D{
 		return neighbors;
 	}
 
-	public void setNeighbors(List<ClusterPoint> neighbors) {
+	public void setNeighborhood(List<ClusterPoint> neighbors) {
 		this.neighbors = neighbors;
 	}
 

@@ -7,9 +7,11 @@ import ij.IJ;
 public class NormalEstimation {
 
 	ClusterPoint point;
+	List<ClusterPoint> neighbors;
 
-	public NormalEstimation(ClusterPoint point) {
+	public NormalEstimation(ClusterPoint point, List<ClusterPoint> neighbors) {
 		this.point = point;
+		this.neighbors = neighbors;
 	}
 
 	public void estimateNormal() {
@@ -21,11 +23,9 @@ public class NormalEstimation {
 		double avgXY = 0.0;
 
 		double[][] covarianceMatrix;
-		List<ClusterPoint> neighborhood = point.getNeighborhood();
-		double size = neighborhood.size()* 1.0;
+		double size = neighbors.size();
 		
-		for (int i = 0; i < neighborhood.size(); i++) {
-			ClusterPoint current = neighborhood.get(i);
+		for (ClusterPoint current : neighbors) {
 			
 			avgX += current.getX();
 			sqrAvgX += Math.pow(current.getX(), 2);

@@ -207,6 +207,7 @@ public class PartDetection {
 			neighbors.add(Matrix.translate(targetPoints, x_location, y_location).get(targetIndex));
 		}
 
+		Visualize.drawDot(test, c_i.getJoint(), Color.green, 10);
 		Visualize.drawPoints(test, Matrix.translate(referencePoints, x_location, y_location), Color.blue);
 		Visualize.drawPoints(test, Matrix.translate(targetPoints, x_location, y_location), Color.red);
 		Visualize.drawAssociations(test, Matrix.translate(referencePoints, x_location, y_location), neighbors);
@@ -337,7 +338,7 @@ public class PartDetection {
 
 		error2 = associations.getError();
 
-		return error1 < error2 ? 1 : -1;
+		return error1 < error2 ? -1 : 1;
 	}
 
 	public Cluster[] getLinkedParts() {
