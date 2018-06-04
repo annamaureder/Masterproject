@@ -28,7 +28,7 @@ public class Input {
 		gd.addCheckbox("Reciprocal point matching", true);
 		gd.addNumericField("Error threshold per point", 6.0, 2);
 		gd.addNumericField("Distance threshold for region growing", 12.0, 2);
-		gd.addNumericField("Distance threshold for Joint rotations", 5.0, 2);
+		gd.addNumericField("Distance threshold for Joint rotations", 4.0, 2);
 		gd.addNumericField("Distance threshold for RANSAC", 3.0, 2);
 		gd.addCheckbox("Activate logging", false);
 		String[] distances = {"Euclidean", "ChiSquared", "Kullback-Leibler"};

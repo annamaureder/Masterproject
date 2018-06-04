@@ -252,32 +252,34 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In the reference paper the feature matching in combination with RANSAC for detecting correspondences was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and the shapes are too similar. Thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint  into the direction with an decreasing least squares error $e$ (see equation \ref{eq:jointWeightError}). By iteratively updating $e$ for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $j_n$ does not contribute as much to the matching error as points located near the joint. The weight $w$ of a cluster point and the total matching error $e$
+In the reference paper the feature matching in combination with RANSAC for detecting correspondences was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and the shapes are too similar. In order to iteratively detect further rigid parts linked to already detected ones another approach was developed which manages to avoid another time-consuming RANSAC. Thereby, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap. Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment which should further reduce the computation steps. Then, $C_i$ is iteratively rotated around its joint into the direction of an decreasing least squares error $e$ (to overlap with $C_j$). By iteratively updating $e$ after each rotation step, a best overlapping position between the linked rigid parts can be detected. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $J_n$ does not contribute as much to the matching error as points located near the joint. A weight $w$ is calculated by comparing the distance $d(p_i, J_n)$ to the maximal distance $d_{max}$ between $J_n$ and the farthermost allocated point. Subsequently a total matching error $e$
 %
 \begin{equation}
 \begin{split}
-w_i = \| \boldsymbol{p}_i - \boldsymbol{j}_n\|
+w_i = \| \boldsymbol{p}_i - \boldsymbol{j}_n\| \cdot \frac{1}{d_{max}}
 \\
-e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \frac{1}{w_i}
+e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot (1 - {w_i})^2
 \end{split}
 \label{eq:jointWeightError}
 \end{equation}
 %
-are achieved by combining the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with a minimum error $e$. As a last step, all points with a closest point are taken as input for region growing. It is assumed, that two linked rigid parts are quite similar aligned, therefore the distance threshold $\tau$ for selecting closest points is considerable small. The largest cluster is finally returned as detected linked part.
+is achieved by combining the distance of a point to its closest point and the joint weight $w$. The error is squared in order to further weaken the influence of cluster points being located far away from the joint. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with a minimum error $e$. As a last step, all points with a closest point below a certain threshold $\tau$ are taken as input for region growing. It is assumed, that two linked rigid parts are quite similar aligned, therefore the distance threshold $\tau$ is considerable small. The largest cluster is finally returned as detected linked part.
 %%
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{ccc}
-		\fbox{\includegraphics[width=0.40\textwidth]{jointRotation_before}} &	
-		\fbox{\includegraphics[width=0.40\textwidth]{jointRotation_after}}  &	
-		\fbox{\includegraphics[width=0.40\textwidth]{detectedRigidPart}} 
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_Before_cropped}} &	
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_After_cropped}}  &	
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_Results_cropped}} 
 		\\
 		(a) & (b) & (c)
 	\end{tabular}
-	\caption{Taking an articulated object (puppet) in two different poses $C_1$ (a) and $C_2$ (b) in form of a 2D point cloud representing its hull point cloud as input.} 
+	\caption{The joints $J_i$ and $J_j$ (green dots) of the reference cluster $C_i$ (red) and the target cluster $C_j$ (blue) are overlapped. The closest points for $C_i$ are computed (a). Stepwise rotation of $C_i$ onto $C_j$ in the direction of a decreasing error until $e$ does not further decrease (b). Final overlapping clusters from taking all closest points of $C_i$ and $C_j$ below a distance threshold $\tau$ (c).} 
 	\label{fig:jointRotation}
 \end{figure}
 %%
+With varying distance thresholds $\tau$ for achieving the final cluster, points from the actual target are skipped or unnecessary points from another rigid part are added. Those circumstances lead to difficulties for the detection of linked parts. Detailed results about this appearance can be seen in section \ref{ResultsLRP}.
+
 \section{Implementation}
 \label{ImplementationLRP}
 For the implementation in Java the individual steps of the largest rigid part algorithm have been split into individual classes for a better overview. Again ImageJ was used as processing library, which only gets a stack with two point clouds as input.

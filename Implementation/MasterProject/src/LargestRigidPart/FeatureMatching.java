@@ -28,7 +28,6 @@ public class FeatureMatching {
 	private Cluster c_j;
 
 	private double error = Double.MAX_VALUE;
-	private boolean logging = Input.logging;
 	private Association associations;
 
 	private Map<Integer, Integer> sourceAssociation;
@@ -103,8 +102,7 @@ public class FeatureMatching {
 
 				if (target.containsKey(targetIndex)) {
 					if ((reciprocalMatching && target.get(targetIndex) == referenceIndex) || !reciprocalMatching) {
-						if (logging)
-							IJ.log("Association between point nr. " + referenceIndex + " and point nr. " + targetIndex);
+
 						finalReferencePoints.add(currentRefPoint);
 						finalTargetPoints.add(currentTargetPoint);
 						finalAssociations.put(referenceIndex, targetIndex);
