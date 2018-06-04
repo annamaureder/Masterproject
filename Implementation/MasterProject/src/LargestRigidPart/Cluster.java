@@ -220,6 +220,7 @@ public class Cluster implements Comparable<Cluster> {
 			calculateNormal(point, getNeighborhood(point, normalNeighbors));
 			point.setNeighborhood(getNeighborhood(point, featureNeighbors));
 		}
+		 
 		//orientNormals();
 
 		for (int i = 0; i < points.size(); i++) {
@@ -241,13 +242,13 @@ public class Cluster implements Comparable<Cluster> {
 		List<ClusterPoint> ref = new ArrayList<>();
 		ref.addAll(points);
 
-		ClusterPoint parent = ref.get(0);
+		ClusterPoint parent = getHighestPoint(ref);
 		List<ClusterPoint> neighbors = new ArrayList<>();
 
 		while (!ref.isEmpty()) {
 			for (int i = 0; i < points.size(); i++) {
 				ClusterPoint current = points.get(i);
-				if (ref.contains(current) && parent.distance(current) < 12) {
+				if (ref.contains(current) && parent.distance(current) < 15) {
 					if (parent.dot(current) < 0) {
 						points.get(i).setNormal(flip(current.getNormal()));
 					}
@@ -260,16 +261,19 @@ public class Cluster implements Comparable<Cluster> {
 		}
 	}
 
+	public ClusterPoint getHighestPoint(List<ClusterPoint> points) {
+		ClusterPoint maximum = points.get(0);
+
+		for (ClusterPoint point : points) {
+			if (point.getY() < maximum.getY()) {
+				maximum = point;
+			}
+		}
+		return maximum;
+	}
+	
 	public double[] flip(double[] normal) {
 		return new double[] { normal[0] * -1, normal[1] * -1 };
-	}
-
-	// TODO
-	public void detectKeyFeatures() {
-	}
-
-	// TODO
-	public void findFeatureCorrespondences() {
 	}
 
 	public List<ClusterPoint> getPoints() {

@@ -1,12 +1,10 @@
 package LargestRigidPart;
 
 import java.awt.Color;
-import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.math3.linear.DecompositionSolver;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -14,12 +12,7 @@ import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 
 import ij.IJ;
-import ij.gui.ShapeRoi;
 import ij.process.ColorProcessor;
-import ij.process.ImageProcessor;
-import procrustes.ProcrustesFit;
-import prototyping.ICP;
-
 /**
  * This plugin takes as input two point clouds c1 and c2 and returns the largest
  * rigid part by applying the RANSAC approach on the correspondacnes and by
@@ -42,8 +35,8 @@ public class RANSAC {
 	List<ClusterPoint> randomPoints1;
 	List<ClusterPoint> randomPoints2;
 
-	private final int numIterations = 1000;
-	private final int numRandom = 3;
+	private final int numIterations = 500;
+	private final int numRandom = 2;
 	List<ClusterPoint> resultPoints;
 
 	private double distanceThreshold = Input.distanceThresholdRANSAC;
@@ -90,10 +83,10 @@ public class RANSAC {
 
 			// points from c2
 			double[] pointsB = new double[] { randomPoints2.get(0).getX(), randomPoints2.get(0).getY(), randomPoints2.get(1).getX(),
-					randomPoints2.get(1).getY(), randomPoints2.get(2).getX(), randomPoints2.get(2).getY() };
+					randomPoints2.get(1).getY()};
 
 			if (logging)
-				IJ.log("points B filed!");
+				IJ.log("points B filled!");
 
 			DecompositionSolver solver = new SingularValueDecomposition(MatrixUtils.createRealMatrix(affineMatrix))
 					.getSolver();
@@ -171,16 +164,13 @@ public class RANSAC {
 			list1.add(c_i.getPoints().get(entry.getKey()));
 			list2.add(c_j.getPoints().get(entry.getValue()));
 		}
-	
 	}
 
-	private double[][] fillTransformMatrix(List<ClusterPoint> vertices) {
-		double[][] matrix = { { vertices.get(0).getX(), vertices.get(0).getY(), 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(0).getX(), vertices.get(0).getY(), 1 },
-				{ vertices.get(1).getX(), vertices.get(1).getY(), 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(1).getX(), vertices.get(1).getY(), 1 },
-				{ vertices.get(2).getX(), vertices.get(2).getY(), 1, 0, 0, 0 },
-				{ 0, 0, 0, vertices.get(2).getX(), vertices.get(2).getY(), 1 }, };
+	private double[][] fillTransformMatrix(List<ClusterPoint> points) {
+		double[][] matrix = { { points.get(0).getX(), points.get(0).getY(), 1, 0, 0, 0 },
+				{ 0, 0, 0, points.get(0).getX(), points.get(0).getY(), 1 },
+				{ points.get(1).getX(), points.get(1).getY(), 1, 0, 0, 0 },
+				{ 0, 0, 0, points.get(1).getX(), points.get(1).getY(), 1 } };
 
 		return matrix;
 	}

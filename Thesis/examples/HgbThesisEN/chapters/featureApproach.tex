@@ -106,21 +106,7 @@ is incremented by 1. The function $q(f)$ returns the interval the feature is all
 \sigma = \frac{1}{N} \cdot \displaystyle\sum_{i=1}^{N}(H_i(b) - \overline{H_i})^2
 \end{equation}
 %%
-is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. The mean histogram as well as the histogram of a not salient point feature can be seen on figure \ref{fig:meanHistogram}.
-%%
-%TODO: Picture of mean histogram + similar histogram
-%%
-\begin{figure}[H]
-	\centering\small
-	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
-		\\
-		(a) & (b) 
-	\end{tabular}
-	\caption{Computing of the $\mu$ histogram of $C_1$ (a) in order to reject frequently emerging feature histograms (b) being inside a value $\mu \pm \theta \cdot \sigma$.} 
-	\label{fig:meanHistogram}
-\end{figure}
+is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. 
 %%
 \subsection{Comparison of histograms}
 \label{histogramCriteria}
@@ -195,34 +181,51 @@ As a first step of the algorithm, the normal as well as the feature histogram fo
 %TODO: Picture of normal estimation + flipping
 \begin{figure}[H]
 	\centering\small
+	\begin{tabular}{cccc}
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C1_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C2_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C1_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C2_cropped}} 
+		\\
+		(a) & (b) & (c) & (d)
+	\end{tabular}
+	\caption{Normal estimation of two Cluster $C_1$ and $C_2$ (a) and (b) a subsequent global traversing of all normals to orient them similar (c) and (d).} 
+	\label{fig:normalFlipping}
+\end{figure}
+
+It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
+
+For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. Two point are selected as correspondences if their feature histogram they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. The mean histogram of all histograms as well as a \textit{unique} histogram can be seen on \ref{fig:meanHistogram}. 
+%%
+%TODO: Picture of mean histogram + similar histogram
+%%
+\begin{figure}[H]
+	\centering\small
 	\begin{tabular}{cc}
 		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
 		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
 		\\
 		(a) & (b) 
 	\end{tabular}
-	\caption{Normal estimation of a Cluster $C_1$ (a) and a subsequent global traversing of all normals to orient them similar (b).} 
-	\label{fig:normalFlipping}
+	\caption{Computing of the $\mu$ histogram of $C_1$ (a) in order to reject frequently emerging feature histograms (b) being inside a value $\mu \pm \theta \cdot \sigma$.} 
+	\label{fig:meanHistogram}
 \end{figure}
-
-It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
-
-For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+Figure \ref{fig:sparseCorrespondences} represents the resulting point correspondences from feature matching. It is clearly evident that points being located in a corner are more likely to detect a reciprocal point correspondence than points located at smooth surfaces. The reason is, that those features appear considerable similar which makes it difficult to distinguish them.
 %%
 \begin{figure}[H]
 	\centering \small
 	\begin{tabular}{c}
 		\fbox{\includegraphics[width=0.80\textwidth]{featureCorrespondences_chiSquare}} 
 	\end{tabular}
-	\caption{Visualization of the point correspondences depending on the most similar, reciprocal feature histograms using the chi-square distance between all points of $C_1$ (red) and $C_2$ (blue).}
+	\caption{Visualization of the point correspondences established from most similar, reciprocal feature histograms using the chi-square distance between all points of $C_1$ (red) and $C_2$ (blue).}
 	\label{fig:sparseCorrespondences}
 \end{figure}
 %%
-%TODO: image of histograms + most unique feature points
+As some of those correspondences might be wrong, a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
 %%
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 1000.
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 2 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 500.
 %%
 %TODO: number of iterations? --> number of false correspondences, formular
 %%

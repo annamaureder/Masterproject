@@ -83,5 +83,4 @@ public class NormalEstimation {
 		
 		point.setNormal(normal);
 	}
-
 }
