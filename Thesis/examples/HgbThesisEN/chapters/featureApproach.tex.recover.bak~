@@ -106,21 +106,7 @@ is incremented by 1. The function $q(f)$ returns the interval the feature is all
 \sigma = \frac{1}{N} \cdot \displaystyle\sum_{i=1}^{N}(H_i(b) - \overline{H_i})^2
 \end{equation}
 %%
-is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. The mean histogram as well as the histogram of a not salient point feature can be seen on figure \ref{fig:meanHistogram}.
-%%
-%TODO: Picture of mean histogram + similar histogram
-%%
-\begin{figure}[H]
-	\centering\small
-	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
-		\\
-		(a) & (b) 
-	\end{tabular}
-	\caption{Computing of the $\mu$ histogram of $C_1$ (a) in order to reject frequently emerging feature histograms (b) being inside a value $\mu \pm \theta \cdot \sigma$.} 
-	\label{fig:meanHistogram}
-\end{figure}
+is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. 
 %%
 \subsection{Comparison of histograms}
 \label{histogramCriteria}
@@ -161,7 +147,7 @@ As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub cluste
 As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
 
 \subsection{Input data}
-For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. 
+For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. To achieve an indicator for the adjustment of thresholds (e.g. maximum distance to closest point), the resolution of the input object is computed. Thus, 10 random points are selected from a cluster $C_i$ and the average distance to the closest points calculated. In case of the input poses in form of the clusters $C_1$ and $C_2$ the estimated resolutions account to 7.24 and 7.56.
 %%
 \begin{figure}[H]
 	\centering\small
@@ -195,34 +181,58 @@ As a first step of the algorithm, the normal as well as the feature histogram fo
 %TODO: Picture of normal estimation + flipping
 \begin{figure}[H]
 	\centering\small
+	\begin{tabular}{cccc}
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C1_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C2_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C1_cropped}} &	
+		\fbox{\includegraphics[width=0.23\textwidth]{Normals_C2_cropped}} 
+		\\
+		(a) & (b) & (c) & (d)
+	\end{tabular}
+	\caption{Normal estimation of two Cluster $C_1$ and $C_2$ (a) and (b) a subsequent global traversing of all normals to orient them similar (c) and (d).} 
+	\label{fig:normalFlipping}
+\end{figure}
+
+It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
+
+For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. Two point are selected as correspondences if their feature histogram they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. The mean histogram of all histograms as well as a \textit{unique} histogram can be seen on \ref{fig:meanHistogram}. 
+%%
+%TODO: Picture of mean histogram + similar histogram
+%%
+\begin{figure}[H]
+	\centering\small
 	\begin{tabular}{cc}
 		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
 		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
 		\\
 		(a) & (b) 
 	\end{tabular}
-	\caption{Normal estimation of a Cluster $C_1$ (a) and a subsequent global traversing of all normals to orient them similar (b).} 
-	\label{fig:normalFlipping}
+	\caption{Computing of the $\mu$ histogram of $C_1$ (a) in order to reject frequently emerging feature histograms (b) being inside a value $\mu \pm \theta \cdot \sigma$.} 
+	\label{fig:meanHistogram}
 \end{figure}
-
-It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
-
-For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. The most similar histograms are selected as correspondence if they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. As some of those correspondences might be wrong (see figure \ref{fig:sparseCorrespondences}), a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+Figure \ref{fig:sparseCorrespondences} represents the resulting point correspondences from feature matching. It is clearly evident that points being located in a corner are more likely to detect a reciprocal point correspondence than points located at smooth surfaces. The reason is, that those features appear considerable similar which makes it difficult to distinguish them.
 %%
 \begin{figure}[H]
 	\centering \small
 	\begin{tabular}{c}
 		\fbox{\includegraphics[width=0.80\textwidth]{featureCorrespondences_chiSquare}} 
 	\end{tabular}
-	\caption{Visualization of the point correspondences depending on the most similar, reciprocal feature histograms using the chi-square distance between all points of $C_1$ (red) and $C_2$ (blue).}
+	\caption{Visualization of the point correspondences established from most similar, reciprocal feature histograms using the chi-square distance between all points of $C_1$ (red) and $C_2$ (blue).}
 	\label{fig:sparseCorrespondences}
 \end{figure}
 %%
-%TODO: image of histograms + most unique feature points
+As some of those correspondences might be wrong, a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
 %%
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 3 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 1000.
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 2 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. 
+
+
+%TODO: Show Matrices of the RANSAC
+
+
+
+The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 500.
 %%
 %TODO: number of iterations? --> number of false correspondences, formular
 %%
@@ -252,20 +262,33 @@ In case of detecting more than one cluster for each $C_i$ and $C_j$, which might
 
 \subsection{Detection of linked rigid parts}
 \label{JointWeights}
-In the reference paper the feature matching in combination with RANSAC for detecting correspondences was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and the shapes are too similar. Thus the feature histograms do not lead to sufficient correspondences. In order to iteratively detect further rigid parts linked to already detected ones, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap.  Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment. Then, $C_i$ is iteratively rotated around its joint  into the direction with an decreasing least squares error $e$ (see equation \ref{eq:jointWeightError}). By iteratively updating $e$ for each iteration, a rotation can be detected that best overlaps the linked rigid parts. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $j_n$ does not contribute as much to the matching error as points located near the joint. The weight $w$ of a cluster point and the total matching error $e$
+In the reference paper the feature matching in combination with RANSAC for detecting correspondences was reapplied on the linked clusters to the already detected rigid parts. However, this approach is not successful in the current 2D application. The reason is that the point features are not meaningful due to the reduced number of points and the shapes are too similar. In order to iteratively detect further rigid parts linked to already detected ones another approach was developed which manages to avoid another time-consuming RANSAC. Thereby, the knowledge is used that the rigid parts are transformed by rotating around a joint. For that purpose the estimated joints $\mathcal{J} = j_1,\cdots,j_n$ resulting from \ref{cluster} are taken into account. As a first step, two input clusters $C_i$ and $C_j$ are transformed that their joints overlap. Next, the primary axis of $C_i$ and $C_j$ are aligned to guess an initial alignment which should further reduce the computation steps. Then, $C_i$ is iteratively rotated around its joint into the direction of an decreasing least squares error $e$ (to overlap with $C_j$). By iteratively updating $e$ after each rotation step, a best overlapping position between the linked rigid parts can be detected. Thereby, the preliminary joints are used as weights. As a consequence, a point $p_i$ being located far away from its allocated joint $J_n$ does not contribute as much to the matching error as points located near the joint. A weight $w$ is calculated by comparing the distance $d(p_i, J_n)$ to the maximal distance $d_{max}$ between $J_n$ and the farthermost allocated point. Subsequently a total matching error $e$
 %
 \begin{equation}
 \begin{split}
-w_i = \| \boldsymbol{p}_i - \boldsymbol{j}_n\|
+w_i = \| \boldsymbol{p}_i - \boldsymbol{j}_n\| \cdot \frac{1}{d_{max}}
 \\
-e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot \frac{1}{w_i}
+e = \displaystyle\sum_{i=1}^{m}\| \boldsymbol{p}_i - \boldsymbol{q}_i\|^2 \cdot (1 - {w_i})^2
 \end{split}
 \label{eq:jointWeightError}
 \end{equation}
 %
-are achieved by combining the distance to the closest point and to the cluster's joint. For the calculation not only successful correspondences are taken as input but all points, that the error is expressive. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with a minimum error $e$. As a last step, all points with a closest point under a considerable threshold $\tau$ As it is assumed, that two rigid parts from two different poses are quite similar, the distance threshold $\tau$ for detecting the linked part through region growing is considerable small.
-
-%TODO: image of joint rotation
+is achieved by combining the distance of a point to its closest point and the joint weight $w$. The error is squared in order to further weaken the influence of cluster points being located far away from the joint. The final correspondence equals to the biggest cluster resulting from rotation around the joint $\boldsymbol{j}_i$ with a minimum error $e$. As a last step, all points with a closest point below a certain threshold $\tau$ are taken as input for region growing. It is assumed, that two linked rigid parts are quite similar aligned, therefore the distance threshold $\tau$ is considerable small. The largest cluster is finally returned as detected linked part.
+%%
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{ccc}
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_Before_cropped}} &	
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_After_cropped}}  &	
+		\fbox{\includegraphics[width=0.30\textwidth]{LegRotation_Results_cropped}} 
+		\\
+		(a) & (b) & (c)
+	\end{tabular}
+	\caption{The joints $J_i$ and $J_j$ (green dots) of the reference cluster $C_i$ (red) and the target cluster $C_j$ (blue) are overlapped. The closest points for $C_i$ are computed (a). Stepwise rotation of $C_i$ onto $C_j$ in the direction of a decreasing error until $e$ does not further decrease (b). Final overlapping clusters from taking all closest points of $C_i$ and $C_j$ below a distance threshold $\tau$ (c).} 
+	\label{fig:jointRotation}
+\end{figure}
+%%
+With varying distance thresholds $\tau$ for achieving the final cluster, points from the actual target are skipped or unnecessary points from another rigid part are added. Those circumstances lead to difficulties for the detection of linked parts. Detailed results about this appearance can be seen in section \ref{ResultsLRP}.
 
 \section{Implementation}
 \label{ImplementationLRP}
@@ -507,18 +530,69 @@ To only remain the rigid part and reject correspondences from the final correspo
 \section{Results}
 \label{ResultsLRP}
 
-Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
+Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved with adjusted parameters (see Table \ref{table:parameters}). for the estimated resolutions of 7.24 and 7.56. 
+
+\begin{table}
+	\centering
+	\begin{tabular}{ |c|c|c|c| } 
+		\hline
+		Iteration & $\tau$ RG  & $\tau$ CPPC & $\tau$ LRP \\
+		\hline
+		1& 3 & 21 & 14 \\ 
+		2& 5 & 3 & 2 \\
+		3& 7 & 2 & 2 \\
+		4& 4 & 38 & 31 \\ 
+		5& 6 & 4 & 3 \\
+		& 8 & 3 & 3 \\
+		& 6 & 35 & 26 \\ 
+		4 & 7 & 3 & 3 \\
+		& 8 & 3 & 3 \\
+		\hline
+	\end{tabular}
+	\caption{Segmentation results}
+	\label{table:parameters}
+\end{table}
+
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final1_12-rgTH_4-JointTH_3-RansacTH_6-error_ED}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final2_12-rgTH_4-JointTH_3-RansacTH_6-error_ED}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Initial results with standard parameters estimated from the resolution from $C_1$ (a) and $C_2$ (b).} 
+	\label{fig:initialResults}
+\end{figure}
+
+Unfortunately, not all rigid parts as well as joints could be detected right using following parameters: 
+
+
+
+
+
+
+
+
+Variations in several parameters
+
+
+Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
 
 %TODO: add pictures of LRP results
 
 \subsection{Histogram similarity criteria}
-The chosen distance between histograms is essential. Euclidean --> most correspondences, more iteration in RANSAC but certainly right more right ones.
+The chosen distance between histograms is essential. Euclidean --> most correspondences, more iteration in RANSAC but certainly more right ones.
 Chi-Square --> less correspondences, more right ones, less iterations with RANSAC
 Kullback-Leibler --> few correspondences, LRP might not be detected as too few right ones
 Not useful in this context, more points required
+
+%TODO: RUNTIME!
+
+
 %TODO: runtime + pictures!
 
-\subsection{Main difficulties}
+\subsection{Main drawbacks}
 The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. In case of a failure, the linked parts can not be detected right as they are computed from region growing. By increasing the number of RANSAC iterations, the probability of a faulty initial alignment can be reduced, however this directly affects the runtime and should therefore not be exaggerated. Most certainly, it has to be guaranteed that the number of corresponding points are the same number from $C_1$ and $C_2$.
 
 %TODO: picture faulty alignment
@@ -531,9 +605,7 @@ Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute 
 
 \section{3D implementation}
 
-The next step would be to implement the approach in 3D. A similar implementation was done by Mitra \cite{Mitra07} (see section \ref{functionalityLRP}) by using the PCL. Most essential functions like FPFH and subsampling for large point clusters are already provided. A good dataset would be thereby the SCAPE, which offers different poses of a scanned human. 
-
-%TODO: Write what fails/main problems/solutions
+The next step would be to transfer the optimized 2D implementation into 3D to reduce the computation steps from \cite{guo2016correspondence} (see section \ref{functionalityLRP}) by using the Point Cloud library \footnote{http://pointclouds.org} which operates with point clouds. Of course many new challenges will have to be overcome due to the three-dimensional space. The straightforward rotation from linked rigid parts around their estimated joints will pose a major difficulty in 3D as two rotation axis are available. It is noticeable that PCL offers many essential functions by default. For example, the Fast Point Feature Histogram completed with the normal estimation of as well as sub sampling for an extensive number of points are already provided. An appropriate dataset as input constitutes the SCAPE dataset. It provides different poses of a human.
 
 
 

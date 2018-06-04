@@ -147,7 +147,7 @@ As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub cluste
 As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
 
 \subsection{Input data}
-For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. 
+For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. To achieve an indicator for the adjustment of thresholds (e.g. maximum distance to closest point), the resolution of the input object is computed. Thus, 10 random points are selected from a cluster $C_i$ and the average distance to the closest points calculated. In case of the input poses in form of the clusters $C_1$ and $C_2$ the estimated resolutions account to 7.24 and 7.56.
 %%
 \begin{figure}[H]
 	\centering\small
@@ -225,7 +225,14 @@ As some of those correspondences might be wrong, a RANSAC approach is applied on
 %%
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
-The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 2 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 500.
+The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 2 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. 
+
+
+%TODO: Show Matrices of the RANSAC
+
+
+
+The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 500.
 %%
 %TODO: number of iterations? --> number of false correspondences, formular
 %%
@@ -523,18 +530,77 @@ To only remain the rigid part and reject correspondences from the final correspo
 \section{Results}
 \label{ResultsLRP}
 
-Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved. Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
+Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved with adjusted parameters (see Table \ref{table:parameters}). for the estimated resolutions of 7.24 and 7.56. 
+
+\begin{itemize}
+	\item[RG] Region Growing for Noise removal
+	\item[LRP] Region growing for largest rigid part
+	\item[CPPC] Closest point for part detection 
+	\item[RGPC]	Region growing for part detection
+	\item[DC] distance criteria for feature matching
+\end{itemize}
+
+\begin{table}
+	\centering
+	\begin{tabular}{ |c|c|c|c|c| } 
+		\hline
+		Iteration & $\tau$ RG  & $\tau$ CPPD & $\tau$ LRP & DC \\
+		\hline
+		1& 3 & 21 & 14 & Euclidean \\ 
+		2& 5 & 3 & 2 & Euclidean \\
+		3& 7 & 2 & 2 & Euclidean\\
+		4& 4 & 38 & 31 & Euclidean \\ 
+		5& 6 & 4 & 3 & Euclidean\\
+		& 8 & 3 & 3 & Euclidean\\
+		& 6 & 35 & 26 & Euclidean\\ 
+		4 & 7 & 3 & 3 & Euclidean \\
+		& 8 & 3 & 3 & Euclidean \\
+		\hline
+	\end{tabular}
+	\caption{Segmentation results}
+	\label{table:parameters}
+\end{table}
+
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final1_12-rgTH_4-JointTH_3-RansacTH_ED}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final2_12-rgTH_4-JointTH_3-RansacTH_ED}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Initial results with standard parameters estimated from the resolution from $C_1$ (a) and $C_2$ (b).} 
+	\label{fig:initialResults}
+\end{figure}
+
+Unfortunately, not all rigid parts as well as joints could be detected right using following parameters: 
+
+
+
+
+
+
+
+
+Variations in several parameters
+
+
+Alternative results (reducing k neighbors, histogram bins, histogram criteria) could be achieved --> Compare runtime of criteria + number of right correspondences as percentage.
 
 %TODO: add pictures of LRP results
 
 \subsection{Histogram similarity criteria}
-The chosen distance between histograms is essential. Euclidean --> most correspondences, more iteration in RANSAC but certainly right more right ones.
+The chosen distance between histograms is essential. Euclidean --> most correspondences, more iteration in RANSAC but certainly more right ones.
 Chi-Square --> less correspondences, more right ones, less iterations with RANSAC
 Kullback-Leibler --> few correspondences, LRP might not be detected as too few right ones
 Not useful in this context, more points required
+
+%TODO: RUNTIME!
+
+
 %TODO: runtime + pictures!
 
-\subsection{Main difficulties}
+\subsection{Main drawbacks}
 The main drawback of the algorithm represents the first initial alignment of the two poses of the articulated object. In case of a failure, the linked parts can not be detected right as they are computed from region growing. By increasing the number of RANSAC iterations, the probability of a faulty initial alignment can be reduced, however this directly affects the runtime and should therefore not be exaggerated. Most certainly, it has to be guaranteed that the number of corresponding points are the same number from $C_1$ and $C_2$.
 
 %TODO: picture faulty alignment
@@ -547,9 +613,7 @@ Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute 
 
 \section{3D implementation}
 
-The next step would be to implement the approach in 3D. A similar implementation was done by Mitra \cite{Mitra07} (see section \ref{functionalityLRP}) by using the PCL. Most essential functions like FPFH and subsampling for large point clusters are already provided. A good dataset would be thereby the SCAPE, which offers different poses of a scanned human. 
-
-%TODO: Write what fails/main problems/solutions
+The next step would be to transfer the optimized 2D implementation into 3D to reduce the computation steps from \cite{guo2016correspondence} (see section \ref{functionalityLRP}) by using the Point Cloud library \footnote{http://pointclouds.org} which operates with point clouds. Of course many new challenges will have to be overcome due to the three-dimensional space. The straightforward rotation from linked rigid parts around their estimated joints will pose a major difficulty in 3D as two rotation axis are available. It is noticeable that PCL offers many essential functions by default. For example, the Fast Point Feature Histogram completed with the normal estimation of as well as sub sampling for an extensive number of points are already provided. An appropriate dataset as input constitutes the SCAPE dataset. It provides different poses of a human.
 
 
 

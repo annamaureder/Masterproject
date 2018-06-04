@@ -2,7 +2,6 @@ package LargestRigidPart;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 
 import ij.IJ;
 import ij.process.ImageProcessor;
@@ -17,12 +16,13 @@ import ij.process.ImageProcessor;
  *
  */
 
-public class Cluster implements Comparable<Cluster> {
+public class Cluster {
 
 	private List<ClusterPoint> points = new ArrayList<>();
 	private int size;
 
 	private ClusterPoint centroid;
+	private double resolution;
 	private ClusterPoint joint;
 	private double orientation;
 	private int principalLength;
@@ -37,6 +37,7 @@ public class Cluster implements Comparable<Cluster> {
 		this.orientation = calculateOrientation();
 		this.principalLength = getPrincipalRadius();
 		this.secondaryLength = getSecondaryRadius();
+		this.resolution = calculateResolution();
 	}
 
 	public Cluster(List<ClusterPoint> p) {
@@ -46,6 +47,7 @@ public class Cluster implements Comparable<Cluster> {
 		this.orientation = calculateOrientation();
 		this.principalLength = getPrincipalRadius();
 		this.secondaryLength = getSecondaryRadius();
+		this.resolution = calculateResolution();
 	}
 
 	public Cluster() {
@@ -61,6 +63,7 @@ public class Cluster implements Comparable<Cluster> {
 		this.size = c.size;
 		this.centroid = c.centroid;
 		this.orientation = c.orientation;
+		this.resolution = c.resolution;
 	}
 
 	private List<ClusterPoint> getPoints(ImageProcessor ip) {
@@ -81,7 +84,6 @@ public class Cluster implements Comparable<Cluster> {
 		if (Input.removeOutliers) {
 			IJ.log("Remove Noise");
 			List<Cluster> clusters = RegionGrowing.detectClusters(pntlist);
-			Collections.sort(clusters);
 			IJ.log("Removing done");
 			return clusters.get(0).points;
 		}
@@ -213,6 +215,30 @@ public class Cluster implements Comparable<Cluster> {
 		return RegionGrowing.nearestNeighbors(points, point, number).get(0).getPoints();
 	}
 
+	private double calculateResolution() {
+		double resolution = 0;
+		int number = 0;
+		int maxPoints = 10;
+
+		while (number < maxPoints) {
+			int randomIndex = (int) (Math.random() * points.size());
+			ClusterPoint current = points.get(randomIndex);
+
+			double distance = Double.MAX_VALUE;
+
+			for (ClusterPoint point : points) {
+				double distanceNew = point.distance(current);
+
+				if (distanceNew != 0.0 && distanceNew < distance) {
+					distance = distanceNew;
+				}
+			}
+			resolution += distance;
+			number++;
+		}
+		return resolution / maxPoints;
+	}
+
 	public void calculateFeatures() {
 
 		// PCA normals
@@ -220,8 +246,8 @@ public class Cluster implements Comparable<Cluster> {
 			calculateNormal(point, getNeighborhood(point, normalNeighbors));
 			point.setNeighborhood(getNeighborhood(point, featureNeighbors));
 		}
-		 
-		//orientNormals();
+
+		// orientNormals();
 
 		for (int i = 0; i < points.size(); i++) {
 			IJ.log("Features for point " + i + 1);
@@ -271,7 +297,7 @@ public class Cluster implements Comparable<Cluster> {
 		}
 		return maximum;
 	}
-	
+
 	public double[] flip(double[] normal) {
 		return new double[] { normal[0] * -1, normal[1] * -1 };
 	}
@@ -295,11 +321,9 @@ public class Cluster implements Comparable<Cluster> {
 	public void setJoint(ClusterPoint joint) {
 		this.joint = joint;
 	}
-
-	@Override
-	public int compareTo(Cluster c) {
-		int size = c.points.size();
-		return size - this.points.size();
+	
+	public double getResoultion(){
+		return this.resolution;
 	}
 
 	public List<Histogram> getHistograms() {

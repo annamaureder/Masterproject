@@ -52,6 +52,9 @@ public class Main implements PlugInFilter {
 		c1 = new Cluster(p1);
 		c2 = new Cluster(p2);
 		
+		IJ.log("Resolution C1: " + c1.getResoultion());
+		IJ.log("Resolution C2: " + c2.getResoultion());
+		
 		if(Input.showInputCloud){
 			ColorProcessor inputPoints1 = new ColorProcessor(width, height);
 			inputPoints1.invert();
@@ -117,7 +120,7 @@ public class Main implements PlugInFilter {
 	public void showResults(){
 		
 		if(Input.showRigidParts){
-			Visualize.colorClusters(rigidParts, "RigidParts");
+			Visualize.colorClusters(rigidParts, "Final_" + (int)Input.distanceThresholdRG + "-rgTH_" + (int) Input.distanceThresholdJoints + "-JointTH_" + (int) Input.distanceThresholdRANSAC + "-RansacTH");
 		}
 		
 		Visualize.showResults();
