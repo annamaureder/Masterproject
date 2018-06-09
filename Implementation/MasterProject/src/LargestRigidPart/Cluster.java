@@ -2,6 +2,7 @@ package LargestRigidPart;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import ij.IJ;
 import ij.process.ImageProcessor;
@@ -216,27 +217,29 @@ public class Cluster {
 	}
 
 	private double calculateResolution() {
-		double resolution = 0;
 		int number = 0;
 		int maxPoints = 10;
+		
+		List<Double> distances = new ArrayList<>();
 
-		while (number < maxPoints) {
+		while (number++ < maxPoints) {
 			int randomIndex = (int) (Math.random() * points.size());
 			ClusterPoint current = points.get(randomIndex);
 
 			double distance = Double.MAX_VALUE;
+			double distanceNew = 0.0;
 
 			for (ClusterPoint point : points) {
-				double distanceNew = point.distance(current);
+				distanceNew = point.distance(current);
 
 				if (distanceNew != 0.0 && distanceNew < distance) {
 					distance = distanceNew;
 				}
 			}
-			resolution += distance;
-			number++;
+			distances.add(distance);
 		}
-		return resolution / maxPoints;
+		Collections.sort(distances);
+		return distances.get(maxPoints/2 - 1);
 	}
 
 	public void calculateFeatures() {

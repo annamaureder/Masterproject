@@ -42,14 +42,12 @@ public class Segmentation1 implements PlugInFilter {
 	// static variables
 	public static int width;
 	public static int height;
-	public static ColorProcessor finalAssoc;
 
 	// member variables
-
 	private ImagePlus im;
 	private ClusterTree tree;
 	private List<Cluster1[]> subclusters;
-	private List<Cluster1[]> mergedParts;
+	private List<Cluster1[]> rigidParts;
 	
 	private Cluster1 c1;
 	private Cluster1 c2;
@@ -67,26 +65,25 @@ public class Segmentation1 implements PlugInFilter {
 			return;
 		}
 		
-		if(Input1.showAssociations){
-			finalAssoc = new ColorProcessor(width, height); 
-			finalAssoc.invert();
-		}
-
 		ImageStack stack = im.getStack();
 		ImageProcessor p1 = stack.getProcessor(1);
 		ImageProcessor p2 = stack.getProcessor(2);
 
 		c1 = new Cluster1(p1);
 		c2 = new Cluster1(p2);
+		
+		IJ.log("Resolution c1: " + c1.getResolution());
+		IJ.log("Resolution c2: " + c2.getResolution());
 
 		tree = new ClusterTree(c1, c2);
 		subclusters = tree.subdivide(tree.getRoot());
 		IJ.log("Subdividing done!");
-		mergedParts = tree.mergeClusters(subclusters);
+		
+		rigidParts = tree.mergeClusters(subclusters);
 		IJ.log("Merging done!");
 
 		IJ.log("Number of clusters: " + subclusters.size());
-		IJ.log("Number of rigid parts: " + mergedParts.size());
+		IJ.log("Number of rigid parts: " + rigidParts.size());
 		
 		showResults();
 	}
@@ -100,7 +97,7 @@ public class Segmentation1 implements PlugInFilter {
 		}
 		
 		if(Input1.showRigidParts){
-			Visualize1.colorClusters(mergedParts, "RigidParts");
+			Visualize1.colorClusters(rigidParts, "RigidParts");
 		}
 		
 		if(Input1.showInputCloud){
@@ -113,11 +110,9 @@ public class Segmentation1 implements PlugInFilter {
 			Visualize1.drawPoints(inputPoints_1, c1.getPoints(), Color.black);
 			Visualize1.drawPoints(inputPoints_2, c2.getPoints(), Color.black);
 
-			Visualize1.showImage(inputPoints_1, "Input points 1");
-			Visualize1.showImage(inputPoints_2, "Input points 2");
+			Visualize1.addToResults(inputPoints_1, "Input points 1");
+			Visualize1.addToResults(inputPoints_2, "Input points 2");
 		}
-		if(Input1.showAssociations){
-			Visualize1.showImage(finalAssoc, "Final Associations");
-		}
+		Visualize1.showResults();
 	}
 }

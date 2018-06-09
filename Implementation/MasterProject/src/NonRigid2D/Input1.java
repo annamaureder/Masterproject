@@ -20,11 +20,11 @@ public class Input1 {
 		gd.addCheckbox("Show input point cloud", false);
 		gd.addCheckbox("Region growing", false);
 		gd.addCheckbox("Draw rigid part axis", true);
-		gd.addCheckbox("Show segmented clusters", false);
+		gd.addCheckbox("Show segmented clusters", true);
 		gd.addCheckbox("Show rigid parts", true);
 		gd.addCheckbox("Show point correspondance", false);
-		gd.addNumericField("Error threshold per point", 6.0, 2);
-		gd.addNumericField("Error threshold per point", 20.0, 2);
+		gd.addNumericField("Error threshold per point", 5.0, 2);
+		gd.addNumericField("Region growing threshold", 10.0, 2);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;

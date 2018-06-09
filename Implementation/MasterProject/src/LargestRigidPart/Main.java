@@ -55,29 +55,29 @@ public class Main implements PlugInFilter {
 		IJ.log("Resolution C1: " + c1.getResoultion());
 		IJ.log("Resolution C2: " + c2.getResoultion());
 		
-		if(Input.showInputCloud){
-			ColorProcessor inputPoints1 = new ColorProcessor(width, height);
-			inputPoints1.invert();
-			
-			ColorProcessor inputPoints2 = new ColorProcessor(width, height);
-			inputPoints2.invert();
-
-			Visualize.drawPoints(inputPoints1, c1.getPoints(), Color.black);
-			Visualize.drawPoints(inputPoints2, c2.getPoints(), Color.black);
-
-			Visualize.addToResults(inputPoints1, "Input points 1");
-			Visualize.addToResults(inputPoints2, "Input points 2");
-		}
-		
-		c1.calculateFeatures();
-		c2.calculateFeatures();
-		
-		showNormals();
-		
-		Segmentation detect = new Segmentation(c1, c2);
-		rigidParts = detect.getRigidParts();
-
-		showResults();
+//		if(Input.showInputCloud){
+//			ColorProcessor inputPoints1 = new ColorProcessor(width, height);
+//			inputPoints1.invert();
+//			
+//			ColorProcessor inputPoints2 = new ColorProcessor(width, height);
+//			inputPoints2.invert();
+//
+//			Visualize.drawPoints(inputPoints1, c1.getPoints(), Color.black);
+//			Visualize.drawPoints(inputPoints2, c2.getPoints(), Color.black);
+//
+//			Visualize.addToResults(inputPoints1, "Input points 1");
+//			Visualize.addToResults(inputPoints2, "Input points 2");
+//		}
+//		
+//		c1.calculateFeatures();
+//		c2.calculateFeatures();
+//		
+//		showNormals();
+//		
+//		Segmentation detect = new Segmentation(c1, c2);
+//		rigidParts = detect.getRigidParts();
+//
+//		showResults();
 	}
 
 	private void showNormals() {

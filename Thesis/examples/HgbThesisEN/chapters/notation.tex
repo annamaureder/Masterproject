@@ -1,7 +1,8 @@
-\chapter*{Notation}
+\chapter{Notation}
 \label{cha:Notation}
 
 \begin{itemize}
+	%use \dotfill for points
 	\item[$M$] Input mesh
 	\item[$\mathcal{P}$] set of rigid parts
 	\item[$\mathcal{J}$] set of joints
@@ -12,12 +13,15 @@
 	\item[$p_i$] principal axis of $C_i$
 	\item[$s_i$] secondary axis of $C_i$
 	\item[$\theta$] orientation of $C_i$
-	\item[$\boldsymbol{p}_i(x,y)$] cluster point of $C_i$
+	\item[$\boldsymbol{p}_i(x,y)$] 2D cluster point of $C_i$
+	\item[$\boldsymbol{p}_i(x,y,z)$] 3D cluster point of $C_i$
+	\item[$\boldsymbol{c}_i(x,y)$] centroid of $C_i$
 	\item[$\boldsymbol{j}_i(x,y)$] joint between two clusters $C_i$ and $C_j$
 	\item[$g(\boldsymbol{p}_i,\boldsymbol{p}_j)$] geodesic distance between two cluster points
 	\item[$d(\boldsymbol{p}_i,\boldsymbol{p}_j)$] euclidean distance between two cluster points
 	\item[$e$] matching error between two clusters
 	\item[$e_{avg}$] average matching error between two clusters 
+	\item[$e_{PF}$] matching error between two clusters applying Procrustes fitting
 	\item[$\tau$] error threshold 
 	\item[$N$] Node in a tree
 	\item[$\mathit{left}$] left child of $N$

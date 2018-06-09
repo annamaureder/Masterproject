@@ -1,28 +1,24 @@
 \chapter{Feature-based approach}
 \label{cha:FeatureApproach}
 
-%TODO: why features? adding another important information to point coordinates --> curvature of points
-
-To solve the main drawbacks of finding reliable point correspondences between $C_1$ and $C_2$ the focus lies on point features for an initial alignment as they provide meaningful information about a point $p$ being compared to its neighbors. The approach to use point features for the non-rigid registration procedure is closely related to Mitra \cite{Mitra07}. The main part thereby is the computation of point feature histograms, namely ``Fast point feature histograms'' (FPFH) \cite{FPFH}. Basically, the computed features describe the curvature between specific points. By computing those features for all points, depending on the curvature, which might be an implied curve for an ellipsoid rigid part, in case of intersections of rigid parts, different features are proposed. Taking only \textit{unique} feature histograms for correspondence estimation which are features considerably deviating from the mean histogram $\mu$ of all point feature histograms of a cluster $C_i$  allows to reduce computation time. It is thereby assumed that those unique features are those located between rigid parts.
+To solve the main drawbacks of finding reliable point correspondences for an initial alignment of $C_1$ and $C_2$ the focus on the second approach lies on point features. They are introduced as they provide additional, meaningful information about a point $\boldsymbol{p}_i$ besides its coordinates. For this reason, point feature histograms, namely ``Fast point feature histograms'' (FPFH) \cite{FPFH} are computed for all points of $C_1$ and $C_2$. Basically, a histogram of a point $\boldsymbol{p}$ describes the curvature of a surface described by itself and its $k$ neighbors. By detecting similar point feature histograms between $C_1$ and $C_2$, referred to as feature matching, point correspondences are acquired. These are then used for an initial alignment of $C_1$ and $C_2$ that their largest rigid parts overlap. Proceeding from the largest rigid part, linked rigid parts can be detected. This approach is closely related to Guo et al \cite{guo2016correspondence}. 
 
 \section{Fast point feature histograms}
 \label{FPFH}
-The ``Fast Point Feature histograms'' (FPFH) algorithm is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH}. It focuses on computing features, depending on a points normal $\vec{n}$ and its $k$ neighbors.  The choice of those features are the following: 
+The ``Fast Point Feature histograms'' algorithm is an improved approach of the `'Persistent Point Feature Histogram for 3D Point Clouds'' \cite{PPFH} in terms of computation time. It focuses on computing a feature histogram for a point $\boldsymbol{p}$ by comparing its normal $\vec{n}$ to the normals of all $k$ neighbors. The choice of those point features are the following: 
 %%
 \begin{itemize}
-	\item rotation- and scale-invariant features
+	\item rotation- and scale-invariant
 	\item easy comparison of feature histograms
-	\item straightforward implementation
 	\item approval of approach
-	\item easy adaption from different dimensions (2D and 3D)
+	\item straightforward adaption of different dimensions (2D and 3D)
 \end{itemize}
 %%
-By using a histogram the neighborhoods' geometrical properties can be provided in form of the mean surface curvature at a point $\boldsymbol{p}$. As in the unordered list of points no surface and following no point normals are provided, those have to be computed in a initial step (see subsection \ref{normal}).
+The data input for this algorithm is a list of $n$ unordered points $\boldsymbol{p}_1(x,y,z), \cdots, \boldsymbol{p}_n(x,y,z)$ only providing information about the points coordinates in 3D space. As a result, no surface is supplied for the computation of feature histograms. Therefore, in an initial step the point normals need to be computed (see subsection \ref{normal}).
 
 \subsection{Normal estimation}
 \label{normal}
-
-As a first step, the normals of all unordered points from the input clusters $C_1$ and $C_2$ need to be estimated \cite{normals}. Those is achieved by taking all points $k$ within a radius $r$ from a point $\boldsymbol{p}$. Subsequently, a least error fit straight line $X$ in the form $ax + by +c = 0$ to all $k$ points is computed by minimizing the squared distances from all points $\boldsymbol{p_i(x_i,y_i)}$
+As a first step, the normals of all unordered points from the input clusters $C_1$ and $C_2$ are estimated, following the approach of Hoppe et al \cite{normals}. The normal $\vec{n}$ of point $\boldsymbol{p}$ can be computed by taking all neighboring points $k$ within a radius $r$ of $\boldsymbol{p}$ into consideration. Subsequently, a least error fit straight line $X$ in the form $ax + by +c = 0$ to all selected points including $\boldsymbol{p_i}$ is computed by minimizing the squared distances from all points
 %%
 \begin{equation}
 \begin{split}
@@ -52,20 +48,36 @@ resulting in two pairs of an eigenvalue and eigenvector $(n_1,\lambda_1)$ and $(
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.4\linewidth]{normalEstimation}
-	\caption{Normal estimation for a cluster point $\boldsymbol{p}$ of $C_i$ by a computation of the least squared fitting line $X$ of the neighborhood inside a radius $r$. Calculation of the eigenvectors $\vec{n_1}$ and $\vec{n_2}$ by the covariance matrix of all $k$ points.}
+	\caption{Normal estimation for a cluster point $\boldsymbol{p}$ of $C_i$ by a computation of the least squared fitting line $X$ of the neighborhood inside a radius $r$. Calculation of the eigenvectors $\vec{n_1}$ and $\vec{n_2}$ by forming the covariance matrix of  $\boldsymbol{p}_i$ and all $k$ points.}
 	\label{fig:normalEstimation}
 \end{figure}
 %%
-As a next step, it is required that all normals are equally oriented. Basically, all $n$ computed normals are traversed globally, starting with a normal $\vec{n_i}$ of a point $p_i$. Thereby, it is of particular importance to select a normal that assures consistent orientations between $C_1$ and $C_2$. Taking its orientation as parent normal $\vec{n_p}$, the angle $\delta$ between $\vec{n_p}$ and all neighboring normals $\vec{n_k}$ 
+%TODO: fix image (C_i, ...)
+%%
+As a next step, it is required that all normals are equally oriented, as some might be flipped by 180°. Basically, all $n$ computed normals are traversed globally, starting with a normal $\vec{n}$ of a point $p$. Thereby, it is of particular importance to select a normal that assures consistent orientations between $C_1$ and $C_2$. Taking its orientation as parent normal $\vec{n_p}$, the angle $\delta$ between $\vec{n_p}$ and all neighboring normals $\vec{n_k}$ 
 %%
 \begin{equation}
 \delta = \vec{n_p} \cdot \vec{n_k}, \quad \text{for $|\vec{n_p}|, |\vec{n_k}| = 1$}
 \end{equation}
 %%
-is computed. In case of $\delta < 0$, $\vec{n_k}$ requires to be flipped 180° ($\vec{n_k} = -\vec{n_k})$. If all $k$ normals have been verified to be oriented in consideration of $\vec{n_p}$ any $\vec{n_k}$ is selected as current $\vec{n_p}$. The whole algorithm proceeds until all $n$ normals have been verified to correspond with their parent normal $n_p$.
-
+is computed. In case of $\delta < 0$, $\vec{n_k}$ requires to be flipped 180° ($\vec{n_k} = -\vec{n_k})$. If all $k$ normals have been verified to be oriented in consideration of $\vec{n_p}$ any $\vec{n_k}$ is selected as current $\vec{n_p}$. The whole algorithm proceeds until all $n$ normals have been verified to correspond with their parent normal $n_p$ (see figure \ref{fig:flipping}).
+%%
+%TODO: add image normal flipping
+%%
+\begin{figure}[H]
+	\centering\small
+	\begin{tabular}{cc}
+		\fbox{\includegraphics[width=0.40\textwidth]{Placeholder}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{Placeholder}} 
+		\\
+		(a) & (b) 
+	\end{tabular}
+	\caption{Normal flipping of all normals computed on a cluster $C_i$ (a) to equally orient them (b).} 
+	\label{fig:flipping}
+\end{figure}
+%%
 \subsection{SPFH and FPFH}
-The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is then computed by using three geometric features. Between $\boldsymbol{p}$ and each of its $k$ neighbors $\boldsymbol{p_k}$ given a threshold $\tau$, those features are computed -- $\boldsymbol{p_i}$ is thereby the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p_j}$ corresponds to the remaining point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. The following angles
+As an intermediate step before computing the FPFH, the simplified point feature histogram (SPFH) of a point $\boldsymbol{p}$ is computed, which represents its relationship to its $k$ neighbors. This is achieved by calculating three geometric features between $\boldsymbol{p}$ and each of its $k$ neighbors $\boldsymbol{p_k}$. For further calculations, $\boldsymbol{p}_i$ represents the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p}_j$ corresponds to the other point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. Consequently, the following angles
 %%
 \begin{equation}
 \begin{split}
@@ -78,29 +90,30 @@ The simplified point feature histogram (SPFH) for a point $\boldsymbol{p}$ is th
 \label{eq:AngularVariations}
 \end{equation}
 %%
-are computed. In a second step for each point $\boldsymbol{p_i}$ again all $n$ neighbor points given a threshold $\tau$ are computed. The simple point histogram SPF of $p$ is then weighted to the final histogram
+are computed which are categorized into a histogram (see subsection \ref{histogram}). The SPFH of $\boldsymbol{p}$ is then weighted to its FPFH
 %%
 \begin{equation}
-FPFH(\boldsymbol{p}) = SPF(\boldsymbol{p}) + \frac{1}{n} \cdot \displaystyle\sum_{i=1}^{n}\frac{1}{w_i} \cdot SPF(p_i)
+FPFH(\boldsymbol{p}) = SPF(\boldsymbol{p}) + \frac{1}{n} \cdot \displaystyle\sum_{k=1}^{n}\frac{1}{w_k} \cdot SPF(p_k)
 \end{equation}
 %%
-where the weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_i)$. The influence region diagram for a Fast Point feature histogram for a query point $\boldsymbol{p_q}$ can be seen on Figure \ref{fig:FPFHregion}. 
+by computing the SPFH for all of its $k$ neighbors. The weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_k)$. The influence region diagram for a Fast Point feature histogram of a query point $\boldsymbol{p_q}$ can be seen on Figure \ref{fig:FPFHregion}. 
 %%
 \begin{figure}[H]
 	\centering
 	\includegraphics[width=0.4\linewidth]{FPFH_region}
-	\caption{The point region for the calculation of the feature histogram for a query point $\boldsymbol{p}_q$. The histogram of $\boldsymbol{p}_q$ and its neighbors (inside the grey circle) is weighted with the further linked neighbors (colored circles) \cite{FPFH}.}
+	\caption{The point region for the calculation of the feature histogram for a query point $\boldsymbol{p}_q$. The SPFH of $\boldsymbol{p}_q$ and its neighbors (inside the grey circle) is weighted with the SPFHs of all $k$ neighbors (colored circles) \cite{FPFH}.}
 	\label{fig:FPFHregion}
 \end{figure}
 %%
-\subsection{Creation of feature histograms}
-The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram $H \{bin_1,\ldots,bin_b\}$ with $b = q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals and $f$ the number of feature values, in this case 3. After the allocation the associated bin at the index $idx$
+\subsection{Feature histograms}
+\label{histogram}
+The resulting feature values for each point $p$ of $C_1$ and $C_2$ in form of three angles between its neighbors $k$ are categorized using a histogram $H \{bin_1,\ldots,bin_b\}$ with $b = q^f$ bins to consider all possible combinations of the feature values. Thereby, $q$ represents the number of intervals the feature values should be categorized into. The number of feature values is represented by $f$, in this case three. Taking into account three feature values computed between a point set ($p$,$p_k$) the associated bin at the index $idx$
 %%
 \begin{equation}
 idx = \displaystyle\sum_{i=1}^{i \leq f}q(f_i) \cdot 2^{i-1}
 \end{equation}
 %%
-is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$ to safe computation time. In order to achieve that the mean of all feature histograms $\mu$ of a cluster $C_i$ is computed. Subsequently, the distance of a feature histogram $H_i$ is compared to $H_\mu$ and in case of being outside the value $\mu \pm \sigma$ denoted as \textit{unique} and passed to the next step of detecting matching histograms between $C_1$ and $C_2$. The standard deviation
+is incremented by 1. The function $q(f)$ returns the interval the feature is allocated to, ranging from 0 to $q - 1$. Finally, each bin contains the number of point pairs that are allocated in the specified value interval.As soon as the feature histograms of all points from $C_1$ and $C_2$ are computed only salient histograms are taken as comparison for point correspondence between $C_1$ and $C_2$ to reduce the correspondence space. In order to achieve that, the mean of all feature histograms $\mu$ of a cluster $C_i$ is computed. Subsequently, the distance of a feature histogram $H_i$ is compared to $H_\mu$ and in case of being outside the value $\mu \pm \sigma$ denoted as \textit{unique} and passed to the next step of detecting matching histograms between $C_1$ and $C_2$. The standard deviation
 %%
 \begin{equation}
 \sigma = \frac{1}{N} \cdot \displaystyle\sum_{i=1}^{N}(H_i(b) - \overline{H_i})^2
@@ -108,46 +121,44 @@ is incremented by 1. The function $q(f)$ returns the interval the feature is all
 %%
 is therefore calculated for all histograms $H_i$ with $N$ data entries of all cluster points. 
 %%
-\subsection{Comparison of histograms}
+\subsection{Feature matching}
 \label{histogramCriteria}
-
-As a next step, all \textit{unique} feature histograms of $C_1$ are verified to find the closest match from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_j$ and $H_k$ with each $b$ bins. In order to detect the best fitting histogram three main criteria mentioned most often in reference papers \cite{surfletPairRelation} \cite{localFeatureHistograms} were selected. As first criterion the squared euclidean distance (L2)
+As a next step, all \textit{unique} feature histograms of $C_1$ are aiming for detecting the most similar feature histogram from $C_2$. For that reason, different histogram-similarity criteria have to be determined to measure the similarity between two histograms $H_j$ and $H_k$ with each $b$ bins. In order to detect the best fitting histogram three main criteria most frequently applied in reference papers \cite{surfletPairRelation} \cite{localFeatureHistograms} are selected. As first criterion the squared euclidean distance (L2)
 %%
 \begin{equation}
 \varepsilon(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i))^2
 \end{equation}
 %%
-is computed. In the reference paper of Mitra et al. \cite{Mitra07} the euclidean distance was the only criterian for correspondence computation which generates most of the point correspondences (see section \ref{ResultsLRP}). Subsequently, the statistical Chi-Square ($\chi^2$) divergence
+is computed. In the reference paper of Guo et al. \cite{guo2016correspondence} the euclidean distance was selected as similarity criterion between feature histograms. It generally generates more point correspondences (see section \ref{ResultsLRP}) than the other two criteria. Furthermore, the statistical Chi-Square ($\chi^2$) divergence
 %%
 \begin{equation}
 \chi^2(H_j, H_k) = \displaystyle\sum_{i=1}^{b}\frac{(H_j(i) - H_k(i))^2}{(H_j(i) + H_k(i))}
 \end{equation}
 %%
-is examined which achieves better results than the L2 form. Finally, the Kullback-Leibler (KL) divergence
+is examined which achieves less point correspondences than the L2 form but with a higher success rate. Finally, the Kullback-Leibler (KL) divergence
 %%
 \begin{equation}
 \kappa(H_j, H_k) = \displaystyle\sum_{i=1}^{b}(H_j(i) - H_k(i)) \cdot ln \frac{H_j(i)}{H_k(i)}
 \end{equation}
 %%
-is calculated, which is the most computational expensive one due to the usage of $ln$. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm all zero-values are replaced with the value 1.
+is calculated, which is the most computational expensive one due to the application of $ln$. As a histogram with $q^f$ bins might contain a lot of zero values, in case of a division or logarithm all zero-values are replaced by the value 1.
 
 \subsection{Adaptions for 2D}
-In order to compute those 3D features for 2D points, those can be treaded like 3D points by setting each z-coordinate to 0, by doing so, all calculations can be conducted straight forward. 
-The calculation of the mean histogram was implemented but as not a considerable great number of correspondences could be detected, all histograms were considered during the feature histogram matching. This improved run time. Also the number of neighbors to be detected by each point was drastically removed. 
+\label{adaptions}
+In order to compute the proposed feature histograms for 2D points, these need be treated like 3D points. This is achieved by setting each z-coordinate to 0 to allow all calculations originally targeting 3D points. 
+2D point clouds are generally composed of less points than 3D point cloud, which results in less neighbor points for normal estimation and feature computation. As a result the computation time can be considerable reduced. 
+As also the number of point correspondences are considerable reduced, all histograms are considered during the feature histogram matching, not only salient ones. 
 
-%TODO: what has been changed in 2D?
-
-\section{Largest rigid part - Algorithm}
+\section{LRP algorithm}
 \label{LRP}
-
-As opposed to the linear approach by subdividing $C_1$ and $C_2$ into sub clusters, the feature-based approach is implemented to detect as an initial step the largest rigid part (LRP) of $C_1$ and $C_2$. Proceeding from there, all other linked parts are detected by region growing and reapplying the algorithm. This approach has been originally implemented for 3D point clouds by De Guo \cite{guo2016correspondence}. 
+The approach from Guo et al \cite{guo2016correspondence} aims to detect the largest rigid part (LRP) of two poses of an object to have a solid basis for a successful segmentation into the rigid parts. A similar procedure is aspired after in the proposed feature-based approach.
 
 \subsection{Basic functionality}
 \label{functionalityLRP}
-As an initial step, the LRP algorithm  attempts to detect the most reliable correspondences between $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, by applying RANSAC to the point correspondences, a single rigid transformation is aimed for to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
+As an initial step, the LRP algorithm attempts to detect the most reliable correspondences between two clusters $C_1$ and $C_2$. For that, local point descriptors (see section \ref{FPFH}) are computed. The requirement for a sparse correspondence between two cluster points $\boldsymbol{p}_i(x,y)$ and $\boldsymbol{p}_j(x,y)$ is that they are \textit{reciprocal}, which means that the according point feature histograms are the most similar from each other. Some of the sparse correspondences are assumed to be wrong. Therefore, RANSAC is applied on the point correspondences to aim for a single rigid transformation to detect the so-called ``largest rigid part'' (LRP), which is supported by the largest corresponding point cluster between $C_1$ and $C_2$. In case of a human, this would be the torso. Subsequently, all linked rigid parts to the LRP are detected by recursively applying the algorithm on grown clusters from the current LRP.
 
 \subsection{Input data}
-For the 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To assure the same overlapping data after a transformation of the rigid parts joint-likely spheres were placed between rigid parts. For the computation those are treated to belong to a rigid part but assure similar gaps between the two input shapes. To achieve an indicator for the adjustment of thresholds (e.g. maximum distance to closest point), the resolution of the input object is computed. Thus, 10 random points are selected from a cluster $C_i$ and the average distance to the closest points calculated. In case of the input poses in form of the clusters $C_1$ and $C_2$ the estimated resolutions account to 7.24 and 7.56.
+For the proposed 2D implementation, the 2D hulls of an articulated object in two different poses are taken as input (see Figure \ref{fig:inputPoses}). To support the point cohesiveness of a rigid parts after a transformation or segmentation joint-likely spheres were placed between rigid parts which are also used as rotation points. For the computation, those are treated to belong to a rigid part and no information about a joint are extracted. To achieve an indicator for the adjustment of thresholds (e.g. maximum distance to closest point), the resolution of the input clusters is computed. By applying the approach from \ref{clustering} the estimated resolutions accounts to 7.24 for $C_1$ and 7.56 for $C_2$.
 %%
 \begin{figure}[H]
 	\centering\small
@@ -157,28 +168,26 @@ For the 2D implementation, the 2D hulls of an articulated object in two differen
 		\\
 		(a) & (b) 
 	\end{tabular}
-	\caption{Taking an articulated object (puppet) in two different poses $C_1$ (a) and $C_2$ (b) in form of a 2D point cloud representing its hull point cloud as input.} 
+	\caption{Taking an articulated object (puppet) in two different poses $C_1$ (a) and $C_2$ (b) in form of a 2D point cloud representing its hull as input.} 
 	\label{fig:inputPoses}
 \end{figure}
 %%
 \subsection{Implementation steps}
-In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished. The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Therefore, as first step, sparse correspondences between $C_1$ and $C_2$ have to be detected (see subsection \ref{correspondences}). Furthermore, the detection of linked rigid parts to detected LRPs
+In order to re-implement the algorithm in 2D, only minor modifications concerning point coordinates and feature histograms had to be accomplished (see subsection \ref{adaptions}). The most crucial part of the whole algorithm is the initial alignment of $C_1$ and $C_2$ in order to detect the actual largest rigid part of the articulated object. This step is of particular importance, as the subsequent detection of further rigid parts proceeds from there. Concerning the detection of linked rigid parts, an approach with less computation steps and time was implemented. Generally, the implementation can be split into main parts.
 \begin{enumerate}
 	\item The PCA is employed on the input clusters $C_1$ and $C_2$ to estimate the normals of all points.
-	\item Point feature histograms (FPFH) are computed to detect sparse point correspondences between $C_1$ and $C_2$. A Point correspondence between $C_1$ and $C_2$ needs to be \textit{reciprocal}.
-	\item The RANSAC approach is applied on those correspondences to detect a $T_j$ that rejects wrong point correspondences. Clusters are detected from all corresponding points by applying region growing.
-	\item The LRP is assigned to the resulting biggest point cluster.
-	\item Proceeding with the LRP, unmatched clusters to $C_1$ and $C_2$ are seeked by region growing from the LRP. 
-	\item Joints are estimated between the current LRP an all detected clusters from all unclustered points. Those are considered for allocating corresponding rigid parts of $C_1$ and $C_2$.
-	\item Linked rigid parts are detected by rotating a cluster around its joint, given certain constraints and a calculating a weighted error.
+	\item Point feature histograms (FPFH) are computed for all points of $C_1$ and $C_2$. Sparse point correspondences are computed by feature matching. A point correspondence needs to be \textit{reciprocal}.
+	\item The RANSAC approach is applied on these correspondences to detect a transformation $T$ that aligns $C_1$ and $C_2$. In each iteration, clusters are detected from overlapping points. The LRP is assigned to the resulting biggest point cluster.
+	\item Unmatched clusters from $C_1$ and $C_2$ are taken as input to detect linked rigid parts from the LRP, which is achieved by region growing.
+	\item Joints are estimated between the current LRP an all detected clusters linked to the LRP. Those are considered for allocating corresponding rigid parts of $C_1$ and $C_2$.
+	\item Linked rigid parts are detected by rotating a cluster around its joint and finding the largest overlapping cluster. Certain constraints and a weighted error are taken into account.
 \end{enumerate}
 
 \subsection{Detection of sparse correspondences}
 \label{correspondences}
+As a first, the normals as well as the feature histograms for all points of $C_1$ and $C_2$ (see section \ref{FPFH}) are computed. Results of the normal flipping procedure can be seen on figure \ref{fig:normalFlipping}.
 
-As a first step of the algorithm, the normal as well as the feature histogram for each point of $C_1$ and $C_2$ (see section \ref{FPFH}) is computed. Results of the normal flipping procedure can be seen on figure \ref{fig:normalFlipping}.
-
-%TODO: Picture of normal estimation + flipping
+%TODO: Picture of normal flipping
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cccc}
@@ -192,25 +201,26 @@ As a first step of the algorithm, the normal as well as the feature histogram fo
 	\caption{Normal estimation of two Cluster $C_1$ and $C_2$ (a) and (b) a subsequent global traversing of all normals to orient them similar (c) and (d).} 
 	\label{fig:normalFlipping}
 \end{figure}
-
-It can be observed that the flipping of normals does not successfully globally flip all normals. The reason are narrow positions where the edges of two rigid parts almost touch and form a corner, like the armpits. In this case the normals get flipped although they should not. For this reason the global flipping of the normals lead to more false point correspondences.
-
-For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. Two point are selected as correspondences if their feature histogram they are \textit{reciprocal}. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. The mean histogram of all histograms as well as a \textit{unique} histogram can be seen on \ref{fig:meanHistogram}. 
+It can be observed that the flipping of normals does not globally succeed. The causes are corner positions of the 2D hull. Considering two normals surrounding a corner point, the normals are expected to face each other. But during the normal flipping they are similarly oriented, although the corner point between them should counteract this behavior. For this reason the global flipping of the normals, considering the given data set, leads to a high number of false point correspondences. A possible solution would be the introduction of more points, especially forming a corner.
+%%
+%TODO: test with new dataset
+%%
+For the detection of sparse correspondences between $C_1$ and $C_2$ three histogram distances (see section \ref{histogramCriteria}) are taken into account. Depending on the chosen distance as criteria, more or less correspondences can be detected, refer to section \ref{ResultsLRP} for a detailed comparison. The mean histogram of all histograms as well as a \textit{unique} histogram can be seen on \ref{fig:meanHistogram}. 
 %%
 %TODO: Picture of mean histogram + similar histogram
 %%
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_1parts_clusters_rigidParts_7th}} &	
-		\fbox{\includegraphics[width=0.45\textwidth]{results/4_2parts_clusters_rigidParts_7th}} 
+		\fbox{\includegraphics[width=0.45\textwidth]{Placeholder}} &	
+		\fbox{\includegraphics[width=0.45\textwidth]{Placeholder}} 
 		\\
 		(a) & (b) 
 	\end{tabular}
-	\caption{Computing of the $\mu$ histogram of $C_1$ (a) in order to reject frequently emerging feature histograms (b) being inside a value $\mu \pm \theta \cdot \sigma$.} 
+	\caption{Computing the $\mu$ histogram of $C_1$ to represent frequently arising feature histograms (a). A \textit{unique}  histogram is stated by considerably deviating from the $\mu$ histogram (b).} 
 	\label{fig:meanHistogram}
 \end{figure}
-Figure \ref{fig:sparseCorrespondences} represents the resulting point correspondences from feature matching. It is clearly evident that points being located in a corner are more likely to detect a reciprocal point correspondence than points located at smooth surfaces. The reason is, that those features appear considerable similar which makes it difficult to distinguish them.
+Figure \ref{fig:sparseCorrespondences} represents the point correspondences between $C_1$ and $C_2$ resulting from feature matching. It is clearly evident that points located near a corner are more likely to detect a reciprocal point correspondence than points located at smooth surfaces. The reason is, that those features are determined as \textit{unique} which makes them more distinguishable. On the contrary, all points located on a smooth surface have similar feature histograms.
 %%
 \begin{figure}[H]
 	\centering \small
@@ -221,23 +231,22 @@ Figure \ref{fig:sparseCorrespondences} represents the resulting point correspond
 	\label{fig:sparseCorrespondences}
 \end{figure}
 %%
-As some of those correspondences might be wrong, a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
+As some of those correspondences are assumed to be wrong, a RANSAC approach is applied on all correspondences to reject false ones (see subsection \ref{detectionLRP}).
 %%
 \subsection{Detection of the largest rigid part}
 \label{detectionLRP}
 The dense point correspondences from the previous computation step (see subsection \ref{correspondences}) may contain several errors. Therefore, RANSAC is applied as a next step to detect a single rigid transformation $T$ that leads to the biggest overlapping point cluster of $C_i$ and $C_j$. Thereby, in each iteration, 2 random correspondences are selected and used for the calculation of $T$ which is applied on $C_i$ to be translated on $C_j$. 
-
-
+%%
 %TODO: Show Matrices of the RANSAC
-
-
-
-The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments, the number of iterations was set to 500.
+%%
+The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments and the calculated probability of a choosing two correct correspondences
 %%
 %TODO: number of iterations? --> number of false correspondences, formular
 %%
-Subsequently, clusters are grown from all corresponding points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output (see figure \ref{RANSAC}).
-
+the number of iterations is set to 500.
+%%
+In each iteration, clusters are grown from all overlapping points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output representing the largest detected clusters (see figure \ref{RANSAC}).
+%%
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
@@ -249,12 +258,12 @@ Subsequently, clusters are grown from all corresponding points with an euclidean
 	\caption{Computation of the largest rigid part from $C_1$ (a) and $C_2$ (b) by applying RANSAC on the detected point correspondences.} 
 	\label{fig:RANSAC}
 \end{figure}
-
-The final transformation $T$ of the RANSAC approach, which leads to the ``largest rigid part'', is applied on the reference cluster. This procedure is required in order to similarly align $C_1$ and $C_2$ for further computations (see subsection \ref{CorrespondingClusters}).
+%%
+The final transformation $T$ of the RANSAC approach, which leads to the largest overlapping clusters, is applied on the reference cluster. This procedure is required in order to similarly align $C_1$ and $C_2$ for further computations (see subsection \ref{CorrespondingClusters}).
 
 \subsection{Cluster detection by region growing}
 \label{cluster}
-After successfully detecting a ``largest rigid part'' $P_i$ and $P_j$ for each input clusters $C_i$ and $C_j$ they are added to a list of rigid parts $\mathcal{P}$. Potential linked rigid parts are detected from region growing of all unclustered points $\mathcal{U} =  \{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$. Those comprise all cluster points of $C_1$ and $C_2$ excluding already detected largest rigid parts $\mathcal{P}$. The region growing initiates with the first point $\boldsymbol{u}_1$ of the unclustered points $\mathcal{U}$ to form a cluster $C_i$. Another point of the unclustered points $\boldsymbol{u}_j$ is added to $C_i$, if the euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{u}_j)$ to any point in $C_i$ is below the threshold $\tau$. If no further unclustered points can be added, the region growing initiates again with the first unclustered point $\boldsymbol{u}_1$ that has not been added by region growing until all points traversed the procedure. The result is a set of clusters $\mathcal{C}$ for each $C_i$ and $C_j$. Subsequently, a preliminary joint $\boldsymbol{j}_i$ for each output clusters is stored, by detecting the two nearest points of $C_i$ and $P_i$. The joints are required for following cluster correspondence and joint weights for the ICP (see subsection \ref{CorrespondingClusters} and \ref{JointWeights}).
+After successfully detecting a ``largest rigid part'' $P_i$ and $P_j$ for each input clusters $C_i$ and $C_j$ they are added to a list of rigid parts $\mathcal{P}$. Potential linked rigid parts are detected from region growing of all unclustered points $\mathcal{U} =  \{\boldsymbol{u}_1,\ldots,\boldsymbol{u}_n\}$. Those comprise all cluster points of $C_1$ and $C_2$ excluding already detected largest rigid parts $\mathcal{P}$. The region growing procedure from subsection \ref{RegionGrowing} is applied with the previously detected LRP as seed. The result is a set of clusters $\mathcal{C}$ for each $C_i$ and $C_j$. As a next step, a preliminary joint $\boldsymbol{j}_i$ for each output clusters is stored, by detecting the two nearest points of $C_i$ and $P_i$. The joints are required for following cluster correspondence and joint weights for the ICP (see subsection \ref{CorrespondingClusters} and \ref{JointWeights}).
 
 \subsubsection{Establishment of corresponding clusters}
 \label{CorrespondingClusters}
@@ -532,21 +541,29 @@ To only remain the rigid part and reject correspondences from the final correspo
 
 Applying the proposed approach on the 2D data set of an articulated object, following results could be achieved with adjusted parameters (see Table \ref{table:parameters}). for the estimated resolutions of 7.24 and 7.56. 
 
+\begin{itemize}
+	\item[RG] Region Growing for Noise removal
+	\item[LRP] Region growing for largest rigid part
+	\item[CPPC] Closest point for part detection 
+	\item[RGPC]	Region growing for part detection
+	\item[DC] distance criteria for feature matching
+\end{itemize}
+
 \begin{table}
 	\centering
-	\begin{tabular}{ |c|c|c|c| } 
+	\begin{tabular}{ |c|c|c|c|c| } 
 		\hline
-		Iteration & $\tau$ RG  & $\tau$ CPPC & $\tau$ LRP \\
+		Iteration & $\tau$ RG  & $\tau$ CPPD & $\tau$ LRP & DC \\
 		\hline
-		1& 3 & 21 & 14 \\ 
-		2& 5 & 3 & 2 \\
-		3& 7 & 2 & 2 \\
-		4& 4 & 38 & 31 \\ 
-		5& 6 & 4 & 3 \\
-		& 8 & 3 & 3 \\
-		& 6 & 35 & 26 \\ 
-		4 & 7 & 3 & 3 \\
-		& 8 & 3 & 3 \\
+		1& 3 & 21 & 14 & Euclidean \\ 
+		2& 5 & 3 & 2 & Euclidean \\
+		3& 7 & 2 & 2 & Euclidean\\
+		4& 4 & 38 & 31 & Euclidean \\ 
+		5& 6 & 4 & 3 & Euclidean\\
+		& 8 & 3 & 3 & Euclidean\\
+		& 6 & 35 & 26 & Euclidean\\ 
+		4 & 7 & 3 & 3 & Euclidean \\
+		& 8 & 3 & 3 & Euclidean \\
 		\hline
 	\end{tabular}
 	\caption{Segmentation results}
@@ -556,8 +573,8 @@ Applying the proposed approach on the 2D data set of an articulated object, foll
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}
-		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final1_12-rgTH_4-JointTH_3-RansacTH_6-error_ED}} &	
-		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final2_12-rgTH_4-JointTH_3-RansacTH_6-error_ED}} 
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final1_12-rgTH_4-JointTH_3-RansacTH_ED}} &	
+		\fbox{\includegraphics[width=0.40\textwidth]{results/final/final2_12-rgTH_4-JointTH_3-RansacTH_ED}} 
 		\\
 		(a) & (b) 
 	\end{tabular}
@@ -604,6 +621,7 @@ Furthermore, touching of rigid parts (e.g. the hand touches the leg) constitute 
 %TODO: show what does not work perfectly
 
 \section{3D implementation}
+\label{3DImplementation}
 
 The next step would be to transfer the optimized 2D implementation into 3D to reduce the computation steps from \cite{guo2016correspondence} (see section \ref{functionalityLRP}) by using the Point Cloud library \footnote{http://pointclouds.org} which operates with point clouds. Of course many new challenges will have to be overcome due to the three-dimensional space. The straightforward rotation from linked rigid parts around their estimated joints will pose a major difficulty in 3D as two rotation axis are available. It is noticeable that PCL offers many essential functions by default. For example, the Fast Point Feature Histogram completed with the normal estimation of as well as sub sampling for an extensive number of points are already provided. An appropriate dataset as input constitutes the SCAPE dataset. It provides different poses of a human.
 

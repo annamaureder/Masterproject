@@ -3,7 +3,9 @@ package NonRigid2D;
 import java.util.List;
 
 import ij.IJ;
+import ij.process.ColorProcessor;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 public class ClusterTree {
@@ -11,7 +13,7 @@ public class ClusterTree {
 	private List<Cluster1[]> subclusters = new ArrayList<Cluster1[]>();
 	private Node root;
 	private int iterations = 1;
-	private ClosestPoint1 cp;
+	private Registration1 registration;
 
 	public class Node {
 		private Cluster1[] cluster;
@@ -39,13 +41,13 @@ public class ClusterTree {
 	 * @return segmented parts
 	 */
 	public List<Cluster1[]> subdivide(Node node) {
-		cp = new ClosestPoint1(node.cluster[0], node.cluster[1]);
+		registration = new Registration1(node.cluster[0], node.cluster[1]);
 
 		if (iterations > 50) {
 			return subclusters;
 		}
 
-		if (!cp.match()) {
+		if (!registration.match()) {
 			split(node);
 			IJ.log("Iteration #" + iterations++);
 
@@ -77,7 +79,7 @@ public class ClusterTree {
 	 * @return mergedParts
 	 */
 	public List<Cluster1[]> mergeClusters(List<Cluster1[]> subclusters) {
-		List<Cluster1[]> mergedParts = new ArrayList<Cluster1[]>();
+		List<Cluster1[]> rigidParts = new ArrayList<Cluster1[]>();
 
 		if (subclusters != null) {
 
@@ -91,22 +93,40 @@ public class ClusterTree {
 
 				Cluster1 merged1 = toBeMergedC1.mergeClusters(currentSegment1);
 				Cluster1 merged2 = toBeMergedC2.mergeClusters(currentSegment2);
+				
+				
+				ColorProcessor merge = new ColorProcessor(Segmentation1.width, Segmentation1.height); 
+				merge.invert();
+				Visualize1.drawPoints(merge, merged1.getPoints(), Color.black);
+				Visualize1.drawPoints(merge, merged2.getPoints(), Color.red);
+				Visualize1.addToResults(merge, "To be merged #" + i);
+				IJ.log("To be meged # " + i);
 
-				ClosestPoint1 cp = new ClosestPoint1(merged1, merged2);
+				Registration1 cp = new Registration1(merged1, merged2);
 				if (cp.match()) {
 					toBeMergedC1 = merged1;
 					toBeMergedC2 = merged2;
 				}
 
 				else if (!cp.match()) {
-					mergedParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
+					rigidParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
 					toBeMergedC1 = currentSegment1;
 					toBeMergedC2 = currentSegment2;
 				}
 			}
-			mergedParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
+			rigidParts.add(new Cluster1[] { toBeMergedC1, toBeMergedC2 });
 		}
-		return mergedParts;
+		estimateJoints(rigidParts);
+		return rigidParts;
+	}
+	
+	public void estimateJoints(List<Cluster1[]> rigidParts){
+		IJ.log("Estimate joints!");
+		for (int i = 0; i < rigidParts.size()-1; i++){
+			rigidParts.get(i)[0].estimateJoint(rigidParts.get(i+1)[0]);
+			rigidParts.get(i)[1].estimateJoint(rigidParts.get(i+1)[1]);
+		}
+		
 	}
 
 	public Node getRoot() {
