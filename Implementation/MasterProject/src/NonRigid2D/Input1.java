@@ -19,7 +19,7 @@ public class Input1 {
 		gd.addCheckbox("Remove outliers", true);
 		gd.addCheckbox("Show input point cloud", false);
 		gd.addCheckbox("Region growing", false);
-		gd.addCheckbox("Draw rigid part axis", true);
+		gd.addCheckbox("Draw rigid part axis", false);
 		gd.addCheckbox("Show segmented clusters", true);
 		gd.addCheckbox("Show rigid parts", true);
 		gd.addCheckbox("Show point correspondance", false);

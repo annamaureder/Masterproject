@@ -77,7 +77,16 @@ is computed. In case of $\delta < 0$, $\vec{n_k}$ requires to be flipped 180° (
 \end{figure}
 %%
 \subsection{SPFH and FPFH}
-As an intermediate step before computing the FPFH, the simplified point feature histogram (SPFH) of a point $\boldsymbol{p}$ is computed, which represents its relationship to its $k$ neighbors. This is achieved by calculating three geometric features between $\boldsymbol{p}$ and each of its $k$ neighbors $\boldsymbol{p_k}$. For further calculations, $\boldsymbol{p}_i$ represents the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p}_j$ corresponds to the other point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed. Consequently, the following angles
+As an intermediate step before computing the FPFH, the simplified point feature histogram (SPFH) of a point $\boldsymbol{p}$ is computed, which represents its relationship to its $k$ neighbors. This is achieved by calculating three geometric features between $\boldsymbol{p}$ and each of its $k$ neighbors $\boldsymbol{p_k}$. For further calculations, $\boldsymbol{p}_i$ represents the point having the smaller angle between its normal and the line connecting the point set, $\boldsymbol{p}_j$ corresponds to the other point. Using their normals $n_i$ and $n_j$ a Darboux $uvn$ frame $(u = n_i, v = (p_j - p_i) \times u, w = u \times v)$ is computed (see figure \ref{fig:darbouxFrame}). 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.8\linewidth]{DarbouxFrame}
+	\caption{Computation of the Darboux frame $uvn$ in order to calculate the features between two point sets described by angles.}
+	\label{fig:darbouxFrame}
+\end{figure}
+
+Consequently, the following angles
 %%
 \begin{equation}
 \begin{split}
@@ -93,7 +102,7 @@ As an intermediate step before computing the FPFH, the simplified point feature 
 are computed which are categorized into a histogram (see subsection \ref{histogram}). The SPFH of $\boldsymbol{p}$ is then weighted to its FPFH
 %%
 \begin{equation}
-FPFH(\boldsymbol{p}) = SPF(\boldsymbol{p}) + \frac{1}{n} \cdot \displaystyle\sum_{k=1}^{n}\frac{1}{w_k} \cdot SPF(p_k)
+FPFH(\boldsymbol{p}) = SPFH(\boldsymbol{p}) + \frac{1}{n} \cdot \displaystyle\sum_{k=1}^{n}\frac{1}{w_k} \cdot SPFH(p_k)
 \end{equation}
 %%
 by computing the SPFH for all of its $k$ neighbors. The weight $w_i$ represents the distance $d(\boldsymbol{p},\boldsymbol{p}_k)$. The influence region diagram for a Fast Point feature histogram of a query point $\boldsymbol{p_q}$ can be seen on Figure \ref{fig:FPFHregion}. 
@@ -239,11 +248,17 @@ The dense point correspondences from the previous computation step (see subsecti
 %%
 %TODO: Show Matrices of the RANSAC
 %%
-The number of iterations highly depends on the ratio of right and wrong point correspondences. Based on visual assessments and the calculated probability of a choosing two correct correspondences
+The number of required iterations for a successful alignment highly depends on the ratio of right and wrong point correspondences. This ration is determined by visual assessments, in case of the chi-square distance approximately 20\% of the point correspondences are assumed to be correct. By calculating the probability that almost assures (99\%) a write alignment
 %%
-%TODO: number of iterations? --> number of false correspondences, formular
+\begin{equation}
+\begin{split}
+1 - (n \cdot q^n) = 0.99\\
+1 - (n \cdot 0.8^n) = 0.99\\
+n = 247.857
+\end{split}
+\end{equation}
 %%
-the number of iterations is set to 500.
+the number of iterations is set to 250.
 %%
 In each iteration, clusters are grown from all overlapping points with an euclidean distance $d(\boldsymbol{p}_i,\boldsymbol{p}_j)$ again below a predefined threshold $\tau$. The procedure is applied both on $C_i$ and $C_j$ which results in two rigid parts as output representing the largest detected clusters (see figure \ref{RANSAC}).
 %%
@@ -306,7 +321,6 @@ For the implementation in Java the individual steps of the largest rigid part al
 %
 %TODO: Add class graph of implementation
 %
-
 \subsection{Iterative Segmentation}
 The whole algorithm initiates from the \texttt{Segmentation} class, where all steps proposed in section \ref{LRP} are implemented (see algorithm \ref{alg:segmentation}). Basically, the segmentation proceeds until no unclustered points from $C_1$ and $C_2$ are remaining. As a first step of the iterative segmentation approach already detected rigid parts are removed from the unclustered points (\texttt{removeAllLRPs()}). As a next step, clusters are detected either for an initial input or in case of an already detected LRP, to detect its the linked parts. Joints are only estimated in case of a previously detected rigid part which is the case for all iterations except the first one. Then, all matching clusters are added to a \texttt{Stack} (\texttt{pushMatchingClusters()}) to be processed in form of a ``last in - first out'' procedure. In case of an empty stack, all clusters have been processed and the algorithm terminates. 
 
@@ -451,6 +465,7 @@ public void featureHistogram(p_i) {
 %TODO implementation of FPFH (index)
 
 The feature histogram is computed by calculating the SPFH of a point by calculating angles between all its neighbors.
+
 
 
 
@@ -639,9 +654,9 @@ Improved results could be achieved by adjusting different parameters, like the n
 	\caption{Initial results with standard parameters estimated from the resolution from $C_1$ (a) and $C_2$ (b).} 
 	\label{fig:initialResults}
 \end{figure}
-
+%%
 %TODO: add alternate pictures of LRP results
-
+%%
 \subsection{Histogram distances for feature matching}
 \label{HistogramSimilarity}
 
@@ -661,23 +676,22 @@ As histogram similarity criteria three different distances are considered: the e
 \end{figure}
 
 In terms of runtime, the euclidean distance represents the fastest choice, followed by the chi-squared and the Kullback-Leibler. 
-
+%%
 %TODO: RUNTIME!
-
+%%
 \subsection{Main drawbacks}
 The main drawback of the algorithm represents the first initial alignment of $C_1$ and $C_2$ to detect the actual largest rigid part of the articulated object. In case of a failure, the linked rigid parts can not be detected as they are directly dependent a successful initial alignment. By increasing the number of RANSAC iterations, the probability of a correct initial alignment can be increased, however this directly affects the runtime and should therefore not be exaggerated. A major factor for the successful detection of a LRP poses the input data in form a point cloud. As the object's surface is imitated by the objects'hull composed of 2D points the region growing is much more error-prone. The reason is, that unlike as in 3D, the points of a rigid part in 2D have a considerable lower number of neighbors. In case of a few missing cluster points from a rigid part, it will not be fully detected during the region growing due to the resulting offset. This is especially drastically during the RANSAC approach as it results in the initial LRP. To counteract this behavior, more and closer hull points can be added to each rigid part. A further main problem is that the algorithm proceeds iteratively from already detected rigid parts. This makes the whole procedure notable unstable and error prone, as one faulty rigid part detection leads to an overall unsuccessful segmentation of an articulated object. Furthermore, touching of rigid parts (e.g. the hand touches the leg) would constitute difficulties as the region growing would detect those as potential linked clusters. Most of the discussed drawbacks concerning the input data can be overcome by an implementation in 3D (see section \ref{3DImplementation}). 
 
 \section{3D implementation}
 \label{3DImplementation}
 The next step would be to transfer the optimized 2D implementation into 3D to reduce the computation steps from \cite{guo2016correspondence} (see section \ref{functionalityLRP}). It can be implemented by using the Point Cloud library \footnote{http://pointclouds.org} which operates with 3D point clouds. Certainly, many new challenges will have to be overcome due to the three-dimensional space. The straightforward rotation from linked rigid parts around their estimated joints will pose a major difficulty in 3D as multiple rotation axes are available. On the other hand it is noticeable that PCL offers many required functions by default. For example, the Fast Point Feature Histogram completed with the normal estimation as well as sub sampling of dense point clouds are already provided. 
-
+%%
 %TODO: add code snippet of PCL
-
-
+%%
 An appropriate dataset as input constitutes the SCAPE data set which provides different poses of a human (see figure \ref{fig:SCAPE}).
-
+%%
 %TODO: add reference of SCAPE data
-
+%%
 \begin{figure}[H]
 	\centering\small
 	\begin{tabular}{cc}

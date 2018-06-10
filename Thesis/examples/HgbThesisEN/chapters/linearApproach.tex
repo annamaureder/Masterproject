@@ -1,6 +1,8 @@
 \chapter{Linear approach}
 \label{cha:LinearApproach}
 
+%TODO: update all result images --> point clouds!
+
 Analyzing the main drawbacks of the reference papers concerning unsupervised segmentation methods, the first implemented approach aims to considerable reduce the computation steps. Unlike previous approaches, point correspondences are not seeked in order to segment the articulated object. Instead a segmentation is performed in order to find point correspondences. The approach operates straightforward, as it linearly subdivides an articulated object $M$ in two different configurations, referred to as $C_1$ and $C_2$, into sub clusters. The subdividing of those clusters proceeds until two matches can be detected (see section \ref{Subdividing}). Thereby, it is taken advantage of PCA to associate sub clusters of $C_1$ and $C_2$.
 
 \section{Cluster detection by region growing}
@@ -65,7 +67,7 @@ As a next step, adjacent sub clusters from $\mathcal{L}$ are iteratively merged 
 
 \section{Joint/skeleton estimation}
 
-After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they joints linking them are estimated. As an initial approach the points of intersection between all principal axes of $\mathcal{P} = \{ {P_1,\ldots,P_m}\}$ are computed, which are determined to represent the joints. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axes might not represent the skeleton of a rigid part. For this reason, another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation a cluster point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select a number of closest points between neighboring rigid parts and computed the average point representing the joint (see figure \ref{fig:jointEstimation}). 
+After detecting the rigid parts $\mathcal{P} =  \{ {P_1,\ldots,P_m}\}$, they joints linking them are estimated. As an initial approach the points of intersection between all principal axes of $\mathcal{P} = \{ {P_1,\ldots,P_m}\}$ are computed, which are determined to represent the joints. However, this calculation assumes that the rigid parts are symmetric, as in the other case the principal axes might not represent the skeleton of a rigid part. For this reason, another approach has to be taken into account. Anguelov \cite{Anguelov04} declares joints as two points of two neighboring rigid parts that undergo the same transformation $T$. In the current implementation a cluster point is only allocated to one rigid part $P$. An improvement of the current situation is therefore to select a number of closest points between neighboring rigid parts and compute the average point representing the joint (see figure \ref{fig:jointEstimation}). 
 %%
 %TODO: result joint estimation
 %%

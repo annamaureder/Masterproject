@@ -34,8 +34,11 @@ public class RANSAC {
 
 	List<ClusterPoint> randomPoints1;
 	List<ClusterPoint> randomPoints2;
+	
+	List<ClusterPoint> finalRandomPoints1;
+	List<ClusterPoint> finalRandomPoints2;
 
-	private final int numIterations = 500;
+	private final int numIterations = 120;
 	private final int numRandom = 2;
 	List<ClusterPoint> resultPoints;
 
@@ -199,14 +202,26 @@ public class RANSAC {
 			if (cluster.getPoints().size() > biggestClusterRef.getPoints().size()) {
 				biggestClusterRef = cluster;
 				finalRef = resultPoints;
+				finalRandomPoints1 = randomPoints1;
 			}
 		}
 		for (Cluster cluster : RegionGrowing.detectClusters(target)) {
 			if (cluster.getPoints().size() > biggestClusterTarget.getPoints().size()) {
 				biggestClusterTarget = cluster;
 				finalTar = points2;
+				finalRandomPoints2 = randomPoints2;
 			}
 		}
+		
+		IJ.log("Random points selected: ");
+		for(ClusterPoint point: finalRandomPoints1){
+			IJ.log("Random 1: " + point.getX() + "/" + point.getY());
+		}
+		
+		for(ClusterPoint point: finalRandomPoints2){
+			IJ.log("Random 2: " + point.getX() + "/" + point.getY());
+		}
+		
 		lrp = new Cluster[] { biggestClusterRef, biggestClusterTarget };
 	}
 
